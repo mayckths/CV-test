@@ -1,0 +1,3 @@
+# impeccable runtime state (local only)
+.impeccable/live/server.json
+.impeccable/critique/*.tmp
