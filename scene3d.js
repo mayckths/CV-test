@@ -289,8 +289,8 @@ function init() {
   // Depth on the case study images: GSAP owns this transform, CSS owns nothing on the same element.
   if (!reduced && gsap && matchMedia("(pointer: fine)").matches) {
     document.querySelectorAll(".case-media").forEach((el) => {
-      const inner = el.firstElementChild;
-      if (!inner) return;
+      // Tilt the whole frame so full-bleed media never shows an edge.
+      const inner = el;
       gsap.set(inner, { transformPerspective: 900, transformOrigin: "center" });
       const rx = gsap.quickTo(inner, "rotationX", { duration: 0.5, ease: "power3" });
       const ry = gsap.quickTo(inner, "rotationY", { duration: 0.5, ease: "power3" });

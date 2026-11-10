@@ -141,17 +141,6 @@ form.addEventListener("submit", (e) => {
 
 renderChips();
 
-// Reveal on scroll
-const targets = document.querySelectorAll(".case, .tile, .timeline li, .quotes figure, .art");
-if (!reduced && "IntersectionObserver" in window) {
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((en) => {
-      if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
-    });
-  }, { rootMargin: "0px 0px -8% 0px" });
-  targets.forEach((t) => { t.classList.add("reveal"); io.observe(t); });
-}
-
 // Looping videos (converted from the original GIFs): play only while visible, never with reduced motion.
 const loops = document.querySelectorAll("video.loop");
 if (reduced) {
