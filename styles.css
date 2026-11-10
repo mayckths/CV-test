@@ -331,7 +331,7 @@ h1 em + em, h1 em:last-of-type { color: var(--m-coral-ink); }
 /* Ask Novo mark animation (ported from the Motion film): Novo indigo on a white sheet */
 .askmark {
   --am-ink: #3d44e3; --am-faint: #c0c2f8; --am-in: 0;
-  position: relative; width: min(100%, 440px); aspect-ratio: 4 / 5; margin-inline: auto; container-type: inline-size;
+  position: relative; width: min(100%, 440px); aspect-ratio: 800 / 1240; margin-inline: auto; container-type: inline-size;
   background: #ffffff; color: #15140f; border-radius: 22px; overflow: hidden;
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7);
 }
@@ -340,18 +340,29 @@ h1 em + em, h1 em:last-of-type { color: var(--m-coral-ink); }
 .askmark .ln { fill: none; stroke: var(--am-ink); stroke-width: 2; stroke-linecap: round; }
 .askmark .lg-ring { stroke: var(--am-faint); stroke-width: 3; stroke-linecap: butt; }
 .am-ui {
-  position: absolute; inset: 0; padding: 36% 9% 7%; display: flex; flex-direction: column; text-align: center;
+  position: absolute; inset: 0; padding: 3.6cqw 4.5cqw 4.5cqw; display: flex; flex-direction: column; gap: 2.4cqw;
+  font-family: var(--text); color: #15140f;
   opacity: var(--am-in); transform: translateY(calc((1 - var(--am-in)) * 14px));
+  background: radial-gradient(60% 40% at 85% 100%, rgba(255, 196, 214, .45), transparent 70%), radial-gradient(50% 35% at 20% 100%, rgba(196, 214, 255, .4), transparent 70%);
 }
-.am-title { font-weight: 700; font-size: 4.6cqw; letter-spacing: -0.02em; }
-.am-hello { margin-top: .3em; color: #5b5a56; font-size: 3.6cqw; }
-.am-prompts { margin-top: auto; display: grid; gap: 1.8cqw; text-align: left; }
-.am-prompts li { font-size: 3.2cqw; line-height: 1.3; padding: 2.3cqw 3.2cqw; border-radius: 3.2cqw; border: 1px solid #dfe0fb; background: #f6f6ff; color: #23246b; }
-.am-input {
-  margin-top: 3.2cqw; display: flex; align-items: center; justify-content: space-between; gap: 2.3cqw;
-  padding: 1.8cqw 1.8cqw 1.8cqw 3.6cqw; border-radius: 999px; border: 1px solid #e3e1da; font-size: 3.2cqw; color: #77746b;
-}
-.am-input i { width: 6.8cqw; height: 6.8cqw; border-radius: 50%; background: var(--am-ink); flex: none; }
+.am-ui svg { width: 4.6cqw; height: 4.6cqw; flex: none; }
+.am-bar { display: flex; align-items: center; justify-content: space-between; height: 9cqw; color: #2b2b30; }
+.am-mark-slot { width: 9cqw; }
+.am-hello { margin-top: 5cqw; text-align: center; font-weight: 700; font-size: 5.6cqw; line-height: 1.22; letter-spacing: -0.015em; }
+.am-prompts { margin-top: 1.4cqw; display: grid; gap: 1.8cqw; }
+.am-prompts li { font-size: 3.7cqw; line-height: 1.25; padding: 2.5cqw 5cqw; border-radius: 999px; border: 1px solid #e2e4ef; background: #fff; }
+.am-card { border: 1px solid #e2e4ef; border-radius: 3.6cqw; background: #fff; padding: 3cqw 4.5cqw; }
+.am-card-head { display: flex; align-items: center; gap: 3.6cqw; color: #2b2b30; }
+.am-card-head p { flex: 1; display: grid; font-size: 3.4cqw; line-height: 1.3; color: #5b5d66; }
+.am-card-head b { font-size: 3.8cqw; color: #15140f; }
+.am-row { font-size: 3.5cqw; line-height: 1.3; padding: 2.4cqw 0 0; margin-top: 2.4cqw; border-top: 1px solid #eceef4; }
+.am-card-head + .am-row { border-top: 0; margin-top: 2.4cqw; padding-top: 0; }
+.am-input { margin-top: auto; border: 1px solid #e2e4ef; border-radius: 3.6cqw; background: #fff; padding: 3cqw 4.5cqw 2.4cqw; display: grid; gap: 2.6cqw; }
+.am-ph { font-size: 3.9cqw; color: #5b5d66; }
+.am-input-foot { display: flex; align-items: center; justify-content: space-between; gap: 2cqw; font-size: 3cqw; color: #6b6d76; }
+.am-icons { display: flex; align-items: center; gap: 3cqw; color: #2b2b30; }
+.am-icons i { width: 7.6cqw; height: 7.6cqw; border-radius: 50%; background: #eef0f6; display: grid; place-items: center; color: #6b6d76; }
+.am-icons i svg { width: 3.6cqw; height: 3.6cqw; }
 .am-replay { margin-left: 10px; font: inherit; color: var(--bp-text); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; min-height: 32px; padding: 0 4px; }
 .askmark.is-playing + .mock-note .am-replay { opacity: .5; }
 

@@ -160,7 +160,7 @@ const art = root.querySelector(".am-art");
 const r = W.rig(kit);
 // The rig is one 1920x1080 sheet; the panel shows it through a camera group.
 const svg = r.svg;
-svg.setAttribute("viewBox", "0 0 800 1000");
+svg.setAttribute("viewBox", "0 0 800 1240");
 svg.setAttribute("aria-hidden", "true");
 svg.removeAttribute("class"); // "art" is also the page's Art section class
 const cam = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -179,8 +179,8 @@ function filmTime(t) {
   return MAP[MAP.length - 1][1];
 }
 const K = 0.62;                 // panel scale of the film frame
-const CX = 400, CY = 470;       // where the mark's centre sits while it is built
-const AVATAR = { x: 400, y: 232, s: 0.26 };
+const CX = 400, CY = 600;       // where the mark's centre sits while it is built
+const AVATAR = { x: 400, y: 74, s: 0.12 };
 const ui = root.querySelector(".am-ui");
 
 function render(t) {
