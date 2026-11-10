@@ -130,7 +130,6 @@ h1 em { font-style: normal; color: var(--accent-display); }
 .flagship-case .result strong { font-size: clamp(40px, 4.4vw, 60px); display: block; margin: 0 0 4px; line-height: 1; }
 .flagship-case .case-media { background: transparent; aspect-ratio: auto; padding: 0; overflow: visible; }
 .flagship-case .case-media::after { display: none; }
-.flagship-case .mock-chat { width: min(100%, 440px); font-size: 15px; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7); }
 .mock-note { margin-top: 14px; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); text-align: center; }
 .ask {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: clamp(20px, 4vw, 56px);
@@ -264,25 +263,38 @@ h1 em { font-style: normal; color: var(--accent-display); }
   .case .case-media { order: -1; }
 }
 
-/* Coded chat mock */
-.mock-chat {
-  width: min(100%, 340px); background: var(--surface); color: var(--ink); border-radius: 18px; padding: 14px;
-  display: flex; flex-direction: column; gap: 10px; font-size: 14px; box-shadow: 0 18px 40px -22px rgba(0,0,0,.45);
+/* Ask Novo mark animation (ported from the Motion film): Novo indigo on a white sheet */
+.askmark {
+  --am-ink: #3d44e3; --am-faint: #c0c2f8; --am-in: 0;
+  position: relative; width: min(100%, 440px); aspect-ratio: 4 / 5; margin-inline: auto; container-type: inline-size;
+  background: #ffffff; color: #15140f; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7);
 }
-.mock-bar { display: flex; align-items: center; gap: 5px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
-.mock-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
-.mock-bar b { margin-left: auto; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--muted); }
-.mock-chat .b { padding: 9px 12px; border-radius: 14px; max-width: 88%; }
-.mock-chat .user { align-self: flex-end; background: var(--ink); color: var(--bg); border-bottom-right-radius: 4px; }
-.mock-chat .bot { background: var(--media); border-bottom-left-radius: 4px; max-width: 100%; }
-.mock-card { margin-top: 8px; background: var(--surface); border-radius: 10px; padding: 10px 12px; }
-.mock-card .tag { font-family: var(--mono); font-size: 11px; color: var(--accent-text); }
-.mock-card .row { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); }
-.mock-card .row b { color: var(--ink); }
-.mock-card .bar { height: 4px; border-radius: 4px; background: var(--line); margin-top: 10px; overflow: hidden; }
-.mock-card .bar i { display: block; width: 66%; height: 100%; background: var(--accent); }
-.mock-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.mock-chips span { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+.am-art, .am-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.askmark .mk { fill: var(--am-ink); stroke: var(--am-ink); stroke-width: .3; stroke-linejoin: round; }
+.askmark .ln { fill: none; stroke: var(--am-ink); stroke-width: 2; stroke-linecap: round; }
+.askmark .lg-ring { stroke: var(--am-faint); stroke-width: 3; stroke-linecap: butt; }
+.am-ui {
+  position: absolute; inset: 0; padding: 36% 9% 7%; display: flex; flex-direction: column; text-align: center;
+  opacity: var(--am-in); transform: translateY(calc((1 - var(--am-in)) * 14px));
+}
+.am-title { font-weight: 700; font-size: 4.6cqw; letter-spacing: -0.02em; }
+.am-hello { margin-top: .3em; color: #5b5a56; font-size: 3.6cqw; }
+.am-prompts { margin-top: auto; display: grid; gap: 1.8cqw; text-align: left; }
+.am-prompts li {
+  font-size: 3.2cqw; line-height: 1.3; padding: 2.3cqw 3.2cqw; border-radius: 3.2cqw;
+  border: 1px solid #dfe0fb; background: #f6f6ff; color: #23246b;
+}
+.am-input {
+  margin-top: 3.2cqw; display: flex; align-items: center; justify-content: space-between; gap: 2.3cqw;
+  padding: 1.8cqw 1.8cqw 1.8cqw 3.6cqw; border-radius: 999px; border: 1px solid #e3e1da; font-size: 3.2cqw; color: #77746b;
+}
+.am-input i { width: 6.8cqw; height: 6.8cqw; border-radius: 50%; background: var(--am-ink); flex: none; }
+.am-replay {
+  margin-left: 10px; font: inherit; color: var(--bg); background: none; border: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; min-height: 32px; padding: 0 4px;
+}
+.askmark.is-playing + .mock-note .am-replay { opacity: .5; }
 
 /* Grid */
 .grid-head { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 4vw, 64px); padding-block: clamp(36px, 5vw, 64px) 24px; align-items: end; }
@@ -349,8 +361,6 @@ h1 em { font-style: normal; color: var(--accent-display); }
   .tile:hover .tile-media { transform: translateY(-4px); box-shadow: 0 18px 36px -24px rgba(21, 20, 15, .45); }
 }
 
-/* The coded Ask Novo mock sets its own height on small screens */
-@media (max-width: 820px) { .case-media.mock { aspect-ratio: auto; } }
 
 /* Pause control for looping media (WCAG 2.2.2) */
 .media-toggle {

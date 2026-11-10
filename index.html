@@ -76,22 +76,21 @@
             <p>The in-app AI assistant for self-service support and servicing, designed and shipped end to end: start screen and suggested prompts, data patterns for status, stats, tables and payment summaries, error and retry states, and handoff to human agents. Then prototyped in the product's own codebases (React web, Android Compose) so design and engineering ship the same patterns.</p>
             <p class="result"><strong>6,000+</strong> businesses with the assistant live in production</p>
           </div>
-          <figure class="case-media mock" role="img" aria-label="Illustrative Ask Novo chat: a payment status answer with the amount, arrival date and follow-up actions">
-            <div class="mock-chat">
-              <div class="mock-bar"><i></i><i></i><i></i><b>Assistant</b></div>
-              <p class="b user">What's the status of my last payment?</p>
-              <div class="b bot">
-                <p>Your last payment is on its way.</p>
-                <div class="mock-card">
-                  <span class="tag">In transit</span>
-                  <div class="row"><span>Amount</span><b>$1,240.00</b></div>
-                  <div class="row"><span>Arrives</span><b>Tomorrow</b></div>
-                  <div class="bar"><i></i></div>
-                </div>
+          <figure class="case-media askmark-frame">
+            <div class="askmark" data-askmark>
+              <div class="am-art" role="img" aria-label="Animation: the Novo n splits into one leg, turns into the four-petal Ask Novo mark, spins while it thinks, then becomes the assistant on an intro chat screen"></div>
+              <div class="am-ui" aria-hidden="true">
+                <p class="am-title">Ask Novo</p>
+                <p class="am-hello">How can I help today?</p>
+                <ul class="am-prompts">
+                  <li>What's the status of my last payment?</li>
+                  <li>Set up AutoPay</li>
+                  <li>Talk to a person</li>
+                </ul>
+                <div class="am-input"><span>Ask a question</span><i></i></div>
               </div>
-              <div class="mock-chips"><span>Set up AutoPay</span><span>Talk to a person</span></div>
             </div>
-            <figcaption class="mock-note" aria-hidden="true">Illustrative mock-up</figcaption>
+            <figcaption class="mock-note">Illustrative mock-up <button type="button" class="am-replay">Replay</button></figcaption>
           </figure>
         </article>
 
@@ -231,6 +230,7 @@
   </footer>
 
   <script src="app.js" defer></script>
+  <script src="askmark.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
   <script type="module" src="scene3d.js"></script>
