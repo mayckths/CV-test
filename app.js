@@ -224,7 +224,7 @@ if ("IntersectionObserver" in window) {
 
 // Scroll reading: the closing line and the recommendations light up word by word as they scroll in.
 if (!reduced) {
-  const lines = [...document.querySelectorAll(".foot .big, .quotes blockquote")].map((el) => {
+  const lines = [...document.querySelectorAll(".statement, .foot .big, .quotes blockquote")].map((el) => {
     const words = el.textContent.trim().split(/\s+/);
     el.textContent = "";
     el.classList.add("read");
@@ -252,4 +252,16 @@ if (!reduced) {
   // Late-loading media moves the lines without a scroll event, so re-read when the page height changes.
   if ("ResizeObserver" in window) new ResizeObserver(() => { if (!tick) tick = requestAnimationFrame(read); }).observe(document.body);
   read();
+}
+
+// Project media leans toward the cursor.
+if (!reduced && matchMedia("(pointer: fine)").matches) {
+  document.querySelectorAll(".work > .case .case-media").forEach((el) => {
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect();
+      const ry = ((e.clientX - r.left) / r.width - 0.5) * 12, rx = -((e.clientY - r.top) / r.height - 0.5) * 10;
+      el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(1.02)`;
+    });
+    el.addEventListener("pointerleave", () => { el.style.transform = ""; });
+  });
 }

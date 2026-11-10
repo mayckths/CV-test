@@ -1,228 +1,161 @@
 ---
 name: Mayck Cuellar Portfolio
-description: A single-page portfolio drawn as one construction drawing set, with 3D work as its material.
+description: A dark single-page portfolio where square pixels are the material and Mayck's M is built from them.
 colors:
-  drafting-film: "#f2f4f6"
-  sheet-white: "#ffffff"
-  graphite: "#1d1e24"
-  graphite-muted: "#5d606b"
-  hairline: "#d8dae2"
-  construction-blue: "#2f3fd6"
-  guide-blue-soft: "#aab2e8"
-  material-coral: "#ff5a36"
-  material-coral-ink: "#e0451f"
-  material-aqua: "#57d3d9"
-  material-violet: "#6a4cdb"
-  material-indigo: "#2d2a8c"
-  material-magenta: "#e0399b"
-  material-yellow: "#ffc23a"
-  blueprint: "#1e1b66"
-  blueprint-text: "#eef0ff"
-  blueprint-muted: "#bcc0f2"
+  ground: "#0a0915"
+  surface: "#131127"
+  surface-raised: "#1b1838"
+  text: "#f2f0fa"
+  text-muted: "#aaa6c4"
+  line: "rgba(242, 240, 250, 0.13)"
+  line-strong: "rgba(242, 240, 250, 0.28)"
+  coral: "#ff6a45"
+  violet: "#a391ff"
+  aqua: "#62dbe0"
+  yellow: "#ffc23a"
+  indigo: "#2a2478"
 typography:
   display:
-    fontFamily: "Archivo, Arial Narrow, system-ui, sans-serif"
-    fontSize: "clamp(40px, 6.3vw, 90px)"
-    fontWeight: 750
-    lineHeight: 0.94
-    letterSpacing: "-0.012em"
-    fontVariation: "'wdth' 72"
+    fontFamily: "Bodoni Moda, Didot, Bodoni MT, Georgia, serif"
+    fontSize: "clamp(40px, 5.2vw, 80px)"
+    fontWeight: 500
+    lineHeight: 1.04
+    letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Archivo, Arial Narrow, system-ui, sans-serif"
-    fontSize: "clamp(34px, 5vw, 68px)"
-    fontWeight: 750
-    lineHeight: 0.95
-    letterSpacing: "-0.01em"
-    fontVariation: "'wdth' 72"
-  title:
-    fontFamily: "Archivo, Arial Narrow, system-ui, sans-serif"
-    fontSize: "clamp(32px, 3.8vw, 52px)"
-    fontWeight: 750
-    lineHeight: 0.95
-    fontVariation: "'wdth' 72"
-  figure:
-    fontFamily: "Archivo, Arial Narrow, system-ui, sans-serif"
-    fontSize: "clamp(30px, 3.6vw, 50px)"
-    fontWeight: 750
+    fontFamily: "Bodoni Moda, Didot, Bodoni MT, Georgia, serif"
+    fontSize: "clamp(36px, 5vw, 72px)"
+    fontWeight: 400
     lineHeight: 1
-    fontFeature: "'tnum'"
-    fontVariation: "'wdth' 75"
+  statement:
+    fontFamily: "Bodoni Moda, Didot, Bodoni MT, Georgia, serif"
+    fontSize: "clamp(26px, 3.3vw, 48px)"
+    fontWeight: 500
+    lineHeight: 1.16
+  figure:
+    fontFamily: "Geist, system-ui, sans-serif"
+    fontSize: "clamp(32px, 4vw, 58px)"
+    fontWeight: 500
+    letterSpacing: "-0.04em"
   body:
-    fontFamily: "Archivo, system-ui, sans-serif"
+    fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "17px"
     fontWeight: 400
     lineHeight: 1.55
   label:
-    fontFamily: "JetBrains Mono, ui-monospace, monospace"
+    fontFamily: "Geist Mono, ui-monospace, monospace"
     fontSize: "12px"
     fontWeight: 500
-    lineHeight: 1.5
     letterSpacing: "0.06em"
 rounded:
-  none: "0px"
-  product-card: "22px"
+  pill: "999px"
+  media: "18px"
+  panel: "28px"
 spacing:
   gutter: "clamp(20px, 4vw, 64px)"
-  section: "clamp(64px, 9vw, 128px)"
-  case: "clamp(32px, 5vw, 72px)"
-  max-width: "1280px"
+  max-width: "1320px"
 components:
   button-primary:
-    backgroundColor: "{colors.graphite}"
-    textColor: "{colors.drafting-film}"
-    rounded: "{rounded.none}"
-    padding: "16px 24px"
-    typography: "{typography.label}"
+    backgroundColor: "{colors.text}"
+    textColor: "{colors.ground}"
+    rounded: "{rounded.pill}"
+    padding: "0 22px"
+    height: "46px"
   button-primary-hover:
-    backgroundColor: "{colors.construction-blue}"
-  button-keyline:
-    backgroundColor: "{colors.drafting-film}"
-    textColor: "{colors.graphite}"
-    rounded: "{rounded.none}"
-    padding: "10px 16px"
-    typography: "{typography.label}"
-  link:
-    textColor: "{colors.graphite}"
-    typography: "{typography.label}"
-  chip-blueprint:
-    textColor: "{colors.blueprint-text}"
-    rounded: "{rounded.none}"
-    padding: "9px 14px"
-    height: "42px"
-  input-composer:
-    backgroundColor: "{colors.drafting-film}"
-    textColor: "{colors.graphite}"
-    rounded: "{rounded.none}"
+    backgroundColor: "{colors.coral}"
+  button-ghost:
+    textColor: "{colors.text}"
+    rounded: "{rounded.pill}"
+    padding: "0 18px"
+    height: "40px"
 ---
 
 # Design System: Mayck Cuellar Portfolio
 
 ## Overview
 
-**Creative North Star: "The Drawing Set"**
+**Creative North Star: "Pixels as matter"**
 
-The portfolio is one construction drawing set. Every section is a sheet: a cool drafting-film ground, graphite ink, and construction blue for each guide line, tick, dimension and small label. The page proves its thesis by its own drawing: results are dimensioned, views are framed with registration corners, and the hero sculpture sits inside live construction lines that measure it.
+The page is a dark indigo space with one material: square pixels. A single WebGL layer sits behind the content. In the hero the pixels form Mayck's serif M as a solid, turning letter; as the page scrolls they leave it and become a quiet field of dust; at the footer they gather into the M again. Everywhere, pixels step away from the cursor and show their colour when disturbed.
 
-Colour does not decorate the drawing. It arrives only as material, taken from Mayck's 3D art (coral, aqua, violet, indigo, magenta and yellow), and lives in the WebGL sculptures, the iridescent art panel, the material swatches and the discipline key that tags each project. The one inversion is the blueprint detail sheet for Ask Novo, set in deep indigo with yellow dimensions.
-
-Density is calm and technical: square corners, hairlines, mono labels, condensed capitals. The headline carries two phrases in material colour; that is an intended exception to the brief's "refuses accent-word" line, recorded here so it stays deliberate.
+The look was pinned by Mayck from three references: ricardochance.com (dark ground, particle form, serif statements that light up as you read, pill buttons), mats.zip (point cloud mark, small labels, bracketed years, dot-matrix bands) and andreas.vision (chunky pixels, elegant italic serif). It is adapted to his own colours and mark, not copied.
 
 **Key Characteristics:**
-- Cool off-white film ground, never cream.
-- Construction blue is the only line colour on the light sheet.
-- Colour is material: sculptures, art and the discipline key.
-- Condensed uppercase display, mono labels, plain body text.
-- Square corners everywhere except the product UI being shown.
+- Dark only: indigo-black ground with soft violet glows.
+- Pixels are the only decoration: the M, the field, the dot-matrix bands, square bullets.
+- A Didone serif, chosen to match the M's own letterform, for statements; a plain sans for reading.
+- Colour appears through interaction: the field is pale until the cursor disturbs it.
 
 ## Colors
 
-A neutral drafting palette with one line colour, plus a six-colour material set from the 3D work.
-
 ### Primary
-- **Construction Blue** (construction-blue): every guide, tick, dimension rule, registration corner, small label, active nav state, focus ring and link underline on the light sheet. 6.8:1 on the film.
-- **Soft Guide Blue** (guide-blue-soft): the sheet border, the dashed construction circle, title block rules and spec-line rules.
+- **Coral** (coral): the one accent on chrome: second headline phrase, link arrows, hover states, send button, quote marks.
 
 ### Secondary
-- **Blueprint Indigo** (blueprint): the ground of the Ask Novo detail sheet, with Blueprint Text and Blueprint Muted for type on it.
-- **Material Yellow** (material-yellow): the only accent on the blueprint: result figures, dimension ticks, the user's chat bubble, chips on hover, the send button.
-
-### Tertiary
-- **Material set** (material-coral, material-aqua, material-violet, material-indigo, material-magenta, material-yellow): sculpture surfaces and the discipline key. Violet marks AI, coral fintech, yellow research, aqua systems, magenta 3D and motion, indigo UI.
-- **Coral Ink** (material-coral-ink) and **Violet** (material-violet): the two headline phrases. Coral Ink is for large type only (3.8:1).
+- **Violet** (violet), **Aqua** (aqua), **Yellow** (yellow): the first headline phrase, focus rings, and the flagship result. With coral, magenta and indigo they are the colours pixels reveal under the cursor.
 
 ### Neutral
-- **Drafting Film** (drafting-film): page ground.
-- **Sheet White** (sheet-white): view frames behind media.
-- **Graphite** (graphite): all type and the primary button.
-- **Graphite Muted** (graphite-muted): body copy under headings, captions (5.7:1).
-- **Hairline** (hairline): dividers between cases and table rows.
+- **Ground** (ground), **Surface** (surface) for media panels, **Text** (text), **Muted** (text-muted) for body under headings, **Line** and **Line strong** for hairlines.
 
 ### Named Rules
-**The Material Rule.** A material colour appears only where it means a material or a discipline: on the 3D, in the art, in a swatch or key. Chrome, borders and backgrounds on the light sheet never use it.
-
-**The One Line Colour Rule.** Every line on the light sheet is construction blue or its soft tint. A graphite rule marks only a section's top edge.
+**The Pale Field Rule.** Loose pixels stay pale and dim. Saturated colour appears only where the cursor touches the field or the M.
 
 ## Typography
 
-**Display Font:** Archivo at condensed width (with Arial Narrow, system sans)
-**Body Font:** Archivo at normal width (with system sans)
-**Label/Mono Font:** JetBrains Mono (with ui-monospace)
+**Display Font:** Bodoni Moda (Didot, Georgia fallback)
+**Body Font:** Geist
+**Label/Mono Font:** Geist Mono
 
-**Character:** One variable family stretched two ways: condensed technical capitals for anything that names a sheet, normal width for reading. Mono is reserved for measurements and labels, the way a drawing sets its annotations.
+**Character:** The display face echoes the M in Mayck's mark: high contrast, flat serifs. Italics carry emphasis.
 
 ### Hierarchy
-- **Display** (750, clamp 40 to 90px, 0.94): the hero statement, uppercase, about two thirds of the sheet width.
-- **Headline** (750, clamp 34 to 68px, 0.95): section titles such as Selected work and Experience, uppercase.
-- **Title** (750, clamp 32 to 52px, 0.95): project names, uppercase; the flagship project runs larger (up to 104px).
-- **Figure** (750, clamp 30 to 50px, tabular): results set above their dimension rules.
-- **Body** (400, 17px, 1.55): paragraphs, 54 to 58ch.
-- **Label** (500, 12px, 0.06em, uppercase): nav, spec lines, title blocks, links, dimensions.
+- **Display** (500, clamp 40 to 80px): the hero headline; two phrases in italic, violet and coral.
+- **Statement** (500, clamp 26 to 48px): the intro paragraph, read word by word.
+- **Headline** (400, clamp 36 to 72px): section and project titles, the closing line.
+- **Figure** (Geist 500, tight tracking): all numbers and results.
+- **Body** (17px, 1.55): paragraphs, up to 54ch.
+- **Label** (Geist Mono 12px, uppercase): tags, years, hints.
 
 ### Named Rules
-**The Annotation Rule.** Mono is for measurement and labelling only. Sentences longer than a label (such as the chat disclosure) set in mono stay in sentence case.
+**The Sans Figures Rule.** Numbers are never set in the serif: its hairline plus and comma disappear on the dark ground.
 
 ## Layout
 
-A centred sheet up to 1280px wide with a fluid gutter (clamp 20 to 64px). There is no ruler frame around the viewport; it was removed at Mayck's request. Sections open with a headline over a graphite rule and a keylined title box at the right. Projects alternate media and text in two columns from 820px up and stack media first below it. The Huge work is a four-column grid, two at 980px and one at 440px. The header is full-bleed with its content aligned to the sheet; on phones it becomes two rows with the four section links spread across 44px targets.
-
-**The Dimension Rule.** A result is always drawn: a 1px rule with end ticks above the figure. The hero stats, every case result and the chat's stat answers use it.
+A centred column up to 1320px. The hero pairs the headline with the M's slot (1.7 to 1), then the statement, four figures on hairlines and the certifications in one row. Projects alternate media and text in two columns from 820px and stack below it. Years sit in square brackets at the right of each label row. Dot-matrix bands separate the hero and footer from the middle. Four small corner marks sit on the viewport.
 
 ## Elevation & Depth
 
-The sheet is flat. Depth comes from the WebGL sculptures behind the content and from one soft shadow under the Ask Novo product card (0 40px 80px -30px at 70% black) and under grid views on hover (0 18px 36px -24px). Views otherwise sit flat in their frames.
+Depth comes from the pixel field's own perspective and from one violet glow under project media (0 50px 120px -60px). Panels are otherwise flat with a 1px inner line.
 
 ## Shapes
 
-Square corners and 1px hairlines. Views carry registration corners: two blue L-marks, top left and bottom right. The keylined Say hi button carries the same marks just outside its box. The only rounded shapes are depicted product UI (the Ask Novo card at 22px) and circular items (the M badge, swatches, media pause controls).
+Pills for buttons, chips and the composer; 18px corners on media and 28px on the flagship and art panels. Pixels and bullets are square.
 
 ## Components
 
+### Pixel M (signature)
+- A voxel M sampled from the mark's outline, a few layers deep, drawn over an empty focusable button in the hero and in the footer. It sways slowly; drag turns it with inertia; a press scatters it and it re-forms; arrow keys nudge it. With reduced motion it rests in a three-quarter view.
+
 ### Buttons
-- **Shape:** square (0px).
-- **Primary:** graphite fill, film text, mono label, 16px by 24px; hover fills construction blue.
-- **Keyline (Say hi):** 1px graphite border with blue registration corners; hover fills graphite.
+- **Primary:** light pill with dark text; coral on hover.
+- **Ghost:** 1px light outline pill; fills faintly on hover.
 
 ### Links
-- Mono uppercase label with a 1px construction-blue underline and a drawn arrow; the arrow nudges up-right on hover. Each link has a 44px hit area.
+- Sans, 1px underline, coral drawn arrow that nudges on hover; 44px hit area.
 
-### Chips (Ask panel)
-- **Style:** square, 1px light border on the blueprint, 42px tall; hover takes a yellow border and tint. At most four show at a time.
-
-### Inputs / Fields
-- **Composer:** square film-coloured bar with a yellow send button; focus draws a 2px yellow ring.
-
-### Navigation
-- Mono uppercase labels in muted graphite; hover and the section in view turn construction blue, the current one underlined.
-
-### Title block
-- Bordered in soft guide blue: Drawn by, Role, Sheet in the hero, beside the certifications and the materials key.
-- Every other sheet carries a slim keylined title box in mono blue capitals, built from that section's own words: the work count and years, Experience with the Full CV link, Recommendations, 3D and digital art, Contact.
-
-### Spec line
-- Project metadata sits under the project name between two soft blue rules: discipline swatches, years, then the discipline list.
-
-### Construction overlay (signature)
-- A dashed circle, crosshair and leader line track the hero sculpture on screen, labelled "Fig. 1 · Soft sculpture" with its live diameter in pixels. The axes draw on at load and the whole overlay fades as the sculpture leaves on scroll.
-
-### M orb (signature)
-- Mayck's mark, rebuilt in WebGL from his GIF: a deep extruded white serif M turning once every 4.9s inside a dark glass ball with a blue rim. It sits in the footer as a real button and the ball is drawn over it.
-- It is also a particle form in the material colours: it assembles as the footer scrolls in, scatters when pressed and re-forms, and a few loose particles orbit the ball and move away from the cursor. Drag spins it with inertia; arrow keys nudge it.
-- With reduced motion it rests facing front, and a press turns it a quarter.
+### Flagship panel
+- Indigo-to-violet panel holding the Ask Novo mark animation (white product card) and the scripted Ask panel.
 
 ### Scroll reading
-- The closing line and the recommendations start in a soft tint (20% ink) and take full ink word by word as they scroll in.
+- The statement, the recommendations and the closing line start at 22% and light up word by word.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** draw every result as a dimension (rule with end ticks) above its figure.
-- **Do** put project metadata under the heading as a ruled spec line.
-- **Do** tag each project with its discipline swatches from the materials key.
-- **Do** keep light-sheet lines in construction blue or its soft tint.
+- **Do** keep pixels as the only decorative material.
+- **Do** set every number in the sans.
+- **Do** put years in square brackets in the label row.
 
 ### Don't:
-- **Don't** place labels or eyebrows above headings.
-- **Don't** use material colours on chrome, borders or backgrounds of the light sheet.
-- **Don't** add a grid, a ruler frame or zone ticks to the sheet; registration corners are the only structure marks.
-- **Don't** round corners on anything except depicted product UI and circular items.
-- **Don't** set coral ink below large-text size.
+- **Don't** add a light theme or light sections; product UI cards are the only light surfaces.
+- **Don't** brighten the resting field; it must stay behind the text.
+- **Don't** add ruler frames or tick marks.
