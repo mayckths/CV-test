@@ -1,3 +1,2 @@
-# impeccable runtime state (local only)
-.impeccable/live/server.json
-.impeccable/critique/*.tmp
+# impeccable working files: the direction contract must not be served by GitHub Pages
+.impeccable/

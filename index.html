@@ -11,11 +11,11 @@
   <meta property="og:image" content="https://mayckths.github.io/CV-test/assets/art.webp" />
   <meta property="og:url" content="https://mayckths.github.io/CV-test/" />
   <meta property="og:type" content="website" />
-  <meta name="theme-color" content="#f3f0e8" />
+  <meta name="theme-color" content="#f5f5f1" />
   <link rel="icon" href="assets/m.webp" type="image/webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script type="importmap">
     { "imports": {
@@ -26,6 +26,15 @@
 </head>
 <body>
   <canvas id="stage" aria-hidden="true"></canvas>
+  <div class="sheet-frame" aria-hidden="true"></div>
+  <div class="construct" aria-hidden="true">
+    <svg viewBox="-100 -100 200 200">
+      <circle class="c-ring" r="100" />
+      <path class="c-axis c-draw" d="M-118 0 H-88 M88 0 H118 M0 -118 V-88 M0 88 V118 M-8 0 H8 M0 -8 V8" pathLength="1" />
+      <path class="c-lead c-draw" d="M-71 -71 L-108 -108" pathLength="1" />
+    </svg>
+    <p class="construct-label"><b>Fig. 1 · Soft sculpture</b><span class="c-dim">Ø 0 px</span></p>
+  </div>
   <a class="skip" href="#work">Skip to work</a>
 
   <header class="top">
@@ -58,6 +67,17 @@
           <li><b>RARE with Google</b> <span>Leadership Academy delegate · 2023</span></li>
           <li><b>UC San Diego</b> <span>Interaction Design Specialization · 2017</span></li>
         </ul>
+        <div class="key">
+          <span class="tb-label">Materials key</span>
+          <ul aria-label="Discipline colours used on each project">
+            <li class="mat"><i class="m-ai"></i>AI</li>
+            <li class="mat"><i class="m-fin"></i>Fintech</li>
+            <li class="mat"><i class="m-res"></i>Research</li>
+            <li class="mat"><i class="m-sys"></i>Systems</li>
+            <li class="mat"><i class="m-3d"></i>3D, motion</li>
+            <li class="mat"><i class="m-ui"></i>UI</li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -71,7 +91,7 @@
       <div class="flagship">
         <article class="case flagship-case" id="ask-novo">
           <div class="case-body">
-            <p class="meta"><span>2025 to 2026</span><span>Conversational AI · Fintech · Web and Android</span></p>
+            <p class="meta"><span class="mat"><i class="m-ai"></i><i class="m-fin"></i><span class="sr">AI, fintech</span></span><span>2025 to 2026</span><span>Conversational AI · Fintech · Web and Android</span></p>
             <h3>Ask Novo</h3>
             <p>The in-app AI assistant for self-service support and servicing, designed and shipped end to end: start screen and suggested prompts, data patterns for status, stats, tables and payment summaries, error and retry states, and handoff to human agents. Then prototyped in the product's own codebases (React web, Android Compose) so design and engineering ship the same patterns.</p>
             <p class="result"><strong>6,000+</strong> businesses with the assistant live in production</p>
@@ -116,7 +136,7 @@
 
       <article class="case" id="componetizer">
         <div class="case-body">
-          <p class="meta"><span>2026</span><span>AI automation · Design systems · Prototyping</span></p>
+          <p class="meta"><span class="mat"><i class="m-ai"></i><i class="m-sys"></i><span class="sr">AI, systems</span></span><span>2026</span><span>AI automation · Design systems · Prototyping</span></p>
           <h3>Figma DS Componetizer</h3>
           <p>A Figma plugin I designed and built that conforms product mockups to the design system. It audits each frame and applies missing styles, variables and components while keeping the look and feel. It runs on a custom Claude skill, ships to the team as a one-command plugin, and comes with a mock backend so conformed screens click through as live prototypes.</p>
           <p class="result"><strong>Hours → one pass</strong> of manual design effort and QA</p>
@@ -126,7 +146,7 @@
 
       <article class="case" id="onboarding">
         <div class="case-body">
-          <p class="meta"><span>2024</span><span>Research · UI design · A/B testing</span></p>
+          <p class="meta"><span class="mat"><i class="m-fin"></i><i class="m-res"></i><span class="sr">fintech, research</span></span><span>2024</span><span>Research · UI design · A/B testing</span></p>
           <h3>Novo first time experience</h3>
           <p>Led the redesign of days 0 to 30 on web and native mobile: signup, post-application, first login and onboarding. Mapped the journey, validated with user interviews and usability tests, and proved it with A/B tests.</p>
           <p class="result"><strong>+50%</strong> activation rate in the first month</p>
@@ -137,7 +157,7 @@
 
       <article class="case" id="logitech">
         <div class="case-body">
-          <p class="meta"><span>2023</span><span>0 to 1 · Interaction design · User testing</span></p>
+          <p class="meta"><span class="mat"><i class="m-res"></i><i class="m-ui"></i><span class="sr">research, UI</span></span><span>2023</span><span>0 to 1 · Interaction design · User testing</span></p>
           <h3>Logitech G audio mixer</h3>
           <p>Led the 0 to 1 design of Logitech G's audio mixing platform as the sole dedicated designer: research, product structure, interaction model, high-fidelity prototypes and usability testing in a 5-month engagement. The beta was praised by creators and gamers for its ease of use.</p>
           <p class="result"><strong>Patent pending</strong></p>
@@ -153,28 +173,28 @@
       <div class="grid">
         <article class="tile">
           <div class="tile-media" style="--frame:#f2f1f8"><video class="loop" poster="assets/wgbi.webp" muted loop playsinline preload="none" width="600" height="588" aria-label="Animated 3D car driving past a house, from the With Google Built-in site"><source src="assets/wgbi.webm" type="video/webm" /><source src="assets/wgbi.mp4" type="video/mp4" /></video></div>
-          <p class="meta"><span>2022</span></p>
+          <p class="meta"><span class="mat"><i class="m-3d"></i><span class="sr">3D and motion</span></span><span>2022</span></p>
           <h4>With Google Built-in Auto</h4>
           <p>Visual and 3D design for the first version of the site, built from the ground up.</p>
           <a class="link" href="https://built-in.google/cars/" target="_blank" rel="noopener">See website</a>
         </article>
         <article class="tile">
           <div class="tile-media" style="--frame:#f8fafb"><img src="assets/wearos.webp" alt="Wear OS website hero with a watch surrounded by app icons" loading="lazy" width="1200" height="1195" /></div>
-          <p class="meta"><span>2022</span></p>
+          <p class="meta"><span class="mat"><i class="m-3d"></i><span class="sr">3D and motion</span></span><span>2022</span></p>
           <h4>Wear OS by Google</h4>
           <p>Site redesign with a series of 3D watch models made in Cinema 4D and Redshift.</p>
           <a class="link" href="https://wearos.google.com/" target="_blank" rel="noopener">See website</a>
         </article>
         <article class="tile">
           <div class="tile-media" style="--frame:#000000"><video class="loop" poster="assets/googletv.webp" muted loop playsinline preload="none" width="600" height="600" aria-label="Google TV website sections scrolling, showing live TV on the home screen"><source src="assets/googletv.webm" type="video/webm" /><source src="assets/googletv.mp4" type="video/mp4" /></video></div>
-          <p class="meta"><span>2022</span></p>
+          <p class="meta"><span class="mat"><i class="m-ui"></i><i class="m-3d"></i><span class="sr">UI, 3D and motion</span></span><span>2022</span></p>
           <h4>Google TV</h4>
           <p>Page sections, prototypes and motion for a more accessible, informative site.</p>
           <a class="link" href="https://tv.google/" target="_blank" rel="noopener">See website</a>
         </article>
         <article class="tile">
           <div class="tile-media" style="--frame:#2d2b27"><img src="assets/accuweather.webp" alt="AccuWeather tablet interface in isometric view" loading="lazy" width="1200" height="1200" /></div>
-          <p class="meta"><span>2020</span></p>
+          <p class="meta"><span class="mat"><i class="m-ui"></i><span class="sr">UI</span></span><span>2020</span></p>
           <h4>AccuWeather app</h4>
           <p>Owned the tablet UI for the app redesign, live on Android and iOS.</p>
           <a class="link" href="https://www.youtube.com/watch?v=bP9W9J1AU6k" target="_blank" rel="noopener">Watch more</a>
@@ -189,6 +209,7 @@
         <a class="link" href="https://mayck.design/cv" target="_blank" rel="noopener">Full CV</a>
       </div>
       <ol class="timeline">
+        <li class="rev-head" aria-hidden="true"><span>Date</span><div>Role · Company</div></li>
         <li><span class="when">2023 to now</span><div><b>Lead Product Designer</b> · Novo<p>Core banking and growth journeys, Ask Novo, and the design team's AI strategy.</p></div></li>
         <li><span class="when">2023</span><div><b>Senior UX/UI Designer</b> · BairesDev for Logitech G<p>0 to 1 design of an audio mixing platform. Patent pending.</p></div></li>
         <li><span class="when">2019 to 2023</span><div><b>Senior Visual Designer</b> · Huge<p>Google, AccuWeather and Credit Acceptance. Managed 3 designers, mentored 4.</p></div></li>
@@ -212,6 +233,7 @@
     <!-- ART -->
     <section class="art" id="art" aria-labelledby="art-title">
       <div class="art-copy">
+        <div class="swatches" aria-hidden="true"><i class="m-3d"></i><i class="m-res"></i><i class="m-sys"></i><i class="m-ai"></i><i class="m-fin"></i></div>
         <h2 id="art-title">Also: 3D and digital art</h2>
         <p>Cinema 4D since my teens, Midjourney more recently. Cover artist for Revista Avenida's 13th edition.</p>
         <a class="link" href="https://mayck.design/3d" target="_blank" rel="noopener">See the eye-candy</a>

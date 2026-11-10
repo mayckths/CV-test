@@ -212,10 +212,31 @@ function init() {
       s.tilt.rotation.x += (pointer.y * 0.35 - s.tilt.rotation.x) * 0.06;
     }
     renderer.render(scene, camera);
+    drawConstruct();
   }
   function wake() {
     if (reduced) { renderer.render(scene, camera); return; }
     if (!running && active()) { running = true; clock.getDelta(); frame(); }
+  }
+
+  // Construction lines that track the hero sculpture on screen (the .construct overlay in index.html).
+  const construct = document.querySelector(".construct");
+  const cDim = construct && construct.querySelector(".c-dim");
+  const tmp = new THREE.Vector3();
+  let lastDim = "";
+  function drawConstruct() {
+    if (!construct) return;
+    if (!hero.rig.visible) { construct.style.setProperty("--co", "0"); return; }
+    tmp.copy(hero.rig.position).project(camera);
+    const cx = (tmp.x * 0.5 + 0.5) * view.vw, cy = (-tmp.y * 0.5 + 0.5) * view.vh;
+    const r = 1.55 * hero.rig.scale.x * (view.vh / view.h);
+    const fade = Math.max(0, 1 - window.scrollY / (view.vh * 0.45));
+    construct.style.setProperty("--cx", cx.toFixed(1));
+    construct.style.setProperty("--cy", cy.toFixed(1));
+    construct.style.setProperty("--r", r.toFixed(1));
+    construct.style.setProperty("--co", fade.toFixed(3));
+    const d = "Ø " + Math.round(r * 2) + " px";
+    if (cDim && d !== lastDim) { cDim.textContent = d; lastDim = d; }
   }
 
   resize();
@@ -232,7 +253,7 @@ function init() {
     triggers.forEach((tr) => tr.kill());
     triggers = [];
     place();
-    if (reduced || !gsap || !ScrollTrigger) { wake(); return; }
+    if (reduced || !gsap || !ScrollTrigger) { wake(); drawConstruct(); return; }
     gsap.registerPlugin(ScrollTrigger);
 
     // Hero: the sculpture leaves upward faster than the page, turning and shrinking as it goes.
@@ -276,6 +297,7 @@ function init() {
     pointer.y = e.clientY / view.vh - 0.5;
   }, { passive: true });
   document.addEventListener("visibilitychange", wake);
+  window.addEventListener("scroll", () => drawConstruct(), { passive: true });
 
   // Cleanup, so nothing keeps animating or holding GPU memory after the page goes away.
   window.addEventListener("pagehide", (e) => {
