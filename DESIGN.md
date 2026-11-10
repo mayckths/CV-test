@@ -163,7 +163,7 @@ A neutral drafting palette with one line colour, plus a six-colour material set 
 
 ## Layout
 
-A centred sheet up to 1280px wide with a fluid gutter (clamp 20 to 64px), inside a fixed sheet border inset 10px from the viewport (6px on phones) with zone ticks every 160px. Sections open with a headline over a graphite rule and a keylined title box at the right. Projects alternate media and text in two columns from 820px up and stack media first below it. The Huge work is a four-column grid, two at 980px and one at 440px. The header is full-bleed with its content aligned to the sheet; on phones it becomes two rows with the four section links spread across 44px targets.
+A centred sheet up to 1280px wide with a fluid gutter (clamp 20 to 64px). There is no ruler frame around the viewport; it was removed at Mayck's request. Sections open with a headline over a graphite rule and a keylined title box at the right. Projects alternate media and text in two columns from 820px up and stack media first below it. The Huge work is a four-column grid, two at 980px and one at 440px. The header is full-bleed with its content aligned to the sheet; on phones it becomes two rows with the four section links spread across 44px targets.
 
 **The Dimension Rule.** A result is always drawn: a 1px rule with end ticks above the figure. The hero stats, every case result and the chat's stat answers use it.
 
@@ -204,6 +204,14 @@ Square corners and 1px hairlines. Views carry registration corners: two blue L-m
 ### Construction overlay (signature)
 - A dashed circle, crosshair and leader line track the hero sculpture on screen, labelled "Fig. 1 · Soft sculpture" with its live diameter in pixels. The axes draw on at load and the whole overlay fades as the sculpture leaves on scroll.
 
+### M orb (signature)
+- Mayck's mark, rebuilt in WebGL from his GIF: a deep extruded white serif M turning once every 4.9s inside a dark glass ball with a blue rim. It sits in the footer as a real button and the ball is drawn over it.
+- It is also a particle form in the material colours: it assembles as the footer scrolls in, scatters when pressed and re-forms, and a few loose particles orbit the ball and move away from the cursor. Drag spins it with inertia; arrow keys nudge it.
+- With reduced motion it rests facing front, and a press turns it a quarter.
+
+### Scroll reading
+- The closing line and the recommendations start in a soft tint (20% ink) and take full ink word by word as they scroll in.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -215,6 +223,6 @@ Square corners and 1px hairlines. Views carry registration corners: two blue L-m
 ### Don't:
 - **Don't** place labels or eyebrows above headings.
 - **Don't** use material colours on chrome, borders or backgrounds of the light sheet.
-- **Don't** add a grid to the blueprint or the sheet; registration corners and zone ticks are the only structure marks.
+- **Don't** add a grid, a ruler frame or zone ticks to the sheet; registration corners are the only structure marks.
 - **Don't** round corners on anything except depicted product UI and circular items.
 - **Don't** set coral ink below large-text size.

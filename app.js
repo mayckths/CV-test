@@ -221,3 +221,35 @@ if ("IntersectionObserver" in window) {
   navLinks.forEach((a) => { const t = document.querySelector(a.getAttribute("href")); if (t) so.observe(t); });
   so.observe(document.getElementById("intro"));
 }
+
+// Scroll reading: the closing line and the recommendations light up word by word as they scroll in.
+if (!reduced) {
+  const lines = [...document.querySelectorAll(".foot .big, .quotes blockquote")].map((el) => {
+    const words = el.textContent.trim().split(/\s+/);
+    el.textContent = "";
+    el.classList.add("read");
+    const spans = words.map((w, i) => {
+      const sp = document.createElement("span");
+      sp.textContent = w;
+      el.append(sp, i < words.length - 1 ? " " : "");
+      return sp;
+    });
+    return { el, spans };
+  });
+  let tick = 0;
+  const read = () => {
+    tick = 0;
+    const vh = window.innerHeight;
+    for (const { el, spans } of lines) {
+      const r = el.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, (vh * 0.92 - r.top) / (vh * 0.36)));
+      const lit = Math.round(p * spans.length);
+      spans.forEach((sp, i) => sp.classList.toggle("on", i < lit));
+    }
+  };
+  window.addEventListener("scroll", () => { if (!tick) tick = requestAnimationFrame(read); }, { passive: true });
+  window.addEventListener("resize", read);
+  // Late-loading media moves the lines without a scroll event, so re-read when the page height changes.
+  if ("ResizeObserver" in window) new ResizeObserver(() => { if (!tick) tick = requestAnimationFrame(read); }).observe(document.body);
+  read();
+}

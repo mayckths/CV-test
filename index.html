@@ -26,7 +26,6 @@
 </head>
 <body>
   <canvas id="stage" aria-hidden="true"></canvas>
-  <div class="sheet-frame" aria-hidden="true"></div>
   <div class="construct" aria-hidden="true">
     <svg viewBox="-100 -100 200 200">
       <circle class="c-ring" r="100" />
@@ -261,13 +260,25 @@
   </main>
 
   <footer class="foot" id="contact">
-    <p class="tbox foot-tb" aria-hidden="true"><span>Contact · LinkedIn</span></p>
-    <p class="big">Have a product that needs to earn trust?</p>
-    <div class="foot-links">
-      <a class="pill solid" href="https://www.linkedin.com/in/mayck69/" target="_blank" rel="noopener">Message me on LinkedIn</a>
-      <a class="link" href="https://mayck.design" target="_blank" rel="noopener">mayck.design</a>
+    <div class="foot-main">
+      <div class="foot-copy">
+        <p class="big">Have a product that needs to earn trust?</p>
+        <div class="foot-links">
+          <a class="pill solid" href="https://www.linkedin.com/in/mayck69/" target="_blank" rel="noopener">Message me on LinkedIn</a>
+          <a class="link" href="https://mayck.design" target="_blank" rel="noopener">mayck.design</a>
+        </div>
+      </div>
+      <div class="orb-wrap">
+        <button type="button" class="orb" aria-label="Mayck's M inside a glass ball. Drag or use the arrow keys to spin it, press to scatter it into particles.">
+          <img src="assets/m.webp" alt="" width="200" height="200" loading="lazy" />
+        </button>
+        <p class="orb-hint" aria-hidden="true">Drag to spin · Press to scatter</p>
+      </div>
     </div>
-    <p class="fine">© 2026 Mayck Cuellar. Designed and built in code.</p>
+    <div class="foot-end">
+      <p class="fine">© 2026 Mayck Cuellar. Designed and built in code.</p>
+      <p class="tbox" aria-hidden="true"><span>Contact · LinkedIn</span></p>
+    </div>
   </footer>
 
   <script src="app.js" defer></script>

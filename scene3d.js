@@ -5,6 +5,7 @@
 //   spin  (rotation) and floating parts -> idle loop
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 
 const canvas = document.getElementById("stage");
 const gsap = window.gsap;
@@ -132,42 +133,155 @@ function init() {
     return s;
   }
 
-  // Footer: three interlocked knots, flattened so the tubes read as ribbons.
-  function ribbonSculpture() {
-    const ribbons = [
-      { p: 2, q: 3, r: 1.0, tube: 0.2, color: accent, rough: 0.22, metal: 0.35 },
-      { p: 3, q: 2, r: 1.22, tube: 0.1, color: new THREE.Color("#efe6ff"), rough: 0.08, metal: 0.9 },
-      { p: 1, q: 4, r: 0.78, tube: 0.07, color: new THREE.Color("#1b1a17"), rough: 0.15, metal: 0.6 },
-    ];
-    const spin = new THREE.Group();
-    ribbons.forEach((k, i) => {
-      const geo = new THREE.TorusKnotGeometry(k.r, k.tube, 260, 28, k.p, k.q);
-      const mat = new THREE.MeshPhysicalMaterial({
-        color: k.color, roughness: k.rough, metalness: k.metal,
-        clearcoat: 1, clearcoatRoughness: 0.12,
-        iridescence: 1, iridescenceIOR: 1.7, iridescenceThicknessRange: [120, 620],
-      });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.scale.z = 0.62;
-      mesh.rotation.set(i * 0.9, i * 1.3, i * 0.5);
-      spin.add(mesh);
-      disposables.push(geo, mat);
+  // Footer: Mayck's M, rebuilt from his GIF. A deep extruded serif M turns inside a dark glass ball
+  // with a blue rim. The M is also a particle form (after ricardochance.com): it assembles as the
+  // footer scrolls in, scatters on a press, and the loose particles move away from the cursor.
+  const orbEl = document.querySelector(".orb");
+  const IDLE_SPIN = reduced ? 0 : (Math.PI * 2) / 4.9; // the GIF turns once every 4.9 s
+  function mOrb() {
+    const OUTLINE = [[3,0],[31,0],[31,4],[20,5],[20,94],[53,0],[58,0],[84,86.7],[84,5],[73,4],[73,0],[113,0],[113,4],
+      [102,5],[102,95],[113,96],[113,100],[83,100],[63,33.3],[41,100],[3,100],[3,96],[14,95],[14,5],[3,4]];
+    const K = 0.0074, DEPTH = 0.62;
+    const shape = new THREE.Shape(OUTLINE.map(([x, y]) => new THREE.Vector2((x - 58) * K, (y - 50) * K)));
+    const mGeo = new THREE.ExtrudeGeometry(shape, { depth: DEPTH, bevelEnabled: false, curveSegments: 1 });
+    mGeo.translate(0, 0, -DEPTH / 2);
+    const mMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 1.15, roughness: 0.6 });
+    const letter = new THREE.Mesh(mGeo, mMat);
+
+    // Particle form of the same M, plus a few that never join and drift around the ball.
+    const COUNT = view0.mobile ? 1500 : 2600;
+    const sampler = new MeshSurfaceSampler(letter).build();
+    const target = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3);
+    const colors = new Float32Array(COUNT * 3), seeds = new Float32Array(COUNT);
+    const palette = ["#6a4cdb", "#ff5a36", "#57d3d9", "#2d2a8c", "#e0399b", "#ffc23a", "#2f3fd6"].map((c) => new THREE.Color(c));
+    const v = new THREE.Vector3();
+    for (let i = 0; i < COUNT; i++) {
+      sampler.sample(v);
+      target.set([v.x, v.y, v.z], i * 3);
+      // Scattered positions ring the ball in the screen plane, so loose particles never sit in front of the glass.
+      const th = Math.random() * Math.PI * 2;
+      const r = 1.2 + Math.pow(Math.random(), 1.8) * 1.3;
+      scatter.set([r * Math.cos(th), r * Math.sin(th), (Math.random() - 0.5) * 0.5], i * 3);
+      const c = palette[i % palette.length];
+      colors.set([c.r, c.g, c.b], i * 3);
+      seeds[i] = Math.random();
+    }
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute("position", new THREE.BufferAttribute(target, 3));
+    pGeo.setAttribute("aScatter", new THREE.BufferAttribute(scatter, 3));
+    pGeo.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
+    pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
+    pGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 4);
+    const uniforms = { uMix: { value: 1 }, uTime: { value: 0 }, uPointer: { value: new THREE.Vector3(99, 99, 99) }, uPx: { value: 1 }, uAngle: { value: 0 } };
+    // Opaque round points, so the ones inside the ball are refracted by the glass like the solid M.
+    const pMat = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: `
+        attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed;
+        uniform float uMix, uTime, uPx, uAngle; uniform vec3 uPointer;
+        varying vec3 vColor;
+        void main() {
+          // A few particles never join: they keep orbiting the ball, like dust around the mark.
+          float joins = step(aSeed, 0.968);
+          float m = joins * smoothstep(0.0, 1.0, clamp(uMix * 1.45 - aSeed * 0.45, 0.0, 1.0));
+          vec3 drift = vec3(sin(uTime * 0.6 + aSeed * 40.0), cos(uTime * 0.5 + aSeed * 31.0), 0.0) * 0.07;
+          // Slow orbit in the screen plane, then undo the M's own turn so the cloud stays put while the M spins.
+          float o = uTime * (0.03 + aSeed * 0.05);
+          vec3 sc = aScatter + drift;
+          sc = vec3(sc.x * cos(o) - sc.y * sin(o), sc.x * sin(o) + sc.y * cos(o), sc.z);
+          sc = vec3(sc.x * cos(uAngle) - sc.z * sin(uAngle), sc.y, sc.x * sin(uAngle) + sc.z * cos(uAngle));
+          vec3 p = mix(sc, position, m);
+          vec3 away = p - uPointer;
+          float push = (1.0 - m) * smoothstep(0.85, 0.0, length(away));
+          p += normalize(away + 1e-4) * push * 0.55;
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          gl_Position = projectionMatrix * mv;
+          gl_PointSize = uPx * mix(0.026 + aSeed * 0.022, 0.02, m) * (10.0 / -mv.z) * (1.0 - joins * smoothstep(0.86, 1.0, uMix));
+          vColor = mix(aColor, vec3(1.0), m);
+        }`,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          if (length(gl_PointCoord - 0.5) > 0.5) discard;
+          gl_FragColor = vec4(vColor, 1.0);
+          #include <colorspace_fragment>
+        }`,
     });
-    spin.rotation.set(1.1, 0.4, 2.0);
-    const s = rigFor(spin);
+    const points = new THREE.Points(pGeo, pMat);
+
+    const turn = new THREE.Group();
+    turn.add(letter, points);
+    // The far inside wall of the ball: black, seen only from within.
+    const wallGeo = new THREE.SphereGeometry(0.965, 64, 48);
+    const wallMat = new THREE.MeshBasicMaterial({ color: "#050508", side: THREE.BackSide });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    // The glass: refracts everything inside it, which gives the lens swell of the GIF.
+    const glassGeo = new THREE.SphereGeometry(1, 96, 64);
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: "#ffffff", transmission: 1, thickness: 0.55, ior: 1.22, roughness: 0, metalness: 0,
+      clearcoat: 1, clearcoatRoughness: 0, envMapIntensity: 1.5,
+    });
+    const glass = new THREE.Mesh(glassGeo, glassMat);
+    // The blue rim, brightest at grazing angles.
+    const rimGeo = new THREE.SphereGeometry(1.004, 64, 48);
+    const rimMat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uColor: { value: new THREE.Color("#2438ff") }, uGain: { value: 1.6 } },
+      vertexShader: `
+        varying vec3 vN; varying vec3 vV;
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        uniform vec3 uColor; uniform float uGain; varying vec3 vN; varying vec3 vV;
+        void main() {
+          float f = pow(1.0 - max(dot(normalize(vN), normalize(vV)), 0.0), 2.6);
+          gl_FragColor = vec4(uColor * f * uGain, f);
+          #include <colorspace_fragment>
+        }`,
+    });
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.renderOrder = 2;
+    disposables.push(mGeo, mMat, pGeo, pMat, wallGeo, wallMat, glassGeo, glassMat, rimGeo, rimMat);
+
+    const body = new THREE.Group();
+    body.add(wall, turn, glass, rim);
+    const s = rigFor(body);
+    s.state = { form: 1, burst: 0, angle: 0, vel: IDLE_SPIN, dragging: false };
+    const local = new THREE.Vector3();
     s.update = (t, dt) => {
-      spin.rotation.y += dt * 0.22;
-      spin.rotation.x += dt * 0.09;
+      const st = s.state;
+      if (!st.dragging) {
+        st.vel += (IDLE_SPIN - st.vel) * (1 - Math.exp(-dt * 1.1));
+        st.angle += st.vel * dt;
+      }
+      turn.rotation.y = st.angle;
+      const mixv = st.form * (1 - st.burst);
+      uniforms.uMix.value = mixv;
+      uniforms.uTime.value = t;
+      uniforms.uAngle.value = st.angle;
+      uniforms.uPx.value = renderer.domElement.height / view.h * s.rig.scale.x;
+      // The solid letter grows out of the particle cluster at the end of the assembly.
+      const g = THREE.MathUtils.smoothstep(mixv, 0.8, 1);
+      letter.scale.setScalar(Math.max(g, 0.0001));
+      // Cursor in the particles' own space, for the repulsion.
+      local.set(pointer.x * view.w, -pointer.y * view.h, 0);
+      turn.worldToLocal(local);
+      uniforms.uPointer.value.copy(local);
     };
     return s;
   }
 
-  const hero = blobSculpture();
-  const foot = ribbonSculpture();
-  foot.rig.visible = false;
-
   // Screen-fraction to world-unit helpers, recomputed on resize.
   const view = { w: 1, h: 1, vw: 1, vh: 1, mobile: false };
+  const view0 = { mobile: window.innerWidth < 820 };
+  const pointer = { x: 0, y: 0 };
+
+  const hero = blobSculpture();
+  const foot = mOrb();
+  foot.rig.visible = false;
   function resize() {
     view.vw = window.innerWidth;
     view.vh = window.innerHeight;
@@ -187,14 +301,11 @@ function init() {
   const heroPose = () => view.mobile
     ? { x: wx(0.72), y: wy(0.235), s: size(0.4) }
     : { x: wx(0.81), y: wy(0.4), s: size(0.6) };
-  const footPose = () => view.mobile
-    ? { x: wx(0.66), y: wy(0.36), s: size(0.4) }
-    : { x: wx(0.8), y: wy(0.64), s: size(0.5) };
+
 
   // On-demand rendering: the loop only runs while a sculpture is on screen and the tab is visible.
   let running = false;
   let raf = 0;
-  const pointer = { x: 0, y: 0 };
   const clock = new THREE.Clock();
   let t = 0;
   const active = () => (hero.rig.visible || foot.rig.visible) && !document.hidden;
@@ -205,17 +316,37 @@ function init() {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(clock.getDelta(), 0.05);
     t += dt;
+    syncOrb();
     for (const s of [hero, foot]) {
       if (!s.rig.visible) continue;
       s.update(t, dt);
-      s.tilt.rotation.y += (pointer.x * 0.5 - s.tilt.rotation.y) * 0.06;
-      s.tilt.rotation.x += (pointer.y * 0.35 - s.tilt.rotation.x) * 0.06;
+      const k = s === foot ? 0.45 : 1;
+      s.tilt.rotation.y += (pointer.x * 0.5 * k - s.tilt.rotation.y) * 0.06;
+      s.tilt.rotation.x += (pointer.y * 0.35 * k - s.tilt.rotation.x) * 0.06;
     }
     renderer.render(scene, camera);
     drawConstruct();
   }
+  // The orb is a real element in the footer; the 3D ball is placed over that element every frame.
+  function syncOrb() {
+    if (!orbEl) return;
+    const r = orbEl.getBoundingClientRect();
+    const vis = r.width > 0 && r.bottom > -view.vh * 0.6 && r.top < view.vh * 1.6;
+    foot.rig.visible = vis;
+    if (!vis) return;
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    foot.rig.position.set((cx / view.vw - 0.5) * view.w, (0.5 - cy / view.vh) * view.h, 0);
+    foot.rig.scale.setScalar((r.width / 2) * (view.h / view.vh) * 0.9);
+  }
+  function renderStill() {
+    syncOrb();
+    if (reduced) hero.rig.visible = window.scrollY < view.vh * 0.5;
+    if (foot.rig.visible) foot.update(t, 0);
+    renderer.render(scene, camera);
+    drawConstruct();
+  }
   function wake() {
-    if (reduced) { renderer.render(scene, camera); return; }
+    if (reduced) { renderStill(); return; }
     if (!running && active()) { running = true; clock.getDelta(); frame(); }
   }
 
@@ -253,7 +384,7 @@ function init() {
     triggers.forEach((tr) => tr.kill());
     triggers = [];
     place();
-    if (reduced || !gsap || !ScrollTrigger) { wake(); drawConstruct(); return; }
+    if (reduced || !gsap || !ScrollTrigger) { foot.state.form = 1; wake(); return; }
     gsap.registerPlugin(ScrollTrigger);
 
     // Hero: the sculpture leaves upward faster than the page, turning and shrinking as it goes.
@@ -270,18 +401,11 @@ function init() {
       .fromTo(hero.rig.rotation, { y: 0 }, { y: Math.PI * 0.8, ease: "none" }, 0)
       .fromTo(hero.rig.scale, { x: h.s, y: h.s, z: h.s }, { x: h.s * 0.55, y: h.s * 0.55, z: h.s * 0.55, ease: "none" }, 0));
 
-    // Footer: a second sculpture rises into place behind the closing line.
-    const f = footPose();
-    foot.rig.position.x = f.x;
+    // Footer: the M assembles from its particles as the footer scrolls in.
+    foot.state.form = 0;
     triggers.push(gsap.timeline({
-      scrollTrigger: {
-        trigger: ".foot", start: "top bottom", end: "bottom bottom", scrub: 0.6,
-        onUpdate: (st) => { foot.rig.visible = st.progress > 0; wake(); },
-      },
-    })
-      .fromTo(foot.rig.position, { y: f.y - view.h }, { y: f.y, ease: "power2.out" }, 0)
-      .fromTo(foot.rig.rotation, { y: -Math.PI }, { y: 0, ease: "power2.out" }, 0)
-      .fromTo(foot.rig.scale, { x: f.s * 0.5, y: f.s * 0.5, z: f.s * 0.5 }, { x: f.s, y: f.s, z: f.s, ease: "power2.out" }, 0));
+      scrollTrigger: { trigger: ".foot", start: "top 88%", end: "top 30%", scrub: 0.5, onUpdate: () => wake() },
+    }).fromTo(foot.state, { form: 0 }, { form: 1, ease: "none" }, 0));
     wake();
   }
   build();
@@ -297,7 +421,58 @@ function init() {
     pointer.y = e.clientY / view.vh - 0.5;
   }, { passive: true });
   document.addEventListener("visibilitychange", wake);
-  window.addEventListener("scroll", () => drawConstruct(), { passive: true });
+  let scrollTick = 0;
+  window.addEventListener("scroll", () => {
+    if (reduced) { cancelAnimationFrame(scrollTick); scrollTick = requestAnimationFrame(renderStill); return; }
+    drawConstruct(); syncOrb(); wake();
+  }, { passive: true });
+
+  // Orb interactions: drag to spin (with inertia), press to scatter into particles, arrow keys to nudge.
+  if (orbEl) {
+    orbEl.classList.add("live");
+    const st = foot.state;
+    let downX = 0, lastX = 0, lastT = 0, moved = 0;
+    const scatterNow = () => {
+      if (reduced || !gsap) { st.angle += Math.PI / 4; renderStill(); return; }
+      st.vel += 7;
+      gsap.killTweensOf(st, "burst");
+      gsap.timeline().to(st, { burst: 1, duration: 0.55, ease: "power3.out" }).to(st, { burst: 0, duration: 1.5, ease: "power2.inOut" }, "+=0.45");
+      wake();
+    };
+    orbEl.addEventListener("pointerdown", (e) => {
+      st.dragging = true; moved = 0; downX = lastX = e.clientX; lastT = performance.now();
+      st.vel = 0;
+      orbEl.setPointerCapture(e.pointerId);
+      orbEl.classList.add("grabbing");
+    });
+    orbEl.addEventListener("pointermove", (e) => {
+      if (!st.dragging) return;
+      const now = performance.now(), dx = e.clientX - lastX;
+      moved = Math.max(moved, Math.abs(e.clientX - downX));
+      st.angle += dx * 0.011;
+      const dt = Math.max(now - lastT, 8) / 1000;
+      st.vel = THREE.MathUtils.clamp((dx * 0.011) / dt, -14, 14);
+      lastX = e.clientX; lastT = now;
+      if (reduced) renderStill();
+    });
+    const release = () => {
+      if (!st.dragging) return;
+      st.dragging = false;
+      orbEl.classList.remove("grabbing");
+      if (performance.now() - lastT > 120) st.vel = 0;
+      if (reduced) st.vel = 0;
+    };
+    orbEl.addEventListener("pointerup", release);
+    orbEl.addEventListener("pointercancel", release);
+    // A press without a drag scatters; this also covers Enter and Space on the focused button.
+    orbEl.addEventListener("click", () => { if (moved < 6) scatterNow(); moved = 0; });
+    orbEl.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const dir = e.key === "ArrowRight" ? 1 : -1;
+      if (reduced) { st.angle += dir * Math.PI / 8; renderStill(); } else { st.vel += dir * 5; wake(); }
+    });
+  }
 
   // Cleanup, so nothing keeps animating or holding GPU memory after the page goes away.
   window.addEventListener("pagehide", (e) => {
