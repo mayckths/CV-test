@@ -151,3 +151,36 @@ if (!reduced && "IntersectionObserver" in window) {
   }, { rootMargin: "0px 0px -8% 0px" });
   targets.forEach((t) => { t.classList.add("reveal"); io.observe(t); });
 }
+
+// Looping videos (converted from the original GIFs): play only while visible, never with reduced motion.
+const loops = document.querySelectorAll("video.loop");
+if (reduced) {
+  loops.forEach((v) => { v.removeAttribute("autoplay"); v.pause(); });
+} else if ("IntersectionObserver" in window) {
+  const vo = new IntersectionObserver((entries) => {
+    entries.forEach(({ target: v, isIntersecting }) => {
+      if (isIntersecting) { v.play().catch(() => {}); } else { v.pause(); }
+    });
+  }, { rootMargin: "120px 0px" });
+  loops.forEach((v) => vo.observe(v));
+}
+
+// Header: hairline once scrolled, and mark the nav link for the section in view.
+const header = document.querySelector(".top");
+const onScroll = () => header.classList.toggle("scrolled", window.scrollY > 8);
+window.addEventListener("scroll", onScroll, { passive: true });
+onScroll();
+const navLinks = [...document.querySelectorAll('.top nav a[href^="#"]:not(.pill)')];
+if ("IntersectionObserver" in window) {
+  const so = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      navLinks.forEach((a) => {
+        if (a.getAttribute("href") === `#${en.target.id}`) a.setAttribute("aria-current", "true");
+        else a.removeAttribute("aria-current");
+      });
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  navLinks.forEach((a) => { const t = document.querySelector(a.getAttribute("href")); if (t) so.observe(t); });
+  so.observe(document.getElementById("intro"));
+}
