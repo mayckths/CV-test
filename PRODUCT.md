@@ -36,7 +36,7 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 
 ## Brand Commitments
 
-- Keep the current overall styling as the identity: the existing palette, type and layout language are the base to elevate, not replace.
+- Visual world: the construction-sheet direction Mayck chose in an impeccable direction round in November 2026, with his 3D sculptures and colour taken from his 3D art. It replaced the earlier cream-and-orange styling.
 - Keep the Three.js sculptures (hero soft sculpture after Mayck's digital art, footer ribbon knot) and the scroll-driven 3D behaviour.
 - Keep the "Ask this portfolio" panel.
 - Keep current copy word for word, including the headline and case study text and numbers.

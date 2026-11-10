@@ -185,7 +185,7 @@ function init() {
   const size = (f) => (Math.min(view.w, view.h) * f) / 4.6;
 
   const heroPose = () => view.mobile
-    ? { x: wx(0.74), y: wy(0.165), s: size(0.44) }
+    ? { x: wx(0.72), y: wy(0.235), s: size(0.4) }
     : { x: wx(0.81), y: wy(0.4), s: size(0.6) };
   const footPose = () => view.mobile
     ? { x: wx(0.66), y: wy(0.36), s: size(0.4) }
