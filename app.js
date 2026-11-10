@@ -1,0 +1,153 @@
+// Scripted "ask" panel. Every answer is hand-written: edit ANSWERS to change the content.
+const ANSWERS = [
+  {
+    id: "short",
+    q: "Give me the 30-second version",
+    keys: ["30", "short", "summary", "who", "about", "bio", "intro", "tldr"],
+    html: `
+      <p>Lead Product Designer with 10+ years in fintech and consumer products. At Novo I own core banking and growth journeys, set the design team's AI strategy, and shipped Ask Novo, the in-app AI assistant.</p>
+      <div class="a-stats">
+        <div><b>6,000+</b><span>businesses using Ask Novo</span></div>
+        <div><b>+50%</b><span>activation, first month</span></div>
+        <div><b>4+</b><span>design systems for Google</span></div>
+      </div>
+      <p>Start with <a href="#ask-novo">Ask Novo</a> or the <a href="#onboarding">first time experience</a>.</p>`,
+  },
+  {
+    id: "ai",
+    q: "What did you ship with AI?",
+    keys: ["ai", "llm", "agent", "assistant", "chat", "claude", "conversational", "model", "prompt"],
+    html: `
+      <p>Three things, from product to tooling:</p>
+      <ul class="a-list">
+        <li><a href="#ask-novo">Ask Novo</a>: an AI assistant live for 6,000+ businesses, with error, retry and trust states designed for non-deterministic answers.</li>
+        <li><a href="#componetizer">Figma DS Componetizer</a>: a plugin on a custom Claude skill that conforms mockups to the design system.</li>
+        <li>The team's AI workflow: Figma MCP and Code Connect linking the design system to the codebase, with a review step for accuracy and compliance.</li>
+      </ul>`,
+  },
+  {
+    id: "impact",
+    q: "Show me the impact",
+    keys: ["impact", "result", "metric", "number", "kpi", "outcome", "data", "growth"],
+    html: `
+      <table class="a-table">
+        <thead><tr><th>Project</th><th>What changed</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#onboarding">First time experience</a></td><td>Activation rate, first month</td><td>+50%</td></tr>
+          <tr><td><a href="#ask-novo">Ask Novo</a></td><td>Businesses with the assistant live</td><td>6,000+</td></tr>
+          <tr><td>AI workflow</td><td>Design cycle time</td><td>1 mo → 1 wk</td></tr>
+          <tr><td>Google at Huge</td><td>Components migrated to Figma</td><td>200+</td></tr>
+        </tbody>
+      </table>`,
+  },
+  {
+    id: "eng",
+    q: "How do you work with engineers?",
+    keys: ["engineer", "dev", "code", "react", "prototype", "process", "work", "handoff", "collaborat", "team"],
+    html: `
+      <p>I close the gap between the mockup and the build:</p>
+      <ul class="a-list">
+        <li>I prototype in the product's own codebases (React web, Android Compose) with Claude Code, so we review real behavior instead of pictures.</li>
+        <li>The design system lives in Figma and in code as React components and tokens, connected through Figma MCP and Code Connect.</li>
+        <li>I decide what to build with evidence: painted-door tests, unmoderated prototype studies and funnel analytics.</li>
+      </ul>
+      <p>This site follows the same approach. It was designed and built in code.</p>`,
+  },
+  {
+    id: "clients",
+    q: "Who have you worked with?",
+    keys: ["client", "compan", "google", "logitech", "huge", "novo", "accuweather", "bizagi", "experience", "career", "job"],
+    html: `
+      <ul class="a-list">
+        <li><b>Novo</b> (2023 to now): business banking. Onboarding, payments, lending, payroll and Ask Novo.</li>
+        <li><b>Logitech G</b> (2023): 0 to 1 audio mixing platform, patent pending.</li>
+        <li><b>Huge</b> (2019 to 2023): Google (Wear OS, Google TV, Chrome, Built-in Auto) and AccuWeather.</li>
+        <li><b>Bizagi</b> (2015 to 2019): product and marketing design plus front-end build.</li>
+      </ul>
+      <p>The full timeline is under <a href="#experience">Experience</a>.</p>`,
+  },
+  {
+    id: "quotes",
+    q: "What do colleagues say?",
+    keys: ["say", "recommend", "reference", "colleague", "feedback", "testimonial", "people"],
+    html: `
+      <p class="a-quote">"He's leveled up our design process and language, and I've been inspired by his creativity and eye for detail."</p>
+      <small>John Chang · Senior Product Designer, Netflix</small>
+      <p class="a-quote">"Not only reliable, but also delivers at premium quality every time."</p>
+      <small>Amar Mehta · Program Management and Product Strategy</small>`,
+  },
+];
+
+const FALLBACK = `
+  <p>I don't have a written answer for that one. This box is scripted, so I'd rather say so than guess.</p>
+  <p>Try a suggestion below, or <a href="#contact">ask me directly</a>.</p>`;
+
+const thread = document.getElementById("thread");
+const chips = document.getElementById("chips");
+const form = document.getElementById("composer");
+const input = document.getElementById("q");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const asked = new Set();
+
+function renderChips() {
+  chips.innerHTML = "";
+  ANSWERS.filter((a) => !asked.has(a.id)).forEach((a) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = a.q;
+    b.addEventListener("click", () => ask(a.q, a));
+    chips.appendChild(b);
+  });
+}
+
+function match(text) {
+  const t = text.toLowerCase();
+  let best = null;
+  let score = 0;
+  for (const a of ANSWERS) {
+    const s = a.keys.filter((k) => new RegExp(`\\b${k}`).test(t)).length;
+    if (s > score) { best = a; score = s; }
+  }
+  return best;
+}
+
+function bubble(cls, html, isText) {
+  const el = document.createElement("div");
+  el.className = `msg ${cls}`;
+  if (isText) el.textContent = html; else el.innerHTML = html;
+  thread.appendChild(el);
+  return el;
+}
+
+function ask(text, answer) {
+  bubble("user", text, true);
+  const a = answer || match(text);
+  if (a) asked.add(a.id);
+  const bot = bubble("bot", `<span class="typing" aria-label="Writing"><i></i><i></i><i></i></span>`);
+  setTimeout(() => {
+    bot.innerHTML = a ? a.html : FALLBACK;
+    renderChips();
+    bot.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" });
+  }, reduced ? 0 : 550);
+}
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  ask(text);
+});
+
+renderChips();
+
+// Reveal on scroll
+const targets = document.querySelectorAll(".case, .tile, .timeline li, .quotes figure, .art");
+if (!reduced && "IntersectionObserver" in window) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+    });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  targets.forEach((t) => { t.classList.add("reveal"); io.observe(t); });
+}
