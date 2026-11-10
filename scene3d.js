@@ -188,8 +188,8 @@ function init() {
     ? { x: wx(0.74), y: wy(0.165), s: size(0.44) }
     : { x: wx(0.81), y: wy(0.4), s: size(0.6) };
   const footPose = () => view.mobile
-    ? { x: wx(0.86), y: wy(0.8), s: size(0.34) }
-    : { x: wx(0.82), y: wy(0.5), s: size(0.56) };
+    ? { x: wx(0.66), y: wy(0.36), s: size(0.4) }
+    : { x: wx(0.8), y: wy(0.64), s: size(0.5) };
 
   // On-demand rendering: the loop only runs while a sculpture is on screen and the tab is visible.
   let running = false;

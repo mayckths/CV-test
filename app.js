@@ -89,9 +89,27 @@ const input = document.getElementById("q");
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const asked = new Set();
 
+const MAX_CHIPS = 4;
+const resetBtn = document.createElement("button");
+resetBtn.type = "button";
+resetBtn.className = "chat-reset";
+resetBtn.textContent = "Start over";
+const tools = document.createElement("div");
+tools.className = "chat-tools";
+tools.hidden = true;
+tools.appendChild(resetBtn);
+thread.after(tools);
+resetBtn.addEventListener("click", () => {
+  thread.innerHTML = "";
+  asked.clear();
+  tools.hidden = true;
+  renderChips();
+  input.focus();
+});
+
 function renderChips() {
   chips.innerHTML = "";
-  ANSWERS.filter((a) => !asked.has(a.id)).forEach((a) => {
+  ANSWERS.filter((a) => !asked.has(a.id)).slice(0, MAX_CHIPS).forEach((a) => {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = a.q;
@@ -121,6 +139,7 @@ function bubble(cls, html, isText) {
 
 function ask(text, answer) {
   bubble("user", text, true);
+  tools.hidden = false;
   const a = answer || match(text);
   if (a) asked.add(a.id);
   const bot = bubble("bot", `<span class="typing" aria-label="Writing"><i></i><i></i><i></i></span>`);
@@ -145,10 +164,39 @@ renderChips();
 const loops = document.querySelectorAll("video.loop");
 if (reduced) {
   loops.forEach((v) => { v.removeAttribute("autoplay"); v.pause(); });
-} else if ("IntersectionObserver" in window) {
+}
+
+// A visible pause control for each looping clip (the M badge is the logo, so it stays decorative).
+const PAUSE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M5 3v10M11 3v10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const PLAY = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M5 3.5v9l8-4.5z" fill="currentColor"/></svg>';
+const userPaused = new WeakSet();
+loops.forEach((v) => {
+  if (v.classList.contains("m-badge")) return;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "media-toggle";
+  const sync = () => {
+    const paused = userPaused.has(v) || reduced;
+    b.innerHTML = paused ? PLAY : PAUSE;
+    b.setAttribute("aria-label", paused ? "Play animation" : "Pause animation");
+    b.setAttribute("aria-pressed", String(paused));
+  };
+  b.addEventListener("click", () => {
+    if (userPaused.has(v) || v.paused) { userPaused.delete(v); v.play().catch(() => {}); }
+    else { userPaused.add(v); v.pause(); }
+    const paused = v.paused || userPaused.has(v);
+    b.innerHTML = paused ? PLAY : PAUSE;
+    b.setAttribute("aria-label", paused ? "Play animation" : "Pause animation");
+    b.setAttribute("aria-pressed", String(paused));
+  });
+  sync();
+  v.parentElement.appendChild(b);
+});
+
+if (!reduced && "IntersectionObserver" in window) {
   const vo = new IntersectionObserver((entries) => {
     entries.forEach(({ target: v, isIntersecting }) => {
-      if (isIntersecting) { v.play().catch(() => {}); } else { v.pause(); }
+      if (isIntersecting && !userPaused.has(v)) { v.play().catch(() => {}); } else { v.pause(); }
     });
   }, { rootMargin: "120px 0px" });
   loops.forEach((v) => vo.observe(v));

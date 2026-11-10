@@ -31,11 +31,11 @@
   <header class="top">
     <a class="mark" href="#" aria-label="Mayck Cuellar, home"><video class="m-badge loop" poster="assets/m.webp" muted loop playsinline preload="metadata" aria-hidden="true"><source src="assets/m.webm" type="video/webm" /><source src="assets/m.mp4" type="video/mp4" /></video><span class="word">mayck<span>.</span></span></a>
     <nav aria-label="Primary">
-      <a href="#ask">Ask</a>
       <a href="#work">Work</a>
+      <a href="#ask">Ask</a>
       <a href="#experience">Experience</a>
       <a href="#art">Art</a>
-      <a class="pill" href="#contact">Say hi</a>
+      <a class="pill" href="https://www.linkedin.com/in/mayck69/" target="_blank" rel="noopener">Say hi</a>
     </nav>
   </header>
 
@@ -44,40 +44,20 @@
     <section class="hero" id="intro">
       <h1>I design AI products people can <em>trust</em>, then prototype them in <em>production code</em>.</h1>
       <p class="lede">Lead Product Designer at Novo, based in Bogotá and working with New York teams. 10+ years across fintech and consumer products for Novo, Google, Logitech G and AccuWeather, from discovery to launch, with the numbers to show for it.</p>
-      <div class="creds">
-        <p class="creds-label">Certified in</p>
-        <ul aria-label="Certifications">
-          <li><b>MIT xPRO</b><span>Designing and Building AI Products and Services · 2026</span></li>
-          <li><b>Nielsen Norman Group</b><span>AI for Design Workflows · 2026</span></li>
-          <li><b>RARE with Google</b><span>Leadership Academy delegate · 2023</span></li>
-          <li><b>UC San Diego</b><span>Interaction Design Specialization · 2017</span></li>
-        </ul>
-      </div>
       <dl class="stats">
         <div><dt>6,000+</dt><dd>businesses using Ask Novo, the AI assistant I designed and shipped</dd></div>
         <div><dt>+50%</dt><dd>activation in the first month after the Days 0-30 redesign</dd></div>
         <div><dt>4+</dt><dd>design systems built for Google surfaces: mobile, tablet, TV, watch</dd></div>
         <div><dt>1 mo → 1 wk</dt><dd>design cycle time with the AI workflow I set up for the team</dd></div>
       </dl>
-    </section>
-
-    <!-- ASK -->
-    <section class="ask" id="ask" aria-labelledby="ask-title">
-      <div class="ask-head">
-        <h2 id="ask-title">Ask this portfolio</h2>
-        <p>I design conversational interfaces, so this page has one. Pick a question or type your own.</p>
-      </div>
-      <div class="chat">
-        <div class="thread" id="thread" aria-live="polite"></div>
-        <div class="chips" id="chips" role="group" aria-label="Suggested questions"></div>
-        <form class="composer" id="composer" autocomplete="off">
-          <label class="sr" for="q">Your question</label>
-          <input id="q" name="q" type="text" placeholder="Try: what did you ship with AI?" />
-          <button type="submit" aria-label="Send question">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </form>
-        <p class="disclosure">Scripted answers written by Mayck. There is no model behind this box, so nothing here is made up.</p>
+      <div class="creds">
+        <p class="creds-label">Certified in</p>
+        <ul aria-label="Certifications">
+          <li><b>MIT xPRO</b> <span>Designing and Building AI Products and Services · 2026</span></li>
+          <li><b>Nielsen Norman Group</b> <span>AI for Design Workflows · 2026</span></li>
+          <li><b>RARE with Google</b> <span>Leadership Academy delegate · 2023</span></li>
+          <li><b>UC San Diego</b> <span>Interaction Design Specialization · 2017</span></li>
+        </ul>
       </div>
     </section>
 
@@ -88,30 +68,52 @@
         <p class="count">08 projects · 2020 to 2026</p>
       </div>
 
-      <article class="case" id="ask-novo">
-        <div class="case-body">
-          <p class="meta"><span>2025 to 2026</span><span>Conversational AI · Fintech · Web and Android</span></p>
-          <h3>Ask Novo</h3>
-          <p>The in-app AI assistant for self-service support and servicing, designed and shipped end to end: start screen and suggested prompts, data patterns for status, stats, tables and payment summaries, error and retry states, and handoff to human agents. Then prototyped in the product's own codebases (React web, Android Compose) so design and engineering ship the same patterns.</p>
-          <p class="result"><strong>6,000+</strong> businesses with the assistant live in production</p>
-        </div>
-        <div class="case-media mock" aria-hidden="true">
-          <div class="mock-chat">
-            <div class="mock-bar"><i></i><i></i><i></i><b>Assistant</b></div>
-            <p class="b user">What's the status of my last payment?</p>
-            <div class="b bot">
-              <p>Your last payment is on its way.</p>
-              <div class="mock-card">
-                <span class="tag">In transit</span>
-                <div class="row"><span>Amount</span><b>$1,240.00</b></div>
-                <div class="row"><span>Arrives</span><b>Tomorrow</b></div>
-                <div class="bar"><i></i></div>
-              </div>
-            </div>
-            <div class="mock-chips"><span>Set up AutoPay</span><span>Talk to a person</span></div>
+      <div class="flagship">
+        <article class="case flagship-case" id="ask-novo">
+          <div class="case-body">
+            <p class="meta"><span>2025 to 2026</span><span>Conversational AI · Fintech · Web and Android</span></p>
+            <h3>Ask Novo</h3>
+            <p>The in-app AI assistant for self-service support and servicing, designed and shipped end to end: start screen and suggested prompts, data patterns for status, stats, tables and payment summaries, error and retry states, and handoff to human agents. Then prototyped in the product's own codebases (React web, Android Compose) so design and engineering ship the same patterns.</p>
+            <p class="result"><strong>6,000+</strong> businesses with the assistant live in production</p>
           </div>
-        </div>
-      </article>
+          <figure class="case-media mock" role="img" aria-label="Illustrative Ask Novo chat: a payment status answer with the amount, arrival date and follow-up actions">
+            <div class="mock-chat">
+              <div class="mock-bar"><i></i><i></i><i></i><b>Assistant</b></div>
+              <p class="b user">What's the status of my last payment?</p>
+              <div class="b bot">
+                <p>Your last payment is on its way.</p>
+                <div class="mock-card">
+                  <span class="tag">In transit</span>
+                  <div class="row"><span>Amount</span><b>$1,240.00</b></div>
+                  <div class="row"><span>Arrives</span><b>Tomorrow</b></div>
+                  <div class="bar"><i></i></div>
+                </div>
+              </div>
+              <div class="mock-chips"><span>Set up AutoPay</span><span>Talk to a person</span></div>
+            </div>
+            <figcaption class="mock-note" aria-hidden="true">Illustrative mock-up</figcaption>
+          </figure>
+        </article>
+
+        <section class="ask" id="ask" aria-labelledby="ask-title">
+          <div class="ask-head">
+            <h2 id="ask-title">Ask this portfolio</h2>
+            <p>I design conversational interfaces, so this page has one. Pick a question or type your own.</p>
+          </div>
+          <div class="chat">
+            <div class="thread" id="thread" aria-live="polite"></div>
+            <div class="chips" id="chips" role="group" aria-label="Suggested questions"></div>
+            <form class="composer" id="composer" autocomplete="off">
+              <label class="sr" for="q">Your question</label>
+              <input id="q" name="q" type="text" placeholder="Try: what did you ship with AI?" />
+              <button type="submit" aria-label="Send question">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </form>
+            <p class="disclosure">Scripted answers written by Mayck. There is no model behind this box, so nothing here is made up.</p>
+          </div>
+        </section>
+      </div>
 
       <article class="case" id="componetizer">
         <div class="case-body">
