@@ -135,7 +135,7 @@ h1 em { font-style: normal; color: var(--accent); }
 .h1-lead { opacity: var(--lead, 1); }   /* the glass words land here, then this takes over */
 .stats { display: contents; }
 .stat dt { font: 600 clamp(44px, 15vw, 230px)/.9 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.stat dd { margin-top: 18px; font: 500 clamp(18px, 2vw, 26px)/1.25 var(--display); color: var(--muted); max-width: 30ch; margin-inline: auto; }
+.stat dd { margin-top: 18px; font: 500 clamp(18px, 2vw, 26px)/1.25 var(--display); color: var(--muted); max-width: 30ch; margin-inline: auto; text-wrap: balance; }
 .step.creds { display: grid; gap: 18px; }
 .step.creds ul { display: grid; gap: clamp(14px, 2vw, 22px); }
 .step.creds li { font: 500 clamp(20px, 2.6vw, 36px)/1.15 var(--display); letter-spacing: -0.02em; }
