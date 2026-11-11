@@ -116,6 +116,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .step { min-width: 0; }
 h1 { font: 600 clamp(38px, 6.2vw, 96px)/.98 var(--display); letter-spacing: -0.04em; text-wrap: balance; }
 h1 em { font-style: normal; color: var(--accent); }
+.h1-lead { opacity: var(--lead, 1); }   /* the glass words land here, then this takes over */
 .statement { font: 500 clamp(26px, 3.9vw, 58px)/1.08 var(--display); letter-spacing: -0.03em; text-wrap: balance; }
 .stats { display: contents; }
 .stat dt { font: 600 clamp(72px, 15vw, 230px)/.9 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }

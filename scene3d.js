@@ -1,6 +1,8 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
-//   - hero: the words "I DESIGN" in glass, turning in front of the name logo and bending it, with colour
-//     fringes. As the pinned hero scrolls, the logo slides away so the two role labels can take its place.
+//   - hero: two glass pyramids standing as an M in front of the name logo, bending it with colour fringes.
+//     As the pinned hero scrolls, the logo slides away and the pyramids break into motes that re-form as the
+//     words "I DESIGN", flanked by two role labels. When the hero leaves, those words travel down onto the
+//     "I design" that opens the headline in the next card.
 //   - particles: soft round motes. They gather into the glass words on load, scatter when pressed, and on
 //     the dark footer panel they draw a stack of cubes. They step away from the cursor.
 // The slots are real buttons: drag to turn, press to scatter, arrow keys to nudge.
@@ -53,6 +55,19 @@ function init(font) {
   mGroup.add(glass);
   scene.add(mGroup);
 
+  // --- Glass pyramids: two side by side read as an M ---
+  const PYR = mobile ? 1.15 : 0.74;            // size relative to the width of the words
+  const PR = 0.36 * PYR, PH = 0.64 * PYR, PX = PR * Math.SQRT1_2;
+  const pyrGeo = new THREE.ConeGeometry(PR, PH, 4, 1);
+  pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
+  const pyrGroup = new THREE.Group();
+  for (const x of [-PX, PX]) {
+    const m = new THREE.Mesh(pyrGeo, [faceMat, sideMat, sideMat]);
+    m.position.x = x;
+    pyrGroup.add(m);
+  }
+  scene.add(pyrGroup);
+
   // --- The name, drawn into the scene so the glass can bend it ---
   const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap"), logoEl = document.querySelector(".hero-logo");
   const nameCanvas = document.createElement("canvas");
@@ -90,7 +105,8 @@ function init(font) {
   // --- Particles: motes that hold the glass words (hero) or a stack of cubes (footer) ---
   const COUNT = mobile ? 2800 : 5600;
   const sampler = new MeshSurfaceSampler(new THREE.Mesh(mGeo)).build();
-  const target = new Float32Array(COUNT * 3), cube = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
+  const pyrSampler = new MeshSurfaceSampler(new THREE.Mesh(pyrGeo)).build();
+  const target = new Float32Array(COUNT * 3), pyr = new Float32Array(COUNT * 3), cube = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
   const seed = new Float32Array(COUNT), sizes = new Float32Array(COUNT);
   const palette = ["#ffffff", "#f3d9ff", "#c9a2ff", "#9a63f5", "#ff9fd0", "#ffd8c2"].map((c) => new THREE.Color(c));
   const v = new THREE.Vector3();
@@ -98,6 +114,8 @@ function init(font) {
   for (let i = 0; i < COUNT; i++) {
     sampler.sample(v);
     target.set([v.x, v.y, v.z], i * 3);
+    pyrSampler.sample(v);
+    pyr.set([v.x + (i % 2 ? PX : -PX), v.y, v.z], i * 3);
     // Eight cubes, two by two by two, drawn mostly by their edges.
     const c = [0, 1, 2].map(() => (Math.random() < 0.5 ? -OFF : OFF));
     const axis = Math.floor(Math.random() * 3), q = [0, 0, 0];
@@ -112,28 +130,29 @@ function init(font) {
   }
   const pGeo = new THREE.BufferGeometry();
   pGeo.setAttribute("position", new THREE.BufferAttribute(target, 3));
+  pGeo.setAttribute("aPyr", new THREE.BufferAttribute(pyr, 3));
   pGeo.setAttribute("aCube", new THREE.BufferAttribute(cube, 3));
   pGeo.setAttribute("aScatter", new THREE.BufferAttribute(scatter, 3));
   pGeo.setAttribute("aColor", new THREE.BufferAttribute(colour, 3));
   pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uShape: { value: 0 }, uTilt: { value: 0 }, uMote: { value: 1 },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uShape: { value: 0 }, uTilt: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
     uPointer: { value: new THREE.Vector2(99, 99) },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
-      attribute vec3 aCube; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uShape, uTilt, uMote;
+      attribute vec3 aPyr; attribute vec3 aCube; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uShape, uTilt, uMote, uMorph, uFade;
       uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
       varying vec3 vColor; varying float vAlpha;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
         float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
-        vec3 t = mix(position, aCube, uShape) * uScale;
+        vec3 t = mix(mix(aPyr, position, uMorph), aCube, uShape) * uScale;
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
         float ct = cos(uTilt), sn = sin(uTilt);
         vec3 formed = vec3(turned.x, turned.y * ct - turned.z * sn, turned.y * sn + turned.z * ct) + uCenter;
@@ -148,9 +167,9 @@ function init(font) {
         gl_Position = projectionMatrix * mv;
         // When the glass M is standing, the motes inside it shrink away.
         float hide = 1.0 - uSolid * smoothstep(0.86, 1.0, uForm);
-        gl_PointSize = max(uPx * uMote * aSize * (1.0 + push) * (10.0 / -mv.z) * hide, 0.0);
+        gl_PointSize = max(uPx * uMote * aSize * (1.0 + push) * (10.0 / -mv.z) * hide * uFade, 0.0);
         vColor = aColor;
-        vAlpha = (0.55 + 0.45 * aSeed) * hide;
+        vAlpha = (0.55 + 0.45 * aSeed) * hide * uFade;
       }`,
     fragmentShader: `
       varying vec3 vColor; varying float vAlpha;
@@ -184,8 +203,12 @@ function init(font) {
   const wx = (px) => (px / view.vw - 0.5) * view.w, wy = (px) => (0.5 - px / view.vh) * view.h, wl = (px) => px * (view.h / view.vh);
 
   const heroSlot = document.getElementById("m-hero"), footSlot = document.getElementById("m-foot");
+  const lead = document.querySelector(".h1-lead");
+  const stickyTop = hero ? parseFloat(getComputedStyle(hero).top) || 0 : 0;
+  let leadShown = "";
+  const showLead = (v) => { const s = v.toFixed(2); if (s !== leadShown) { leadShown = s; document.documentElement.style.setProperty("--lead", s); } };
   const footPanel = document.querySelector(".foot.panel");
-  const st = { form: 0, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: reduced ? 1 : 0, mode: null, hp: 0,
+  const st = { form: 0, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: reduced ? 1 : 0, mode: null, hp: 0, q: 0,
     pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2() };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
   const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < view.vh;
@@ -206,16 +229,26 @@ function init(font) {
     const x = Math.max(0, panel.left), y = Math.max(0, panel.top), r = Math.min(view.vw, panel.right), b = Math.min(view.vh, panel.bottom);
     renderer.setScissor(x, view.vh - b, Math.max(0, r - x), Math.max(0, b - y));
     if (mode === "hero") {
+      const wr = heroWrap ? heroWrap.getBoundingClientRect() : hr;
+      st.hp = reduced ? 0 : clamp01(-wr.top / Math.max(1, wr.height - view.vh));
+      // Once the pin ends the panel scrolls away; q runs 0 to 1 over that exit.
+      st.q = reduced || !lead ? 0 : clamp01((stickyTop - hr.top) / Math.max(1, hr.height));
+      if (st.q > 0) {
+        // The words travel from the panel onto the "I design" that opens the headline, and nothing clips them.
+        const lr = lead.getBoundingClientRect(), e = THREE.MathUtils.smoothstep(st.q, 0, 0.78);   // landed before they dissolve
+        const c = uniforms.uCenter.value;
+        c.set(c.x + (wx(lr.left + lr.width / 2) - c.x) * e, c.y + (wy(lr.top + lr.height / 2) - c.y) * e, 0);
+        uniforms.uScale.value += (wl(lr.width * 1.04) - uniforms.uScale.value) * e;
+        renderer.setScissor(0, 0, view.vw, view.vh);
+      }
       if (nameReady && nameRect) {
         const f = (10 - NAME_Z) / 10;
         // While the hero is pinned, the logo slides down and out so the role labels can take its place.
-        const wr = heroWrap ? heroWrap.getBoundingClientRect() : hr;
-        st.hp = clamp01(-wr.top / Math.max(1, wr.height - view.vh));
         const drop = THREE.MathUtils.smoothstep(st.hp, 0.02, 0.5) * hr.height * 0.95;
         namePlane.position.set(wx(hr.left + nameRect.x + nameRect.w / 2) * f, wy(hr.top + nameRect.y + nameRect.h / 2 + drop) * f, NAME_Z);
         namePlane.scale.set(wl(nameRect.w) * f, wl(nameRect.h) * f, 1);
       }
-      return clamp01(1 - (-hr.top / (hr.height * 0.6)));
+      return reduced || !lead ? clamp01(1 - (-hr.top / (hr.height * 0.6))) : 1;
     }
     return clamp01((view.vh * 0.98 - slot.top) / (view.vh * 0.45));
   }
@@ -225,6 +258,7 @@ function init(font) {
   function step(dt) {
     t += dt;
     const goal = anchor();
+    if (st.mode !== "hero") showLead(1);
     if (!st.mode) {
       if (!cleared) { renderer.setScissorTest(false); renderer.clear(); cleared = true; }
       return;
@@ -246,29 +280,38 @@ function init(font) {
       st.vel *= Math.exp(-dt * 1.6);
       if (Math.abs(st.vel) < 0.6) st.spin += (Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2 - st.spin) * (1 - Math.exp(-dt * 1.2));
     }
-    const isHero = st.mode === "hero";
-    const sway = reduced ? -0.35 : Math.sin(t * 0.5) * 0.5;
-    const angle = sway + st.spin;
+    const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
+    const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
+    const settle = 1 - SS(q, 0, 0.7);                       // the words stop turning as they land
+    const sway = (reduced ? -0.35 : Math.sin(t * 0.5) * 0.5) * settle;
+    const angle = sway + st.spin * settle;
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
+    // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
+    const pyrSolid = 1 - SS(hp, 0.06, 0.18), wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.78, 0.92));
+    const formed = SS(st.form, 0.8, 1);
     uniforms.uForm.value = st.form;
     uniforms.uAngle.value = isHero ? angle : angle * 0.6 + Math.PI / 4;
     uniforms.uTime.value = reduced ? 0 : t;
-    uniforms.uSolid.value = isHero ? 1 : 0;
+    uniforms.uSolid.value = isHero ? Math.max(pyrSolid, wordSolid) : 0;
+    uniforms.uMorph.value = SS(hp, 0.16, 0.38);
+    uniforms.uFade.value = 1 - SS(q, 0.9, 1);
     uniforms.uShape.value = isHero ? 0 : 1;
     uniforms.uTilt.value = isHero ? 0 : 0.6155;   // the cubes sit in an isometric view
     uniforms.uPointer.value.copy(st.pointer);
-    // Glass M: grows out of the gathered motes, leans a little toward the cursor.
-    const g = isHero ? THREE.MathUtils.smoothstep(st.form, 0.8, 1) : 0;
-    mGroup.visible = g > 0.001;
-    namePlane.visible = isHero && nameReady;
-    if (mGroup.visible) {
-      const c = uniforms.uCenter.value;
-      st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;
-      st.tilt.y += ((st.pointer.x - c.x) * 0.04 - st.tilt.y) * 0.08;
-      mGroup.position.copy(c);
-      mGroup.scale.setScalar(uniforms.uScale.value * g);
-      mGroup.rotation.set(reduced ? 0 : THREE.MathUtils.clamp(st.tilt.x, -0.18, 0.18), angle + (reduced ? 0 : THREE.MathUtils.clamp(st.tilt.y, -0.18, 0.18)), 0);
+    if (isHero) showLead(SS(q, 0.86, 1));
+    const c = uniforms.uCenter.value;
+    st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;
+    st.tilt.y += ((st.pointer.x - c.x) * 0.04 - st.tilt.y) * 0.08;
+    const tx = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.x, -0.18, 0.18) * settle, ty = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.y, -0.18, 0.18) * settle;
+    for (const [group, solid] of [[pyrGroup, pyrSolid], [mGroup, wordSolid]]) {
+      const g = isHero ? solid * formed : 0;
+      group.visible = g > 0.001;
+      if (!group.visible) continue;
+      group.position.copy(c);
+      group.scale.setScalar(uniforms.uScale.value * g);
+      group.rotation.set(tx, angle + ty, 0);
     }
+    namePlane.visible = isHero && nameReady && hp < 0.6;
     // The name eases from the panel's own colour to cream as the panel opens.
     nameMat.color.set("#ff4a22").lerp(new THREE.Color("#f3e7e0"), THREE.MathUtils.smoothstep(st.intro, 0.3, 0.8));
     renderer.setScissorTest(false);
@@ -348,7 +391,7 @@ function init(font) {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [mGeo, faceMat, sideMat, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
+    [mGeo, pyrGeo, faceMat, sideMat, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
     renderer.dispose();
   });
 }
