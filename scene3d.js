@@ -68,7 +68,7 @@ function init(font) {
   const BG_Z = -1.6;
   const bgMat = new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false, alphaToCoverage: true,
-    uniforms: { uColor: { value: new THREE.Color("#1b3ae6") }, uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 } },
+    uniforms: { uColor: { value: new THREE.Color("#22126d") }, uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 } },
     vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
       uniform vec3 uColor; uniform float uRadius; uniform vec4 uRect;

@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero is a plain blue panel (#1b3ae6), also drawn in WebGL so the glass has something to bend, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero is a plain deep indigo-blue panel (#22126d), also drawn in WebGL so the glass has something to bend, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -81,7 +81,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
-- **Hero background:** one flat blue, #1b3ae6. No gradient, no glares.
+- **Hero background:** one flat deep indigo-blue, #22126d. No gradient, no glares.
 
 ### Secondary
 - **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
@@ -128,7 +128,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.
 
 ### Blueprint
-- The serif M drawn as a real path: every vertex has an anchor, the bracketed serifs are true curves with their control handles, and guides mark the baseline, cap line and stems. It reacts to the scroll: a camera travels around the letter, each step framing another corner (top-left serif, top-right serif, the vertex, each foot), and the node in focus is picked out in the accent colour with its handles, like a selected point. It fades back behind the education and certifications list so the list reads cleanly.
+- The serif M drawn as a real path: every vertex has an anchor, the bracketed serifs are true curves with their control handles, and guides mark the baseline, cap line and stems. It reacts to the scroll: a camera travels around the letter, each step framing another corner (top-left serif, top-right serif, the vertex, each foot), and the node in focus is picked out in the accent colour with its handles, like a selected point. Every anchor and handle can be dragged to reshape the letter (an anchor carries its handles, a handle bends its curve), with a hint that becomes "Reset shape" once something has moved. It fades back behind the education and certifications list so the list reads cleanly.
 
 ### Stamps
 - 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover, focus or tap.

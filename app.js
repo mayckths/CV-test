@@ -239,9 +239,115 @@ if (!reduced && matchMedia("(pointer: fine)").matches) {
   });
 }
 
+// Blueprint of the M: a real path whose points can be dragged. The markup is the fallback; with scripts
+// on, the outline is read into a model, and the anchors and handles are rebuilt from it so they stay in step.
+const scene = document.querySelector(".scene");
+const blueprint = (() => {
+  const svg = scene && scene.querySelector(".blueprint"), card = scene && scene.querySelector(".scene-card");
+  const line = svg && svg.querySelector(".bp-line"), fill = svg && svg.querySelector(".bp-fill");
+  if (!line || !fill) return null;
+  const NS = "http://www.w3.org/2000/svg";
+  const make = (tag, parent, cls) => { const el = document.createElementNS(NS, tag); if (cls) el.setAttribute("class", cls); return parent.appendChild(el); };
+
+  // The outline uses M, L and C in absolute coordinates and closes with Z.
+  const anchors = [], controls = [], segs = [];
+  let prev = null;
+  for (const m of line.getAttribute("d").matchAll(/([MLC])([^MLCZ]*)/g)) {
+    const n = m[2].trim().split(/[\s,]+/).map(Number), end = { x: n[n.length - 2], y: n[n.length - 1] };
+    anchors.push(end);
+    if (m[1] === "C") {
+      const c1 = { x: n[0], y: n[1], of: prev }, c2 = { x: n[2], y: n[3], of: end };   // each handle belongs to an anchor
+      controls.push(c1, c2);
+      segs.push({ start: prev, end, c1, c2 });
+    } else segs.push({ end, move: m[1] === "M" });
+    prev = end;
+  }
+  const points = [...anchors, ...controls], home = points.map((p) => [p.x, p.y]);
+
+  // Visible points sit behind the text; an empty twin of the drawing sits above it and only carries the grab areas.
+  const hits = svg.cloneNode(false);
+  hits.classList.add("bp-hits");
+  card.insertBefore(hits, card.querySelector(".scene-foot"));
+  const gH = svg.querySelector(".bp-handles"), gA = svg.querySelector(".bp-anchors");
+  gH.textContent = ""; gA.textContent = "";
+  controls.forEach((c) => { c.stem = make("path", gH); c.el = make("circle", gH); c.el.setAttribute("r", 0.9); });
+  anchors.forEach((a) => { a.el = make("rect", gA, "bp-a"); a.el.setAttribute("width", 2); a.el.setAttribute("height", 2); });
+  points.forEach((p) => { p.hit = make("circle", hits); p.hit.setAttribute("r", 1); });
+
+  const f = (v) => +v.toFixed(2);
+  const render = () => {
+    let d = "";
+    segs.forEach((s) => { d += s.c1 ? `C${f(s.c1.x)} ${f(s.c1.y)} ${f(s.c2.x)} ${f(s.c2.y)} ${f(s.end.x)} ${f(s.end.y)}` : `${s.move ? "M" : "L"}${f(s.end.x)} ${f(s.end.y)}`; });
+    line.setAttribute("d", d + "Z"); fill.setAttribute("d", d + "Z");
+    controls.forEach((c) => { c.stem.setAttribute("d", `M${f(c.of.x)} ${f(c.of.y)}L${f(c.x)} ${f(c.y)}`); c.el.setAttribute("cx", f(c.x)); c.el.setAttribute("cy", f(c.y)); });
+    anchors.forEach((a) => { a.el.setAttribute("x", f(a.x - 1)); a.el.setAttribute("y", f(a.y - 1)); });
+    points.forEach((p) => { p.hit.setAttribute("cx", f(p.x)); p.hit.setAttribute("cy", f(p.y)); });
+  };
+
+  // A hint that turns into a reset once the letter has been changed.
+  const ui = document.createElement("div");
+  ui.className = "bp-ui";
+  ui.innerHTML = '<span class="bp-hint">Drag any point of the M</span><button type="button" class="bp-reset" hidden>Reset shape</button>';
+  card.appendChild(ui);
+  const hint = ui.firstChild, resetBtn = ui.lastChild;
+  const setEdited = (on) => { hint.hidden = on; resetBtn.hidden = !on; };
+  resetBtn.addEventListener("click", () => {
+    const from = points.map((p) => [p.x, p.y]), t0 = performance.now();
+    const tick = (now) => {
+      const t = reduced ? 1 : Math.min(1, (now - t0) / 350), e = 1 - Math.pow(1 - t, 3);
+      points.forEach((p, i) => { p.x = from[i][0] + (home[i][0] - from[i][0]) * e; p.y = from[i][1] + (home[i][1] - from[i][1]) * e; });
+      render();
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    setEdited(false);
+  });
+
+  // Dragging: an anchor carries its handles with it; a handle moves alone and bends its curve.
+  const toSvg = (e) => { const m = hits.getScreenCTM().inverse(); return { x: m.a * e.clientX + m.c * e.clientY + m.e, y: m.b * e.clientX + m.d * e.clientY + m.f }; };
+  const look = (p, cls, on) => [p.el, p.stem].forEach((el) => el && el.classList.toggle(cls, on));
+  let drag = null;
+  points.forEach((p) => {
+    p.hit.addEventListener("pointerenter", () => look(p, "hot", true));
+    p.hit.addEventListener("pointerleave", () => look(p, "hot", false));
+    p.hit.addEventListener("pointerdown", (e) => {
+      if (e.button) return;
+      e.preventDefault();
+      const at = toSvg(e);
+      drag = { p, dx: p.x - at.x, dy: p.y - at.y };
+      p.hit.setPointerCapture(e.pointerId);
+      look(p, "grab", true);
+      scene.classList.add("bp-dragging");
+    });
+    p.hit.addEventListener("pointermove", (e) => {
+      if (!drag || drag.p !== p) return;
+      const at = toSvg(e), mx = at.x + drag.dx - p.x, my = at.y + drag.dy - p.y;
+      p.x += mx; p.y += my;
+      if (!("of" in p)) controls.forEach((c) => { if (c.of === p) { c.x += mx; c.y += my; } });
+      render();
+      setEdited(true);
+    });
+    const drop = () => { if (drag && drag.p === p) { drag = null; look(p, "grab", false); scene.classList.remove("bp-dragging"); } };
+    p.hit.addEventListener("pointerup", drop);
+    p.hit.addEventListener("pointercancel", drop);
+  });
+
+  // Points keep their size on screen whatever the zoom: upp is drawing units per pixel.
+  const GRAB = matchMedia("(pointer: coarse)").matches ? 12 : 14;
+  const scale = (upp, fixAnchors) => {
+    if (fixAnchors) svg.style.setProperty("--k", (4.5 * upp).toFixed(3));
+    hits.style.setProperty("--kh", (GRAB * upp).toFixed(3));
+  };
+  const view = (box, upp) => { svg.setAttribute("viewBox", box); hits.setAttribute("viewBox", box); scale(upp, true); };
+  const measure = () => { const m = hits.getScreenCTM(); if (m && m.a) scale(1 / m.a, false); };   // the still layout, no camera
+  measure();
+  window.addEventListener("resize", measure);
+  render();
+  return { card, anchors, corners: segs.filter((s) => s.c1), view };
+})();
+
 // Intro scene: the card stays pinned and shows one message per scroll step; behind it a camera travels
 // around the blueprint of the M, framing another corner and its bezier handles at each step.
-const scene = document.querySelector(".scene");
 if (scene && !reduced) {
   const steps = [...scene.querySelectorAll(".step")];
   const rail = scene.querySelector(".scene-rail");
@@ -253,7 +359,6 @@ if (scene && !reduced) {
   // Blueprint camera. Each step frames another part of the M: f is the point of the letter in focus
   // (in the drawing's own units), a is where that point sits on the card (0 to 1), h is how many units
   // of the drawing fit the card's height. Scrolling glides from one shot to the next.
-  const bp = scene.querySelector(".blueprint"), card = scene.querySelector(".scene-card");
   const SHOTS = [
     { f: [58, 50], a: [0.27, 0.72], h: 177 },   // the whole letter
     { f: [10, 6], a: [0.16, 0.76], h: 64 },     // top-left serif and its bracket
@@ -263,11 +368,6 @@ if (scene && !reduced) {
     { f: [17, 95], a: [0.2, 0.78], h: 64 },     // left foot
     { f: [58, 50], a: [0.5, 0.5], h: 135 },     // the whole letter again, behind the list
   ];
-  const anchors = bp ? [...bp.querySelectorAll(".bp-a")].map((el) => ({ el, x: +el.getAttribute("x") + 1, y: +el.getAttribute("y") + 1 })) : [];
-  const handles = bp ? [...bp.querySelectorAll(".bp-handles path")].map((el) => {
-    const n = el.getAttribute("d").match(/-?[\d.]+/g).map(Number);   // two handle lines: anchor, control, anchor, control
-    return { els: [el, el.nextElementSibling, el.nextElementSibling.nextElementSibling], x: (n[0] + n[4]) / 2, y: (n[1] + n[5]) / 2 };
-  }) : [];
   const cam = { v: null, goal: null, raf: 0, last: 0 };
   const shotAt = (p) => {
     const s = Math.min(SHOTS.length - 1, Math.max(0, p * steps.length - 0.5)), i = Math.min(SHOTS.length - 2, Math.floor(s));
@@ -277,14 +377,16 @@ if (scene && !reduced) {
     return [mix(A.f[0], B.f[0]), mix(A.f[1], B.f[1]), mix(A.a[0], B.a[0]), mix(A.a[1], B.a[1]), mix(Math.log(A.h), Math.log(B.h))];
   };
   const frame = () => {
+    const { card, anchors, corners } = blueprint;
     const [fx, fy, ax, ay, lh] = cam.v, h = Math.exp(lh), cw = card.clientWidth, ch = Math.max(1, card.clientHeight), w = h * cw / ch;
-    bp.setAttribute("viewBox", `${(fx - ax * w).toFixed(2)} ${(fy - ay * h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
-    bp.style.setProperty("--k", (4.5 * h / ch).toFixed(3));          // anchors stay about 9px whatever the zoom
-    // Close in, the node nearest the focus reads as selected, with its handles.
-    const near = (list) => h < 110 ? list.reduce((best, o) => (Math.hypot(o.x - fx, o.y - fy) < Math.hypot(best.x - fx, best.y - fy) ? o : best)) : null;
-    const na = near(anchors), nh = near(handles);
+    blueprint.view(`${(fx - ax * w).toFixed(2)} ${(fy - ay * h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`, h / ch);
+    // Close in, the node nearest the focus reads as selected, and so do the handles of the nearest curve.
+    const far = (x, y) => Math.hypot(x - fx, y - fy);
+    const na = h < 110 ? anchors.reduce((best, o) => (far(o.x, o.y) < far(best.x, best.y) ? o : best)) : null;
+    const mid = (c) => far((c.start.x + c.end.x) / 2, (c.start.y + c.end.y) / 2);
+    const nc = h < 110 ? corners.reduce((best, c) => (mid(c) < mid(best) ? c : best)) : null;
     anchors.forEach((o) => o.el.classList.toggle("sel", o === na));
-    handles.forEach((o) => o.els.forEach((el) => el.classList.toggle("sel", o === nh && Math.hypot(o.x - fx, o.y - fy) < 14)));
+    corners.forEach((c) => { const on = c === nc && mid(c) < 14; [c.c1, c.c2].forEach((k) => { k.el.classList.toggle("sel", on); k.stem.classList.toggle("sel", on); }); });
   };
   const glide = (now) => {
     const dt = Math.min(0.05, (now - cam.last) / 1000); cam.last = now;
@@ -305,7 +407,7 @@ if (scene && !reduced) {
     scene.style.setProperty("--draw", draw.toFixed(3));
     scene.classList.toggle("drawn", draw >= 1);
     scene.style.setProperty("--points", Math.min(1, Math.max(0, p * 6 - 0.4)).toFixed(3));
-    if (bp && anchors.length) {
+    if (blueprint) {
       cam.goal = shotAt(p);
       if (!cam.v) { cam.v = cam.goal.slice(); frame(); }
       else if (!cam.raf) { cam.last = performance.now(); cam.raf = requestAnimationFrame(glide); }
