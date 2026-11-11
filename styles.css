@@ -83,8 +83,12 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 
 /* Hero: gradient panel, name, glass M */
 .hero.panel { height: calc(100svh - 2 * var(--gap)); min-height: 520px; display: grid; place-items: center; color: var(--on-dark); }
-/* The Capas render. This still copy shows first and without WebGL; scene3d.js draws a moving one over it. */
-.hero .panel-bg { background: linear-gradient(rgba(12, 6, 20, .16), rgba(12, 6, 20, .16)), #2a1a3a url("assets/capas.webp") center / cover; }
+/* Deep blue with glares. This still copy shows first and without WebGL; scene3d.js draws a moving one over it. */
+.hero .panel-bg { background:
+  radial-gradient(22% 28% at 70% 20%, rgba(115, 199, 255, .36), transparent 72%),
+  radial-gradient(62% 78% at 20% 22%, rgba(26, 77, 242, .5), transparent 72%),
+  radial-gradient(64% 84% at 86% 86%, rgba(77, 56, 242, .36), transparent 72%),
+  linear-gradient(200deg, #08113a, #040820); }
 .hero .hero-name { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; pointer-events: none; }
 .hero-logo { width: min(82%, 1180px); height: auto; fill: #ffffff; transform: translateY(calc(var(--hp, 0) * 90vh)); }
 .hero.live .hero-logo { opacity: 0; }   /* drawn in WebGL instead, so the glass can bend it */

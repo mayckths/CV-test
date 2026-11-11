@@ -1,6 +1,6 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
-//   - hero background: Mayck's "Capas" render, alive. Its layers drift, shift in depth with the cursor
-//     and are dragged by it.
+//   - hero background: deep blue with a few glares that drift, lean with the cursor and leave a soft
+//     light under it.
 //   - hero figure: two pyramids drawn in soft particles (an M) in front of the name logo. As the pinned
 //     hero scrolls, the logo slides away and the particles re-form as "I DESIGN", which crystallises into
 //     glass between two role labels. When the hero leaves, the words turn back into particles, travel
@@ -65,43 +65,50 @@ function init(font) {
   const pyrGeo = new THREE.ConeGeometry(PR, PH, 4, 1);
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
 
-  // --- Background: the Capas render, moving. It is opaque, so the glass words bend it too. ---
+  // --- Background: deep blue with a few glares that drift and lean with the cursor. Opaque, so the glass words bend it too. ---
   const BG_Z = -1.6;
-  let bgReady = false;
-  const bgTex = new THREE.TextureLoader().load("assets/capas.webp", (tx) => {
-    bgMat.uniforms.uImg.value = tx.image.width / tx.image.height;
-    bgReady = true;
-  });
-  bgTex.colorSpace = THREE.SRGBColorSpace;
   const bgMat = new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false, alphaToCoverage: true,
     uniforms: {
-      uTex: { value: bgTex }, uTime: { value: 0 }, uImg: { value: 16 / 9 }, uAspect: { value: 1 }, uZoom: { value: 1 },
+      uTime: { value: 0 }, uAspect: { value: 1 }, uZoom: { value: 1 },
       uPointer: { value: new THREE.Vector2(0.5, 0.5) }, uVel: { value: new THREE.Vector2() },
       uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 },
     },
     vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
-      uniform sampler2D uTex; uniform float uTime, uImg, uAspect, uZoom, uRadius;
+      uniform float uTime, uAspect, uZoom, uRadius;
       uniform vec2 uPointer, uVel; uniform vec4 uRect;
       varying vec2 vUv;
+      float glare(vec2 p, vec2 at, float r) { vec2 d = p - at; return exp(-dot(d, d) / (r * r)); }
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
       void main() {
-        // Same framing as CSS "cover", so the still image underneath and this one line up.
-        vec2 c = vUv - 0.5;
-        if (uAspect > uImg) c.y *= uImg / uAspect; else c.x *= uAspect / uImg;
-        c /= uZoom;
-        vec2 uv = c + 0.5;
-        // The brighter ridges of the render read as nearer, so they travel further: layers, not a flat picture.
-        float h = dot(texture2D(uTex, uv).rgb, vec3(0.3, 0.5, 0.2));
-        vec2 depth = (uPointer - 0.5) * -0.045 * (0.25 + h);
-        vec2 flow = vec2(sin(c.y * 5.0 + uTime * 0.25 + h * 3.0), cos(c.x * 4.0 - uTime * 0.21 + h * 2.0)) * 0.007;
-        // The cursor drags the layers nearest to it.
-        vec2 dp = vUv - uPointer; dp.x *= uAspect;
-        vec2 drag = -uVel * exp(-dot(dp, dp) / 0.035) * (0.5 + h);
-        vec3 col = texture2D(uTex, uv + depth + flow + drag).rgb * 0.84;
+        // Height is one unit; x runs from -A/2 to A/2 so the glares stay round on any panel.
+        float A = uAspect, t = uTime;
+        vec2 p = (vUv - 0.5) / uZoom; p.x *= A;
+        vec2 m = uPointer - 0.5; m.x *= A;
+        float k = mix(0.62, 1.0, smoothstep(0.5, 1.2, A));   // tighter glares on a narrow panel, so it stays dark
+        // Night blue, a touch lighter towards the top right.
+        vec3 col = mix(vec3(0.016, 0.031, 0.105), vec3(0.030, 0.066, 0.215), smoothstep(-0.7, 0.7, p.y + p.x * 0.22));
+        // Each glare sits at its own depth: nearer ones lean further away from the cursor.
+        vec2 g1 = vec2(-0.30 * A + sin(t * 0.13) * 0.05, 0.27 + cos(t * 0.11) * 0.04) - m * 0.10;
+        vec2 g2 = vec2(0.36 * A + cos(t * 0.09) * 0.05, -0.36 + sin(t * 0.12) * 0.04) - m * 0.06;
+        vec2 g3 = vec2(0.20 * A + sin(t * 0.17 + 1.0) * 0.03, 0.30 + cos(t * 0.15) * 0.03) - m * 0.18;
+        col += vec3(0.10, 0.30, 0.95) * glare(p, g1, 0.46 * k) * 0.50;
+        col += vec3(0.30, 0.22, 0.95) * glare(p, g2, 0.52 * k) * 0.36;
+        col += vec3(0.45, 0.78, 1.00) * glare(p, g3, 0.13 * k) * 0.42;
+        // A thin lens streak through the small bright one.
+        vec2 s = p - g3;
+        col += vec3(0.50, 0.74, 1.00) * exp(-s.y * s.y / 0.00035) * exp(-s.x * s.x / (0.22 * k * k * k)) * 0.20;
+        // A soft light under the cursor that trails when it moves.
+        vec2 lag = uVel; lag.x *= A;
+        col += vec3(0.20, 0.46, 1.00) * glare(p, m - lag * 1.6, 0.24 * k) * 0.22;
+        // Darker edges keep the labels on clear ground; a little grain stops the gradients banding.
+        col *= 1.0 - 0.30 * smoothstep(0.25, 0.85, length(vec2(p.x / A, p.y)) * 1.5);
+        col += (hash(gl_FragCoord.xy) - 0.5) * 0.014;
+        col = pow(max(col, 0.0), vec3(2.2));
         // Rounded corners of the panel.
-        vec2 p = gl_FragCoord.xy - (uRect.xy + uRect.zw * 0.5);
-        vec2 q = abs(p) - uRect.zw * 0.5 + uRadius;
+        vec2 c = gl_FragCoord.xy - (uRect.xy + uRect.zw * 0.5);
+        vec2 q = abs(c) - uRect.zw * 0.5 + uRadius;
         float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
         gl_FragColor = vec4(col, clamp(0.5 - d, 0.0, 1.0));
         #include <colorspace_fragment>
@@ -397,7 +404,7 @@ function init(font) {
     }
     namePlane.visible = isHero && nameReady && hp < 0.6;
     // Background: follows the cursor with a little lag, and carries its speed as drag.
-    bgPlane.visible = isHero && bgReady;
+    bgPlane.visible = isHero;
     if (bgPlane.visible) {
       const u = bgMat.uniforms, before = bgState.p.clone();
       bgState.p.lerp(bgState.goal, reduced ? 1 : 1 - Math.exp(-dt * 5));
@@ -491,7 +498,7 @@ function init(font) {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [mGeo, pyrGeo, faceMat, sideMat, bgGeo, bgMat, bgTex, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
+    [mGeo, pyrGeo, faceMat, sideMat, bgGeo, bgMat, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
     renderer.dispose();
   });
 }

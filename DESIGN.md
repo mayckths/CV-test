@@ -1,6 +1,6 @@
 ---
 name: Mayck Cuellar Portfolio
-description: A cream page of stacked rounded panels, a hero built on the Capas render with particle pyramids that become glass words, and content that arrives one step at a time.
+description: A cream page of stacked rounded panels, a deep blue hero with soft glares and particle pyramids that become glass words, and content that arrives one step at a time.
 colors:
   cream: "#f5ebe3"
   card: "#fffaf5"
@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero is a panel filled with Mayck's "Capas" render, drawn in WebGL so its layers drift, shift in depth with the cursor and are dragged by it, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero is a deep blue panel with a few soft glares, drawn in WebGL so they drift slowly, lean with the cursor and leave a light under it, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -81,7 +81,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
-- **Hero background:** the Capas render (yellow, magenta, violet, orange), dimmed about 16% so white type holds.
+- **Hero background:** night blue (#040820 to #08113a) with three glares (blue, violet-blue, a small pale blue one with a thin lens streak) and darker edges so white type holds.
 
 ### Secondary
 - **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
@@ -90,7 +90,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Cream** (cream) page, **Card** (card) for pinned and stacked cards and media frames, **Ink** (ink), **Muted** (muted), **Line** (line).
 
 ### Named Rules
-**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles and the render stay inside the hero and footer panels.
+**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles and glares stay inside the hero and footer panels.
 
 ## Typography
 
@@ -110,7 +110,7 @@ Panels sit 16px from the viewport edge and from each other. The hero panel fills
 
 ## Elevation & Depth
 
-Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the hero: the layered render and the glass words.
+Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the hero: the glares at different depths and the glass words.
 
 ## Shapes
 
@@ -119,7 +119,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 ## Components
 
 ### Particle pyramids and glass words (signature)
-- Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning in front of the logo. The logo and the render are drawn in WebGL so the glass can bend them, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
+- Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning in front of the logo. The logo and the background are drawn in WebGL so the glass can bend them, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
 
 ### Particles
 - Soft round motes in white, lilac, violet and pink. They draw the pyramids on load, gather into the glass words on scroll and, on the dark footer panel, draw the two pyramids again. They step away from the cursor.
@@ -137,7 +137,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - Dark panels carry a soft coral light at the cursor.
 
 ### Floating header
-- A dark translucent pill, centred, legible over both the hero render and the cream page.
+- A dark translucent pill, centred, legible over both the blue hero and the cream page.
 
 ## Do's and Don'ts
 
