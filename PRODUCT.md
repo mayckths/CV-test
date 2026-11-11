@@ -36,8 +36,8 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 
 ## Brand Commitments
 
-- Visual world, chosen by Mayck in November 2026: a cream page of stacked rounded panels with dark text; a vivid red-orange to violet gradient hero with his name and a glass M (after guillaumezhu.com); content presented one step at a time with stacking cards and spotlit dark panels (after awakeagency.dev); soft particles for the M's second state (after ricardochance.com). Particles never sit behind text.
-- Logo: the "Mayck Cuellar" wordmark (assets/logo.svg), used in the header and as the giant name in the hero. The hero object is the words "I DESIGN" in glass; the footer object is a stack of cubes in particles.
+- Visual world, chosen by Mayck in November 2026: a cream page of stacked rounded panels with dark text; a hero built on his Capas render with his name and two particle pyramids standing as an M, which become the glass words "I DESIGN" on scroll (after guillaumezhu.com); content presented one step at a time with stacking cards and spotlit dark panels (after awakeagency.dev); soft particles for the pyramids and transitions (after ricardochance.com); 3D pieces shown as one-ink pixel stamps that resolve into the render (after andreas.vision). Particles never sit behind text.
+- Logo: the "Mayck Cuellar" wordmark (assets/logo.svg), used in the header and as the giant name in the hero. The hero object is two particle pyramids that become the words "I DESIGN" in glass; the footer object is the same two pyramids in particles.
 - Keep the "Ask this portfolio" panel.
 - Keep current copy word for word, including the headline and case study text and numbers.
 - The animated M (assets/m.*) is Mayck's mark and may be restyled.

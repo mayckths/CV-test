@@ -1,6 +1,6 @@
 ---
 name: Mayck Cuellar Portfolio
-description: A cream page of stacked rounded panels, a gradient hero with a glass M, and content that arrives one step at a time.
+description: A cream page of stacked rounded panels, a hero built on the Capas render with particle pyramids that become glass words, and content that arrives one step at a time.
 colors:
   cream: "#f5ebe3"
   card: "#fffaf5"
@@ -90,7 +90,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Cream** (cream) page, **Card** (card) for pinned and stacked cards and media frames, **Ink** (ink), **Muted** (muted), **Line** (line).
 
 ### Named Rules
-**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles and gradients stay inside the hero and footer panels.
+**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles and the render stay inside the hero and footer panels.
 
 ## Typography
 
@@ -110,7 +110,7 @@ Panels sit 16px from the viewport edge and from each other. The hero panel fills
 
 ## Elevation & Depth
 
-Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the glass M.
+Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the hero: the layered render and the glass words.
 
 ## Shapes
 
@@ -118,11 +118,11 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 
 ## Components
 
-### Glass pyramids and words (signature)
-- Two square pyramids side by side (an M), then "I DESIGN" extruded, both with clear glass faces and pink sides, turning in front of the logo. The logo is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again, arrow keys nudge it.
+### Particle pyramids and glass words (signature)
+- Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning in front of the logo. The logo and the render are drawn in WebGL so the glass can bend them, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
 
 ### Particles
-- Soft round motes in white, lilac, violet and pink. They gather into the glass words on load and, on the dark footer panel, draw a two-by-two-by-two stack of cubes in an isometric view. They step away from the cursor.
+- Soft round motes in white, lilac, violet and pink. They draw the pyramids on load, gather into the glass words on scroll and, on the dark footer panel, draw the two pyramids again. They step away from the cursor.
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.
@@ -137,7 +137,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - Dark panels carry a soft coral light at the cursor.
 
 ### Floating header
-- A dark translucent pill, centred, legible over both the gradient and the cream page.
+- A dark translucent pill, centred, legible over both the hero render and the cream page.
 
 ## Do's and Don'ts
 
