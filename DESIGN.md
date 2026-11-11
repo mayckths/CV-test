@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero is a deep indigo-blue panel (#22126d) with a soft light from the top left, also drawn in WebGL so the glass has something to bend, with two pyramids drawn in particles standing alone as an M. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero follows ricardochance.com: a dark indigo ground with a slow haze of the blue (#22126d) and faint stars, the name and an italic serif headline top left, two actions bottom left, a short account bottom right, and two pyramids built from soft blobs in the middle. The haze leans toward the cursor and a soft light trails it; the cursor opens a clean round hole in the pyramids, and scrolling turns them. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -81,7 +81,8 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
-- **Hero and footer background:** deep indigo-blue #22126d with a small radial gradient (#3a25a8 at the top left, through #22126d, to #190c52). The footer adds a pale blue light under the cursor.
+- **Hero and footer background:** a dark ground (#0d0730) with a haze of the blue (#22126d, lifting to #4330c4). In the hero the haze drifts, slides against the cursor and carries faint twinkling stars; the footer uses a still version with a pale blue light under the cursor.
+- **One hue family in the hero:** particles are pale lavender (#b9b2e2 to #e9e6fb) with a saturated violet-blue rim (#5a3cf2 to #a160ff); hero text is #f1eefd, with trailing words and secondary text dimmed. The glass words keep their red glow as the single accent.
 
 ### Secondary
 - **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
@@ -95,6 +96,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 ## Typography
 
 **Display Font:** Bricolage Grotesque
+**Hero Font:** Instrument Serif Italic (hero headline and the two role labels only)
 **Body Font:** Geist
 **Label/Mono Font:** Geist Mono
 
@@ -106,7 +108,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ## Layout
 
-Panels sit 16px from the viewport edge and from each other. The hero panel fills the first screen. The intro is a pinned card: seven steps (headline, statement, four results, certifications), about 58vh of scroll each, with a progress rail and the two calls to action fixed at the bottom of the card. The four cases are sticky cards that stack; none is treated differently. Below 820px cards stop stacking and everything is one column. With reduced motion or without scripts, the steps are simply laid out one after another.
+Panels sit 16px from the viewport edge and from each other. The hero panel fills the first screen. The intro is a pinned card: six steps (headline, four results, education and certifications), about 58vh of scroll each, with a progress rail and the two calls to action fixed at the bottom of the card. The four cases are sticky cards that stack; none is treated differently. Below 820px cards stop stacking and everything is one column. With reduced motion or without scripts, the steps are simply laid out one after another.
 
 ## Elevation & Depth
 
@@ -122,7 +124,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning on the panel. The background is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
 
 ### Particles
-- Soft round motes in white, lilac, violet and pink. They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. They step away from the cursor.
+- Soft round blobs with a pale core and a saturated rim, large enough to overlap into a surface while they hold the pyramids and fine grains once they become the words. They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The cursor opens a round hole in them: motes inside it move out to its rim and return when it leaves.
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.

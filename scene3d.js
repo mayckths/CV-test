@@ -1,5 +1,5 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
-//   - hero background: deep blue with a soft gradient.
+//   - hero background: a dark ground with a drifting haze of the blue, faint stars, and a light that trails the cursor.
 //   - hero figure: two pyramids drawn in soft particles (an M), alone on the panel. As the pinned
 //     hero scrolls, the particles re-form as "I DESIGN", which crystallises into
 //     glass between two role labels. When the hero leaves, the words turn back into particles, travel
@@ -59,35 +59,55 @@ function init(font) {
   scene.add(mGroup);
 
   // --- Pyramids: two side by side read as an M. They are only ever drawn in particles. ---
-  const PYR = mobile ? 1.15 : 0.74;            // size relative to the width of the words
+  const PYR = mobile ? 1.0 : 0.6;            // size relative to the width of the words
   const PR = 0.36 * PYR, PH = 0.64 * PYR, PX = PR * Math.SQRT1_2, PYR_W = 4 * PX;
   const pyrGeo = new THREE.ConeGeometry(PR, PH, 4, 1);
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
 
-  // --- Background: deep blue with a soft light from the top left, the same gradient as the CSS one under it.
-  //     Drawn here too so the glass words have something to bend. ---
+  // --- Background: a dark ground with a slow haze of the blue drifting across it and a few faint stars.
+  //     The haze leans toward the cursor and a soft light follows it. Opaque, so the glass words bend it too. ---
   const BG_Z = -1.6;
   const srgb = (hex) => { const c = new THREE.Color(hex); return new THREE.Vector3(...c.convertLinearToSRGB().toArray()); };   // keep CSS values as written
   const bgMat = new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false, alphaToCoverage: true,
     uniforms: {
-      uA: { value: srgb("#3a25a8") }, uB: { value: srgb("#22126d") }, uC: { value: srgb("#190c52") },
+      uDeep: { value: srgb("#0d0730") }, uBase: { value: srgb("#22126d") }, uLight: { value: srgb("#4330c4") },
+      uTime: { value: 0 }, uDpr: { value: 1 }, uPointer: { value: new THREE.Vector2(0.7, 0.3) },
       uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 },
     },
     vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
-      uniform vec3 uA, uB, uC; uniform float uRadius; uniform vec4 uRect;
+      uniform vec3 uDeep, uBase, uLight; uniform float uRadius, uTime, uDpr; uniform vec4 uRect; uniform vec2 uPointer;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float noise(vec2 p) {
+        vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+      }
+      float fbm(vec2 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++) { s += a * noise(p); p = p * 2.03 + 17.0; a *= 0.5; } return s; }
       void main() {
-        // radial-gradient(110% 120% at 30% 0%, A, B 50%, C)
-        vec2 uv = (gl_FragCoord.xy - uRect.xy) / uRect.zw;
-        float t = length((uv - vec2(0.3, 1.0)) / vec2(1.1, 1.2));
-        vec3 col = t < 0.5 ? mix(uA, uB, t * 2.0) : mix(uB, uC, min(1.0, t * 2.0 - 1.0));
-        col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;   // no banding
+        vec2 px = gl_FragCoord.xy - uRect.xy, uv = px / uRect.zw;
+        float A = uRect.z / uRect.w;
+        vec2 p = vec2(uv.x * A, uv.y), m = vec2(uPointer.x * A, uPointer.y);
+        // Haze: warped noise gives long soft bands; it drifts on its own and slides against the cursor.
+        float t = uTime * 0.03;
+        vec2 q = p * 0.95 + vec2(t, -t * 0.6) - (m - vec2(0.5 * A, 0.5)) * 0.22;
+        float n = fbm(q + fbm(q * 0.8 - t) * 0.9);
+        float band = smoothstep(0.40, 0.80, n);
+        float near = exp(-dot(p - m, p - m) / 0.16);                       // a soft light where the cursor is
+        vec3 col = mix(uDeep, uBase, clamp(band + near * 0.55, 0.0, 1.0));
+        col = mix(col, uLight, clamp(band * band * 0.34 + near * 0.26, 0.0, 1.0));
+        // Stars: one faint point in some cells of a grid, twinkling, shifting a few pixels with the cursor.
+        vec2 sp = (px / uDpr + (uPointer - 0.5) * 16.0) / 56.0, id = floor(sp), f = fract(sp);
+        float h = hash(id);
+        vec2 o = 0.2 + 0.6 * vec2(hash(id + 7.7), hash(id + 13.3));
+        float tw = 0.55 + 0.45 * sin(uTime * (0.4 + h * 1.4) + h * 40.0);
+        col += step(0.5, h) * smoothstep(0.7 + h * 0.9, 0.0, length(f - o) * 56.0) * tw * vec3(0.74, 0.72, 1.0) * 0.6;
+        col += (hash(gl_FragCoord.xy) - 0.5) / 255.0;                      // no banding
         col = pow(max(col, 0.0), vec3(2.2));
         // Rounded corners of the panel.
         vec2 c = gl_FragCoord.xy - (uRect.xy + uRect.zw * 0.5);
-        vec2 q = abs(c) - uRect.zw * 0.5 + uRadius;
-        float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
+        vec2 r = abs(c) - uRect.zw * 0.5 + uRadius;
+        float d = length(max(r, 0.0)) + min(max(r.x, r.y), 0.0) - uRadius;
         gl_FragColor = vec4(col, clamp(0.5 - d, 0.0, 1.0));
         #include <colorspace_fragment>
       }`,
@@ -107,7 +127,8 @@ function init(font) {
   const pyrSampler = new MeshSurfaceSampler(new THREE.Mesh(pyrGeo)).build();
   const target = new Float32Array(COUNT * 3), pyr = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
   const seed = new Float32Array(COUNT), sizes = new Float32Array(COUNT);
-  const palette = ["#ffffff", "#f3d9ff", "#c9a2ff", "#9a63f5", "#ff9fd0", "#ffd8c2"].map((c) => new THREE.Color(c));
+  // One hue family, as in the reference: pale lavender cores; the rim colour is added in the shader.
+  const palette = ["#e9e6fb", "#d6d1f3", "#c6c0ea", "#dcd8f6", "#b9b2e2"].map((c) => new THREE.Color(c));
   const v = new THREE.Vector3();
   for (let i = 0; i < COUNT; i++) {
     sampler.sample(v);
@@ -139,15 +160,17 @@ function init(font) {
   const uniforms = {
     uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
-    uPointer: { value: new THREE.Vector2(99, 99) },
+    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 }, uBlob: { value: 1 }, uBlobK: { value: mobile ? 1.7 : 1 },
+    uRimA: { value: new THREE.Color("#5a3cf2") }, uRimB: { value: new THREE.Color("#a160ff") },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand, uHole, uBlob, uBlobK;
+      uniform vec3 uRimA, uRimB;
       uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
-      varying vec3 vColor; varying float vAlpha; varying float vCore;
+      varying vec3 vColor; varying vec3 vRim; varying float vAlpha; varying float vCore;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
         float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
@@ -159,25 +182,30 @@ function init(font) {
         vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
         vec3 p = mix(loose, formed, m);
+        // The cursor opens a clean round hole: motes inside it are moved out to its rim, and return when it leaves.
         vec2 d = p.xy - uPointer;
-        float push = smoothstep(0.7, 0.0, length(d));
-        p.xy += normalize(d + 1e-4) * push * 0.38;
+        float len = length(d);
+        p.xy += normalize(d + 1e-4) * max(0.0, uHole - len) * 0.94;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
         // When the glass M is standing, the motes inside it shrink away.
         float hide = 1.0 - smoothstep(0.35, 1.0, uSolid) * smoothstep(0.86, 1.0, uForm);
-        gl_PointSize = max(uPx * uMote * aSize * (1.0 + push) * (10.0 / -mv.z) * hide * uFade, 0.0);
+        // As pyramids the motes are large soft blobs that overlap into a surface; as words they are fine grains.
+        float size = mix(aSize, (0.019 + 0.02 * fract(aSeed * 7.31)) * uBlobK * mix(0.4, 1.0, m), uBlob);
+        gl_PointSize = max(uPx * uMote * size * (10.0 / -mv.z) * hide * uFade, 0.0);
         // Landing on the headline, the motes take the ink of the type they are becoming.
         vColor = mix(aColor, vec3(0.015, 0.012, 0.012), uLand);
         vCore = 1.0 - uLand;
-        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, uLand) * hide * uFade;
+        vRim = mix(uRimA, uRimB, fract(aSeed * 3.17));
+        vAlpha = mix(0.86 + 0.14 * aSeed, 1.0, uLand) * hide * uFade;
       }`,
     fragmentShader: `
-      varying vec3 vColor; varying float vAlpha; varying float vCore;
+      varying vec3 vColor; varying vec3 vRim; varying float vAlpha; varying float vCore;
       void main() {
-        float r = length(gl_PointCoord - 0.5);
-        float a = smoothstep(0.5, 0.2, r);
-        vec3 col = mix(vColor, vec3(1.0), smoothstep(0.3, 0.0, r) * 0.55 * vCore);
+        float r = length(gl_PointCoord - 0.5) * 2.0;
+        float a = smoothstep(1.0, 0.7, r);
+        // Pale core, saturated rim: where blobs overlap, the rims draw the texture.
+        vec3 col = mix(vColor, vRim, smoothstep(0.42, 0.96, r) * vCore);
         gl_FragColor = vec4(col, a * vAlpha);
         #include <colorspace_fragment>
       }`,
@@ -234,7 +262,8 @@ function init(font) {
   const showLead = (v) => { const s = v.toFixed(2); if (s !== leadShown) { leadShown = s; document.documentElement.style.setProperty("--lead", s); } };
   const footPanel = document.querySelector(".foot.panel");
   const st = { form: 0, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: reduced ? 1 : 0, mode: null, hp: 0, q: 0,
-    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2() };
+    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2(),
+    bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
   const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < view.vh;
 
@@ -262,6 +291,12 @@ function init(font) {
       u.uRadius.value = panelRadius * view.dpr;
       const wr = heroWrap ? heroWrap.getBoundingClientRect() : hr;
       st.hp = reduced ? 0 : clamp01(-wr.top / Math.max(1, wr.height - view.vh));
+      if (!mobile) {
+        // As pyramids the figure sits a little right of centre and lower, clear of the headline; it centres as it becomes the words.
+        const k = 1 - THREE.MathUtils.smoothstep(st.hp, 0.05, 0.3), c0 = uniforms.uCenter.value;
+        c0.x += wl(hr.width * 0.055) * k;
+        c0.y -= wl(hr.height * 0.045) * k;
+      }
       // Once the pin ends the panel scrolls away; q runs 0 to 1 over that exit.
       st.q = reduced || !lead ? 0 : clamp01((stickyTop - hr.top) / Math.max(1, hr.height));
       if (st.q > 0) {
@@ -310,7 +345,9 @@ function init(font) {
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
     const settle = 1 - SS(q, 0, 0.7);                       // the words stop turning as they land
     const sway = (reduced ? -0.35 : Math.sin(t * 0.5) * 0.5) * settle;
-    const angle = sway + st.spin * settle;
+    // Scrolling turns the pyramids, and they come back to the front as they become the words.
+    const turn = isHero && !reduced ? Math.sin(Math.min(1, hp / 0.36) * Math.PI) * 1.1 : 0;
+    const angle = sway + st.spin * settle + turn;
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
     const wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.02, 0.22));   // back to motes for the trip down
@@ -323,6 +360,8 @@ function init(font) {
     uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
     uniforms.uFade.value = 1 - SS(q, 0.86, 1);
     uniforms.uPointer.value.copy(st.pointer);
+    uniforms.uBlob.value = isHero ? 1 - SS(hp, 0.08, 0.3) : 1;
+    uniforms.uHole.value = wl(mobile ? 46 : 68);
     if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
     st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;
@@ -338,6 +377,13 @@ function init(font) {
       for (const m of mats) m.opacity = g;            // how much of the surface has crystallised
     }
     bgPlane.visible = isHero;
+    if (isHero) {
+      // The background's light trails the cursor slowly, like something heavy.
+      st.bgPointer.lerp(st.bgGoal, reduced ? 1 : 1 - Math.exp(-dt * 1.6));
+      bgMat.uniforms.uPointer.value.copy(st.bgPointer);
+      bgMat.uniforms.uTime.value = reduced ? 0 : t;
+      bgMat.uniforms.uDpr.value = view.dpr;
+    }
 
     renderer.setScissorTest(false);
     renderer.clear();
@@ -372,8 +418,14 @@ function init(font) {
   } else {
     window.addEventListener("pointermove", (e) => {
       st.pointerGoal.set(wx(e.clientX), wy(e.clientY));
+      const r = hero && hero.getBoundingClientRect();
+      if (r && r.width && r.bottom > 0) st.bgGoal.set((e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height);
     }, { passive: true });
     document.addEventListener("pointerleave", () => st.pointerGoal.set(99, 99));
+    // A finger does not hover: let the hole close when it lifts.
+    const lift = (e) => { if (e.pointerType !== "mouse") st.pointerGoal.set(99, 99); };
+    window.addEventListener("pointerup", lift, { passive: true });
+    window.addEventListener("pointercancel", lift, { passive: true });
   }
 
   for (const slot of [heroSlot, footSlot]) {

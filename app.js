@@ -368,7 +368,6 @@ if (scene && !reduced) {
     { f: [106, 6], a: [0.84, 0.22], h: 64 },    // top-right serif
     { f: [57, 97], a: [0.5, 0.86], h: 84 },     // the vertex where the diagonals meet
     { f: [93, 95], a: [0.8, 0.78], h: 64 },     // right foot
-    { f: [17, 95], a: [0.2, 0.78], h: 64 },     // left foot
     { f: [58, 50], a: [0.5, 0.5], h: 135 },     // the whole letter again, behind the list
   ];
   const cam = { v: null, goal: null, raf: 0, last: 0 };
@@ -445,7 +444,9 @@ if (heroWrap && !reduced) {
   const set = () => {
     queued = 0;
     const r = heroWrap.getBoundingClientRect();
-    heroWrap.style.setProperty("--hp", Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight))).toFixed(3));
+    const hp = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
+    heroWrap.style.setProperty("--hp", hp.toFixed(3));
+    heroWrap.classList.toggle("deep", hp > 0.16);   // the opening text has faded: its links stop taking clicks
   };
   window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(set); }, { passive: true });
   window.addEventListener("resize", set);
