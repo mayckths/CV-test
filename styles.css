@@ -1,5 +1,5 @@
-/* World: a cream page built from stacked rounded panels. The hero is a vivid gradient panel with
-   Mayck's name and a glass M that bends it; dark panels carry the flagship work and the footer.
+/* World: a cream page built from stacked rounded panels. The hero is a plain blue panel with
+   Mayck's name, particle pyramids and glass words; dark panels carry the chat and the footer.
    Content arrives one step at a time. Particles only ever appear inside the hero and footer panels. */
 :root {
   color-scheme: light;
@@ -83,12 +83,8 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 
 /* Hero: gradient panel, name, glass M */
 .hero.panel { height: calc(100svh - 2 * var(--gap)); min-height: 520px; display: grid; place-items: center; color: var(--on-dark); }
-/* Deep blue with glares. This still copy shows first and without WebGL; scene3d.js draws a moving one over it. */
-.hero .panel-bg { background:
-  radial-gradient(22% 28% at 70% 20%, rgba(115, 199, 255, .36), transparent 72%),
-  radial-gradient(62% 78% at 20% 22%, rgba(26, 77, 242, .5), transparent 72%),
-  radial-gradient(64% 84% at 86% 86%, rgba(77, 56, 242, .36), transparent 72%),
-  linear-gradient(200deg, #08113a, #040820); }
+/* Plain blue. scene3d.js draws the same colour in WebGL so the glass words have something to bend. */
+.hero .panel-bg { background: #1b3ae6; }
 .hero .hero-name { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; pointer-events: none; }
 .hero-logo { width: min(82%, 1180px); height: auto; fill: #ffffff; transform: translateY(calc(var(--hp, 0) * 90vh)); }
 .hero.live .hero-logo { opacity: 0; }   /* drawn in WebGL instead, so the glass can bend it */
@@ -118,7 +114,20 @@ h1 em { font-style: normal; color: var(--accent); }
 .h1-lead { opacity: var(--lead, 1); }   /* the glass words land here, then this takes over */
 .statement { font: 500 clamp(26px, 3.9vw, 58px)/1.08 var(--display); letter-spacing: -0.03em; text-wrap: balance; }
 .stats { display: contents; }
-.stat dt { font: 600 clamp(72px, 15vw, 230px)/.9 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The stat numerals are drawn from the typeface's own outlines, with their bezier anchors and handles on show */
+.stat dt { font: 600 clamp(72px, 15vw, 230px)/.9 var(--display); }
+.bz-defs { position: absolute; }
+.bz-defs [id^="bz-p-"], .bz-defs [id^="bz-h-"] { vector-effect: non-scaling-stroke; }   /* hairlines stay hairlines; points scale with the numeral */
+.bz { display: block; width: calc(var(--w) * 1em); max-width: 100%; height: auto; margin-inline: auto; overflow: visible; }
+.bz-ink { fill: var(--ink); }
+.bz-c { fill: none; stroke: var(--accent); stroke-width: 1.5px; }
+.bz-h { stroke-width: 1.25px; }
+.bz-e { stroke-linecap: round; stroke-width: 22; }
+.bz-a { stroke-linecap: square; stroke-width: 30; }
+.bz-a2 { stroke-linecap: square; stroke-width: 19; stroke: var(--card); }
+@media (max-width: 700px) { .bz-c { stroke-width: 1px; } .bz-h { stroke-width: .75px; } .bz-e { stroke-width: 40; } .bz-a { stroke-width: 56; } .bz-a2 { stroke-width: 34; } }
+.scene.js .step .bz-c { opacity: 0; transition: opacity .3s ease; }
+.scene.js .step.is-on .bz-c { opacity: 1; transition: opacity .6s ease .35s; }
 .stat dd { margin-top: 18px; font: 500 clamp(18px, 2vw, 26px)/1.25 var(--display); color: var(--muted); max-width: 30ch; margin-inline: auto; }
 .step.creds { display: grid; gap: 18px; }
 .step.creds ul { display: grid; gap: clamp(14px, 2vw, 22px); }
@@ -172,20 +181,9 @@ h1 em { font-style: normal; color: var(--accent); }
 .link:hover::after { transform: translate(2px, -2px); }
 
 /* Dark surfaces share a spotlight that follows the cursor */
-.flagship, .ask-panel, .foot .panel-bg { --sx: 70%; --sy: 0%; background: radial-gradient(520px circle at var(--sx) var(--sy), rgba(255, 106, 69, .22), transparent 70%), var(--dark); }
+.ask-panel, .foot .panel-bg { --sx: 70%; --sy: 0%; background: radial-gradient(520px circle at var(--sx) var(--sy), rgba(255, 106, 69, .22), transparent 70%), var(--dark); }
 
 /* Flagship: Ask Novo and the live panel */
-.flagship { margin-top: 8px; border-radius: var(--r); color: var(--on-dark); padding: clamp(24px, 4.5vw, 64px); display: grid; gap: clamp(32px, 5vw, 64px); }
-.flagship ::selection { background: #ff6a45; color: var(--ink); }
-.flagship .flagship-case { padding: 0; gap: clamp(24px, 5vw, 80px); grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
-.flagship-case h3 { font-size: clamp(56px, 8vw, 128px); line-height: .88; }
-.flagship-case .meta, .flagship-case .year { color: var(--on-dark-muted); }
-.flagship-case .case-body > p:not(.meta):not(.result) { font-size: 18px; color: var(--on-dark-muted); }
-.flagship-case .result { border-top-color: var(--dark-line); color: var(--on-dark-muted); }
-.flagship-case .result strong { font-size: clamp(56px, 6vw, 92px); display: block; margin: 0 0 6px; color: #ff6a45; }
-.flagship-case .case-media { background: transparent; aspect-ratio: auto; padding: 0; overflow: visible; box-shadow: none; }
-.flagship-case .case-media::after { display: none; }
-.flagship .mock-note { color: var(--on-dark-muted); margin-top: 14px; text-align: center; }
 
 /* Ask panel */
 .ask-panel { margin: clamp(48px, 7vw, 104px) var(--gap) 0; border-radius: var(--r); color: var(--on-dark); padding: clamp(28px, 5vw, 72px) var(--pad); }
@@ -230,7 +228,7 @@ h1 em { font-style: normal; color: var(--accent); }
 .chat-tools { display: flex; justify-content: flex-end; margin: -6px 0 12px; }
 .chat-reset { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--on-dark-muted); background: none; border: 0; cursor: pointer; min-height: 32px; padding: 0 2px; text-decoration: underline; text-underline-offset: 3px; }
 .chat-reset:hover { color: var(--on-dark); }
-@media (max-width: 820px) { .ask, .flagship .flagship-case { grid-template-columns: 1fr; } }
+@media (max-width: 820px) { .ask { grid-template-columns: 1fr; } }
 @media (max-width: 560px) {
   .a-table thead { display: none; }
   .a-table tr { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; padding: 10px 0; border-top: 1px solid var(--dark-line); }
@@ -254,14 +252,14 @@ h1 em { font-style: normal; color: var(--accent); }
 .case-media.bleed img, .case-media.bleed video, .tile-media img, .tile-media video { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
 .case-media.cover img, .case-media.cover video, .tile-media img, .tile-media video { object-fit: cover; }
 .case-media::after, .tile-media::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px var(--frame-line); }
-/* The three other cases are cards that slide over one another */
+/* Cases are cards that slide over one another */
 .stack { margin-top: var(--gap); display: grid; gap: var(--gap); }
 .stack > .case {
   position: sticky; top: calc(84px + var(--i, 0) * 14px); min-height: min(74vh, 660px);
   background: var(--card); border-radius: var(--r); padding: clamp(24px, 4vw, 56px);
   box-shadow: inset 0 0 0 1px var(--line), 0 -24px 48px -36px rgba(31, 28, 28, .35);
 }
-.stack > .case:nth-child(1) { --i: 0; } .stack > .case:nth-child(2) { --i: 1; } .stack > .case:nth-child(3) { --i: 2; }
+.stack > .case:nth-child(1) { --i: 0; } .stack > .case:nth-child(2) { --i: 1; } .stack > .case:nth-child(3) { --i: 2; } .stack > .case:nth-child(4) { --i: 3; }
 .stack > .case:nth-child(even) .case-media { order: -1; }
 @media (max-width: 820px) {
   .case { grid-template-columns: 1fr; }
@@ -274,7 +272,18 @@ h1 em { font-style: normal; color: var(--accent); }
   --am-ink: #3d44e3; --am-faint: #c0c2f8; --am-in: 0;
   position: relative; width: min(100%, 440px); aspect-ratio: 800 / 1240; margin-inline: auto; container-type: inline-size;
   background: #ffffff; color: #15140f; border-radius: 22px; overflow: hidden;
-  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7);
+  box-shadow: 0 24px 48px -28px rgba(31, 28, 80, .45);
+}
+/* Inside a case card the assistant panel stands in the same 4:3 frame as the other projects */
+.askmark-frame { background: #eceefb; aspect-ratio: 1 / 1; max-height: min(62vh, 560px); }
+.askmark-frame .askmark { height: 100%; width: auto; border-radius: 14px; }
+.askmark-frame .mock-note { position: absolute; left: 16px; bottom: 12px; max-width: 12ch; line-height: 1.4; }
+.askmark-frame .am-replay { display: block; margin-left: 0; padding-left: 0; }
+@media (max-width: 820px) {
+  .askmark-frame { aspect-ratio: auto; max-height: none; }
+  .askmark-frame .askmark { height: auto; width: min(100%, 320px); }
+  .askmark-frame .mock-note { position: static; max-width: none; margin-top: 12px; text-align: center; }
+  .askmark-frame .am-replay { display: inline; margin-left: 10px; }
 }
 .am-art, .am-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .askmark .mk { fill: var(--am-ink); stroke: var(--am-ink); stroke-width: .3; stroke-linejoin: round; }
@@ -304,7 +313,7 @@ h1 em { font-style: normal; color: var(--accent); }
 .am-icons { display: flex; align-items: center; gap: 3cqw; color: #2b2b30; }
 .am-icons i { width: 7.6cqw; height: 7.6cqw; border-radius: 50%; background: #eef0f6; display: grid; place-items: center; color: #6b6d76; }
 .am-icons i svg { width: 3.6cqw; height: 3.6cqw; }
-.am-replay { margin-left: 10px; font: inherit; color: var(--on-dark); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; min-height: 32px; padding: 0 4px; }
+.am-replay { margin-left: 10px; font: inherit; color: var(--ink); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; min-height: 32px; padding: 0 4px; }
 .askmark.is-playing + .mock-note .am-replay { opacity: .5; }
 
 /* Huge grid */

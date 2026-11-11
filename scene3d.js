@@ -1,6 +1,5 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
-//   - hero background: deep blue with a few glares that drift, lean with the cursor and leave a soft
-//     light under it.
+//   - hero background: plain blue.
 //   - hero figure: two pyramids drawn in soft particles (an M) in front of the name logo. As the pinned
 //     hero scrolls, the logo slides away and the particles re-form as "I DESIGN", which crystallises into
 //     glass between two role labels. When the hero leaves, the words turn back into particles, travel
@@ -65,52 +64,20 @@ function init(font) {
   const pyrGeo = new THREE.ConeGeometry(PR, PH, 4, 1);
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
 
-  // --- Background: deep blue with a few glares that drift and lean with the cursor. Opaque, so the glass words bend it too. ---
+  // --- Background: plain blue, drawn here (not only in CSS) so the glass words have something to bend. ---
   const BG_Z = -1.6;
   const bgMat = new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false, alphaToCoverage: true,
-    uniforms: {
-      uTime: { value: 0 }, uAspect: { value: 1 }, uZoom: { value: 1 },
-      uPointer: { value: new THREE.Vector2(0.5, 0.5) }, uVel: { value: new THREE.Vector2() },
-      uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 },
-    },
-    vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    uniforms: { uColor: { value: new THREE.Color("#1b3ae6") }, uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 } },
+    vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
-      uniform float uTime, uAspect, uZoom, uRadius;
-      uniform vec2 uPointer, uVel; uniform vec4 uRect;
-      varying vec2 vUv;
-      float glare(vec2 p, vec2 at, float r) { vec2 d = p - at; return exp(-dot(d, d) / (r * r)); }
-      float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+      uniform vec3 uColor; uniform float uRadius; uniform vec4 uRect;
       void main() {
-        // Height is one unit; x runs from -A/2 to A/2 so the glares stay round on any panel.
-        float A = uAspect, t = uTime;
-        vec2 p = (vUv - 0.5) / uZoom; p.x *= A;
-        vec2 m = uPointer - 0.5; m.x *= A;
-        float k = mix(0.62, 1.0, smoothstep(0.5, 1.2, A));   // tighter glares on a narrow panel, so it stays dark
-        // Night blue, a touch lighter towards the top right.
-        vec3 col = mix(vec3(0.016, 0.031, 0.105), vec3(0.030, 0.066, 0.215), smoothstep(-0.7, 0.7, p.y + p.x * 0.22));
-        // Each glare sits at its own depth: nearer ones lean further away from the cursor.
-        vec2 g1 = vec2(-0.30 * A + sin(t * 0.13) * 0.05, 0.27 + cos(t * 0.11) * 0.04) - m * 0.10;
-        vec2 g2 = vec2(0.36 * A + cos(t * 0.09) * 0.05, -0.36 + sin(t * 0.12) * 0.04) - m * 0.06;
-        vec2 g3 = vec2(0.20 * A + sin(t * 0.17 + 1.0) * 0.03, 0.30 + cos(t * 0.15) * 0.03) - m * 0.18;
-        col += vec3(0.10, 0.30, 0.95) * glare(p, g1, 0.46 * k) * 0.50;
-        col += vec3(0.30, 0.22, 0.95) * glare(p, g2, 0.52 * k) * 0.36;
-        col += vec3(0.45, 0.78, 1.00) * glare(p, g3, 0.13 * k) * 0.42;
-        // A thin lens streak through the small bright one.
-        vec2 s = p - g3;
-        col += vec3(0.50, 0.74, 1.00) * exp(-s.y * s.y / 0.00035) * exp(-s.x * s.x / (0.22 * k * k * k)) * 0.20;
-        // A soft light under the cursor that trails when it moves.
-        vec2 lag = uVel; lag.x *= A;
-        col += vec3(0.20, 0.46, 1.00) * glare(p, m - lag * 1.6, 0.24 * k) * 0.22;
-        // Darker edges keep the labels on clear ground; a little grain stops the gradients banding.
-        col *= 1.0 - 0.30 * smoothstep(0.25, 0.85, length(vec2(p.x / A, p.y)) * 1.5);
-        col += (hash(gl_FragCoord.xy) - 0.5) * 0.014;
-        col = pow(max(col, 0.0), vec3(2.2));
         // Rounded corners of the panel.
         vec2 c = gl_FragCoord.xy - (uRect.xy + uRect.zw * 0.5);
         vec2 q = abs(c) - uRect.zw * 0.5 + uRadius;
         float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
-        gl_FragColor = vec4(col, clamp(0.5 - d, 0.0, 1.0));
+        gl_FragColor = vec4(uColor, clamp(0.5 - d, 0.0, 1.0));
         #include <colorspace_fragment>
       }`,
   });
@@ -120,7 +87,6 @@ function init(font) {
   bgPlane.frustumCulled = false;
   bgPlane.visible = false;
   scene.add(bgPlane);
-  const bgState = { p: new THREE.Vector2(0.5, 0.5), goal: new THREE.Vector2(0.5, 0.5), vel: new THREE.Vector2() };
 
   // --- The name, drawn into the scene so the glass can bend it ---
   const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap"), logoEl = document.querySelector(".hero-logo");
@@ -314,10 +280,8 @@ function init(font) {
       const fb = (10 - BG_Z) / 10, u = bgMat.uniforms;
       bgPlane.position.set(wx(hr.left + hr.width / 2) * fb, wy(hr.top + hr.height / 2) * fb, BG_Z);
       bgPlane.scale.set(wl(hr.width) * fb, wl(hr.height) * fb, 1);
-      u.uAspect.value = hr.width / hr.height;
       u.uRect.value.set(hr.left * view.dpr, (view.vh - hr.bottom) * view.dpr, hr.width * view.dpr, hr.height * view.dpr);
       u.uRadius.value = panelRadius * view.dpr;
-      bgState.rect = hr;
       const wr = heroWrap ? heroWrap.getBoundingClientRect() : hr;
       st.hp = reduced ? 0 : clamp01(-wr.top / Math.max(1, wr.height - view.vh));
       // Once the pin ends the panel scrolls away; q runs 0 to 1 over that exit.
@@ -403,17 +367,7 @@ function init(font) {
       for (const m of mats) m.opacity = g;            // how much of the surface has crystallised
     }
     namePlane.visible = isHero && nameReady && hp < 0.6;
-    // Background: follows the cursor with a little lag, and carries its speed as drag.
     bgPlane.visible = isHero;
-    if (bgPlane.visible) {
-      const u = bgMat.uniforms, before = bgState.p.clone();
-      bgState.p.lerp(bgState.goal, reduced ? 1 : 1 - Math.exp(-dt * 5));
-      if (dt > 0) bgState.vel.lerp(bgState.p.clone().sub(before).multiplyScalar(0.9 / Math.max(dt, 0.016)).clampLength(0, 0.09), 0.2);
-      u.uPointer.value.copy(bgState.p);
-      u.uVel.value.copy(reduced ? before.set(0, 0) : bgState.vel);
-      u.uTime.value = reduced ? 0 : t;
-      u.uZoom.value = 1.05 + hp * 0.14;
-    }
     // The name eases from the panel's own colour to cream as the panel opens.
 
     renderer.setScissorTest(false);
@@ -449,8 +403,6 @@ function init(font) {
   } else {
     window.addEventListener("pointermove", (e) => {
       st.pointerGoal.set(wx(e.clientX), wy(e.clientY));
-      const r = bgState.rect;
-      if (r && r.width) bgState.goal.set((e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height);
     }, { passive: true });
     document.addEventListener("pointerleave", () => st.pointerGoal.set(99, 99));
   }

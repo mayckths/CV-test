@@ -1,6 +1,6 @@
 ---
 name: Mayck Cuellar Portfolio
-description: A cream page of stacked rounded panels, a deep blue hero with soft glares and particle pyramids that become glass words, and content that arrives one step at a time.
+description: A cream page of stacked rounded panels, a plain blue hero with particle pyramids that become glass words, and content that arrives one step at a time.
 colors:
   cream: "#f5ebe3"
   card: "#fffaf5"
@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero is a deep blue panel with a few soft glares, drawn in WebGL so they drift slowly, lean with the cursor and leave a light under it, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero is a plain blue panel (#1b3ae6), also drawn in WebGL so the glass has something to bend, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -81,7 +81,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
-- **Hero background:** night blue (#040820 to #08113a) with three glares (blue, violet-blue, a small pale blue one with a thin lens streak) and darker edges so white type holds.
+- **Hero background:** one flat blue, #1b3ae6. No gradient, no glares.
 
 ### Secondary
 - **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
@@ -90,7 +90,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Cream** (cream) page, **Card** (card) for pinned and stacked cards and media frames, **Ink** (ink), **Muted** (muted), **Line** (line).
 
 ### Named Rules
-**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles and glares stay inside the hero and footer panels.
+**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles stay inside the hero and footer panels.
 
 ## Typography
 
@@ -106,11 +106,11 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ## Layout
 
-Panels sit 16px from the viewport edge and from each other. The hero panel fills the first screen. The intro is a pinned card: seven steps (headline, statement, four results, certifications), about 58vh of scroll each, with a progress rail and the two calls to action fixed at the bottom of the card. The flagship is a dark panel; the three other cases are sticky cards that stack. Below 820px cards stop stacking and everything is one column. With reduced motion or without scripts, the steps are simply laid out one after another.
+Panels sit 16px from the viewport edge and from each other. The hero panel fills the first screen. The intro is a pinned card: seven steps (headline, statement, four results, certifications), about 58vh of scroll each, with a progress rail and the two calls to action fixed at the bottom of the card. The four cases are sticky cards that stack; none is treated differently. Below 820px cards stop stacking and everything is one column. With reduced motion or without scripts, the steps are simply laid out one after another.
 
 ## Elevation & Depth
 
-Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the hero: the glares at different depths and the glass words.
+Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the hero's glass words.
 
 ## Shapes
 
@@ -129,6 +129,9 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 
 ### Blueprint
 - The serif M drawn as a real path: every vertex has an anchor, the bracketed serifs are true curves with their control handles, and guides mark the baseline, cap line and stems. It fades back behind the certifications so the list reads cleanly.
+
+### Bezier numerals
+- The four result figures are drawn from Bricolage Grotesque's own outlines (weight 600, optical size 96) with the path, anchor points and control handles shown in the accent colour, like a glyph in vector edit mode. The construction fades in once the step is in view.
 
 ### Stamps
 - 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover, focus or tap.
