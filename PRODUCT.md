@@ -37,7 +37,7 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 ## Brand Commitments
 
 - Visual world, chosen by Mayck in November 2026: a cream page of stacked rounded panels with dark text; a vivid red-orange to violet gradient hero with his name and a glass M (after guillaumezhu.com); content presented one step at a time with stacking cards and spotlit dark panels (after awakeagency.dev); soft particles for the M's second state (after ricardochance.com). Particles never sit behind text.
-- The M is the signature object: glass in the hero, particles in the footer.
+- Logo: the "Mayck Cuellar" wordmark (assets/logo.svg), used in the header and as the giant name in the hero. The hero object is the words "I DESIGN" in glass; the footer object is a stack of cubes in particles.
 - Keep the "Ask this portfolio" panel.
 - Keep current copy word for word, including the headline and case study text and numbers.
 - The animated M (assets/m.*) is Mayck's mark and may be restyled.
@@ -45,7 +45,7 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 
 ## Evidence on Hand
 
-- Impact numbers from the CV: Ask Novo live for 6,000+ businesses; +50% activation in the first month after the Days 0 to 30 redesign; 4+ design systems for Google surfaces; design cycle time from 1 month to 1 week.
+- Impact numbers from the CV: the fintech AI assistant used by 200,000+ businesses (figure supplied by Mayck in November 2026; the project is shown as "AI Assistant" and is not named after Novo); +50% activation in the first month after the Days 0 to 30 redesign; 4+ design systems for Google surfaces; design cycle time from 1 month to 1 week.
 - Recommendations from John Chang (Senior Product Designer, Netflix) and Amar Mehta (Program Management and Product Strategy), linked to LinkedIn.
 - Project media in assets/ taken from mayck.design (stills and looping videos converted from the original GIFs).
 - No real Ask Novo screenshots: the Ask Novo visual is a coded mock-up. Do not fabricate further metrics, clients or quotes.

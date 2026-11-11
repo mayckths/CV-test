@@ -1,6 +1,6 @@
-// Ask Novo mark: the Novo "n" splits into one leg, turns into the four-petal mark, thinks, then lands
-// as the avatar of an intro chat screen. Geometry and timing are ported from Mayck's "Ask Novo Logo
-// Evolution" Motion film; every frame is a pure function of time, so it can scrub, replay or rest.
+// AI assistant mark: one stroke turns into the four-petal mark, thinks, then lands in the header of the
+// assistant panel. Geometry and timing are ported from Mayck's own Motion film; every frame is a pure
+// function of time, so it can scrub, replay or rest.
 (() => {
 const root = document.querySelector("[data-askmark]");
 if (!root) return;
@@ -169,7 +169,8 @@ svg.appendChild(cam);
 art.appendChild(svg);
 
 // Panel time t (s) to film time F: the build plays faster than the film, the thinking spin at film speed.
-const MAP = [[0, -1.2], [2.0, 1.2], [2.6, 2.6], [4.2, 5.4], [9.0, 14.8], [12.9, 18.7]];
+// Starts once the single stroke stands alone, so no company wordmark is shown.
+const MAP = [[0, 5.9], [4.4, 14.8], [8.3, 18.7]];
 const MAIN = MAP[MAP.length - 1][0], LAND = 1.5, END = MAIN + LAND;
 function filmTime(t) {
   for (let i = 1; i < MAP.length; i++) {

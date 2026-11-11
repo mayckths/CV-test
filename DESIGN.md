@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero is a vivid gradient panel (red-orange into pink and violet) that opens on load, with Mayck's name set huge and a glass M turning in front of it, bending the letters behind it. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero is a vivid gradient panel (red-orange into pink and violet) that opens on load, with Mayck's wordmark logo set huge and the words "I DESIGN" in glass turning in front of it, bending the logo behind them. The hero stays pinned while the logo slides away and two roles (Product design, AI strategy & product growth) take its place. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -75,7 +75,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - Cream ground, dark ink, one red-orange accent. Text never sits on particles.
 - Rounded panels (28px) stacked with a 16px gap.
 - One message, one card, one project in focus at a time.
-- The M has two states: glass in the hero, particles in the footer and on press.
+- Glass words in the hero; soft particles on press and for the cube stack in the footer.
 
 ## Colors
 
@@ -99,7 +99,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 **Label/Mono Font:** Geist Mono
 
 ### Hierarchy
-- **Giant** (500, up to 290px, lowercase): the name in the hero.
+- **Logo:** the wordmark is the giant name in the hero and the mark in the header.
 - **Display** (600, clamp 38 to 96px, tight): the headline, section titles (up to 176px), the closing line.
 - **Figure** (600, up to 230px): one result per step in the intro.
 - **Body** (17px, 1.55), up to 54ch. **Label** (mono 12px, uppercase): tags, bracketed years.
@@ -118,11 +118,11 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 
 ## Components
 
-### Glass M (signature)
-- An extruded serif M with clear glass faces and pink sides, turning in front of the name. The name is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again, arrow keys nudge it.
+### Glass words (signature)
+- "I DESIGN" extruded with clear glass faces and pink sides, turning in front of the logo. The logo is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again, arrow keys nudge it.
 
-### Particle M
-- Soft round motes in white, lilac, violet and pink, denser along the letter's edges. They gather into the glass M on load and are the M itself on the dark footer panel. They step away from the cursor.
+### Particles
+- Soft round motes in white, lilac, violet and pink. They gather into the glass words on load and, on the dark footer panel, draw a two-by-two-by-two stack of cubes in an isometric view. They step away from the cursor.
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.

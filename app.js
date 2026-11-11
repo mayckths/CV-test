@@ -5,13 +5,13 @@ const ANSWERS = [
     q: "Give me the 30-second version",
     keys: ["30", "short", "summary", "who", "about", "bio", "intro", "tldr"],
     html: `
-      <p>Lead Product Designer with 10+ years in fintech and consumer products. At Novo I own core banking and growth journeys, set the design team's AI strategy, and shipped Ask Novo, the in-app AI assistant.</p>
+      <p>Lead Product Designer with 10+ years in fintech and consumer products. At Novo I own core banking and growth journeys, set the design team's AI strategy, and shipped the in-app AI assistant for a fintech.</p>
       <div class="a-stats">
-        <div><b>6,000+</b><span>businesses using Ask Novo</span></div>
+        <div><b>200,000+</b><span>businesses using the AI assistant</span></div>
         <div><b>+50%</b><span>activation, first month</span></div>
         <div><b>4+</b><span>design systems for Google</span></div>
       </div>
-      <p>Start with <a href="#ask-novo">Ask Novo</a> or the <a href="#onboarding">first time experience</a>.</p>`,
+      <p>Start with the <a href="#ai-assistant">AI Assistant</a> or the <a href="#onboarding">first time experience</a>.</p>`,
   },
   {
     id: "ai",
@@ -20,7 +20,7 @@ const ANSWERS = [
     html: `
       <p>Three things, from product to tooling:</p>
       <ul class="a-list">
-        <li><a href="#ask-novo">Ask Novo</a>: an AI assistant live for 6,000+ businesses, with error, retry and trust states designed for non-deterministic answers.</li>
+        <li><a href="#ai-assistant">AI Assistant</a>: a fintech assistant live for 200,000+ businesses, with error, retry and trust states designed for non-deterministic answers.</li>
         <li><a href="#componetizer">Figma DS Componetizer</a>: a plugin on a custom Claude skill that conforms mockups to the design system.</li>
         <li>The team's AI workflow: Figma MCP and Code Connect linking the design system to the codebase, with a review step for accuracy and compliance.</li>
       </ul>`,
@@ -34,7 +34,7 @@ const ANSWERS = [
         <thead><tr><th>Project</th><th>What changed</th><th>Result</th></tr></thead>
         <tbody>
           <tr><td><a href="#onboarding">First time experience</a></td><td>Activation rate, first month</td><td>+50%</td></tr>
-          <tr><td><a href="#ask-novo">Ask Novo</a></td><td>Businesses with the assistant live</td><td>6,000+</td></tr>
+          <tr><td><a href="#ai-assistant">AI Assistant</a></td><td>Businesses with the assistant live</td><td>200,000+</td></tr>
           <tr><td>AI workflow</td><td>Design cycle time</td><td>1 mo → 1 wk</td></tr>
           <tr><td>Google at Huge</td><td>Components migrated to Figma</td><td>200+</td></tr>
         </tbody>
@@ -59,7 +59,7 @@ const ANSWERS = [
     keys: ["client", "compan", "google", "logitech", "huge", "novo", "accuweather", "bizagi", "experience", "career", "job"],
     html: `
       <ul class="a-list">
-        <li><b>Novo</b> (2023 to now): business banking. Onboarding, payments, lending, payroll and Ask Novo.</li>
+        <li><b>Novo</b> (2023 to now): business banking. Onboarding, payments, lending, payroll and the AI assistant.</li>
         <li><b>Logitech G</b> (2023): 0 to 1 audio mixing platform, patent pending.</li>
         <li><b>Huge</b> (2019 to 2023): Google (Wear OS, Google TV, Chrome, Built-in Auto) and AccuWeather.</li>
         <li><b>Bizagi</b> (2015 to 2019): product and marketing design plus front-end build.</li>
@@ -166,37 +166,10 @@ if (reduced) {
   loops.forEach((v) => { v.removeAttribute("autoplay"); v.pause(); });
 }
 
-// A visible pause control for each looping clip (the M badge is the logo, so it stays decorative).
-const PAUSE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M5 3v10M11 3v10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
-const PLAY = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M5 3.5v9l8-4.5z" fill="currentColor"/></svg>';
-const userPaused = new WeakSet();
-loops.forEach((v) => {
-  if (v.classList.contains("m-badge")) return;
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = "media-toggle";
-  const sync = () => {
-    const paused = userPaused.has(v) || reduced;
-    b.innerHTML = paused ? PLAY : PAUSE;
-    b.setAttribute("aria-label", paused ? "Play animation" : "Pause animation");
-    b.setAttribute("aria-pressed", String(paused));
-  };
-  b.addEventListener("click", () => {
-    if (userPaused.has(v) || v.paused) { userPaused.delete(v); v.play().catch(() => {}); }
-    else { userPaused.add(v); v.pause(); }
-    const paused = v.paused || userPaused.has(v);
-    b.innerHTML = paused ? PLAY : PAUSE;
-    b.setAttribute("aria-label", paused ? "Play animation" : "Pause animation");
-    b.setAttribute("aria-pressed", String(paused));
-  });
-  sync();
-  v.parentElement.appendChild(b);
-});
-
 if (!reduced && "IntersectionObserver" in window) {
   const vo = new IntersectionObserver((entries) => {
     entries.forEach(({ target: v, isIntersecting }) => {
-      if (isIntersecting && !userPaused.has(v)) { v.play().catch(() => {}); } else { v.pause(); }
+      if (isIntersecting) { v.play().catch(() => {}); } else { v.pause(); }
     });
   }, { rootMargin: "120px 0px" });
   loops.forEach((v) => vo.observe(v));
@@ -293,7 +266,7 @@ if (scene && !reduced) {
 
 // Spotlight: dark surfaces carry a soft light that follows the cursor.
 if (!reduced && matchMedia("(pointer: fine)").matches) {
-  document.querySelectorAll(".flagship, .foot.panel").forEach((el) => {
+  document.querySelectorAll(".flagship, .ask-panel, .foot.panel").forEach((el) => {
     const target = el.classList.contains("foot") ? el.querySelector(".panel-bg") : el;
     el.addEventListener("pointermove", (e) => {
       const r = el.getBoundingClientRect();
@@ -301,4 +274,18 @@ if (!reduced && matchMedia("(pointer: fine)").matches) {
       target.style.setProperty("--sy", `${e.clientY - r.top}px`);
     });
   });
+}
+
+// Pinned hero: publish how far through it the page has scrolled, for the logo, the roles and the gradient.
+const heroWrap = document.querySelector(".hero-wrap");
+if (heroWrap && !reduced) {
+  let queued = 0;
+  const set = () => {
+    queued = 0;
+    const r = heroWrap.getBoundingClientRect();
+    heroWrap.style.setProperty("--hp", Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight))).toFixed(3));
+  };
+  window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(set); }, { passive: true });
+  window.addEventListener("resize", set);
+  set();
 }
