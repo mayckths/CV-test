@@ -157,7 +157,7 @@ function init(font) {
   pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uTilt: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
     uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 },
   };
@@ -165,7 +165,7 @@ function init(font) {
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand, uHole;
+      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand, uHole;
       uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
       varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
@@ -175,15 +175,22 @@ function init(font) {
         vec3 words = mix(position, aLead, uLand);
         vec3 t = mix(aPyr, words, uMorph) * uScale;
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
+        float ct = cos(uTilt), sn = sin(uTilt);                    // then pitched, so the figure can face the cursor
+        turned = vec3(turned.x, turned.y * ct - turned.z * sn, turned.y * sn + turned.z * ct);
         vec3 formed = turned + uCenter;
         vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
         vec3 p = mix(loose, formed, m);
         // The cursor is an attractor: motes within reach are drawn in toward it and circle it, and go home when it leaves.
+        // Wherever it is on the panel, every mote also leans a little toward it, each by its own amount.
+        // None of this applies while the motes are landing on the headline.
+        float free = 1.0 - uLand;
         vec2 d = p.xy - uPointer;
-        float f = smoothstep(uHole, 0.0, length(d));
-        f *= f;
-        d *= 1.0 - f * 0.78;
+        float len = length(d);
+        float f = smoothstep(uHole, 0.0, len);
+        f *= f * free;
+        float lean = 0.085 / (1.0 + len * len * 0.12) * (0.4 + 1.2 * fract(aSeed * 5.3)) * free;
+        d *= 1.0 - f * 0.78 - lean * (1.0 - f);
         float a = f * (1.2 + 0.6 * sin(uTime * 0.9 + aSeed * 31.0));
         p.xy = uPointer + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
@@ -259,7 +266,7 @@ function init(font) {
   const footPanel = document.querySelector(".foot.panel");
   // The pyramids are simply there on load (form and intro start complete); only the hero's text has an entrance.
   const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: 1, mode: null, hp: 0, q: 0,
-    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2(),
+    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2(), idle: 1,
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
   const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < view.vh;
@@ -340,8 +347,16 @@ function init(font) {
     }
     const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
-    const settle = 1 - SS(q, 0, 0.7);                       // the words stop turning as they land
-    const sway = (reduced ? -0.35 : Math.sin(t * 0.5) * 0.5) * settle;
+    const settle = 1 - SS(q, 0, 0.3);                       // the words face front well before they land on the sentence
+    // The figure faces the cursor: yaw and pitch follow where the pointer is. With no cursor (touch, or it has
+    // left the page) it faces front and sways a little more on its own.
+    const ctr = uniforms.uCenter.value, away = st.pointer.x > 50, ease = reduced ? 1 : 1 - Math.exp(-dt * 5);
+    st.idle += ((away ? 1 : 0) - st.idle) * ease;
+    const clampTo = THREE.MathUtils.clamp;
+    st.tilt.y += ((away ? 0 : clampTo((st.pointer.x - ctr.x) / (view.w * 0.5), -1, 1) * 0.62) - st.tilt.y) * ease;
+    st.tilt.x += ((away ? 0 : clampTo((st.pointer.y - ctr.y) / (view.h * 0.5), -1, 1) * -0.36) - st.tilt.x) * ease;
+    const tx = reduced ? 0 : st.tilt.x * settle, ty = reduced ? 0 : st.tilt.y * settle;
+    const sway = (reduced ? -0.35 : Math.sin(t * 0.5) * (0.06 + 0.3 * st.idle)) * settle;
     // Scrolling turns the pyramids, and they come back to the front as they become the words.
     const turn = isHero && !reduced ? Math.sin(Math.min(1, hp / 0.36) * Math.PI) * 1.1 : 0;
     const angle = sway + st.spin * settle + turn;
@@ -350,7 +365,8 @@ function init(font) {
     const wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.02, 0.22));   // back to motes for the trip down
     const formed = SS(st.form, 0.8, 1);
     uniforms.uForm.value = st.form;
-    uniforms.uAngle.value = angle;
+    uniforms.uAngle.value = angle + ty;
+    uniforms.uTilt.value = tx;
     uniforms.uTime.value = reduced ? 0 : t;
     uniforms.uSolid.value = isHero ? wordSolid : 0;
     uniforms.uMorph.value = isHero ? SS(hp, 0.1, 0.36) : 0;      // pyramids re-form as the words; the footer keeps the pyramids
@@ -360,9 +376,6 @@ function init(font) {
     uniforms.uHole.value = wl(mobile ? 120 : 190);   // the attractor's reach
     if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
-    st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;
-    st.tilt.y += ((st.pointer.x - c.x) * 0.04 - st.tilt.y) * 0.08;
-    const tx = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.x, -0.18, 0.18) * settle, ty = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.y, -0.18, 0.18) * settle;
     for (const [group, solid, mats] of [[mGroup, wordSolid, [faceMat, sideMat]]]) {
       const g = isHero ? solid * formed : 0;
       group.visible = g > 0.001;

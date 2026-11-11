@@ -8,7 +8,7 @@ const ANSWERS = [
       <p>Lead Product Designer with 10+ years in fintech and consumer products. At Novo I own core banking and growth journeys, set the design team's AI strategy, and shipped the in-app AI assistant for a fintech.</p>
       <div class="a-stats">
         <div><b>200,000+</b><span>businesses using the AI assistant and Design System</span></div>
-        <div><b>+242%</b><span>unique users on referrals, week after the update</span></div>
+        <div><b>+242%</b><span>unique users on referrals after redesign</span></div>
         <div><b>4+</b><span>design systems for Google</span></div>
       </div>
       <p>Start with the <a href="#ai-assistant">AI Assistant</a> or the <a href="#onboarding">first time experience</a>.</p>`,
@@ -34,7 +34,7 @@ const ANSWERS = [
         <thead><tr><th>Project</th><th>What changed</th><th>Result</th></tr></thead>
         <tbody>
           <tr><td><a href="#onboarding">First time experience</a></td><td>Activation rate, first month</td><td>+50%</td></tr>
-          <tr><td>Referrals dashboard</td><td>Unique users, week after the UI/UX update</td><td>+242%</td></tr>
+          <tr><td>Referrals dashboard</td><td>Unique users after redesign</td><td>+242%</td></tr>
           <tr><td><a href="#ai-assistant">AI Assistant</a></td><td>Businesses with the assistant live</td><td>200,000+</td></tr>
           <tr><td>AI workflow</td><td>Design cycle time</td><td>1 mo → 1 wk</td></tr>
           <tr><td>Google at Huge</td><td>Components migrated to Figma</td><td>200+</td></tr>
@@ -520,6 +520,7 @@ if (spot && typeof spot.showModal === "function") {
     const img = $(".spot-art img"), film = $(".spot-art video"), thumbs = $(".spot-thumbs");
     const show = (k) => {
       img.src = items[k].src; img.alt = items[k].alt;
+      $(".spot-art-bg").style.backgroundImage = `url("${items[k].src}")`;   // a soft copy fills the space around it
       thumbs.querySelectorAll("button").forEach((b, n) => b.setAttribute("aria-current", String(n === k)));
     };
     film.pause(); film.hidden = !s.dataset.video; img.hidden = !!s.dataset.video;
