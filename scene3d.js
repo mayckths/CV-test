@@ -347,9 +347,9 @@ function init(font) {
     }
     const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
-    // The words come to rest facing front before the pinned hero lets go, so nothing turns while they travel
-    // down and become the sentence.
-    const settle = (isHero ? 1 - SS(hp, 0.8, 0.98) : 1) * (1 - SS(q, 0, 0.3));
+    // Only the pyramids face the cursor and sway. By the time the words have formed they face front and stay
+    // still, through the rest of the pinned hero and all the way down into the sentence.
+    const settle = (isHero ? 1 - SS(hp, 0.26, 0.4) : 1) * (1 - SS(q, 0, 0.3));
     // The figure faces the cursor: yaw and pitch follow where the pointer is. With no cursor (touch, or it has
     // left the page) it faces front and sways a little more on its own.
     const ctr = uniforms.uCenter.value, away = st.pointer.x > 50, ease = reduced ? 1 : 1 - Math.exp(-dt * 5);

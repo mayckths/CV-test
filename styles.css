@@ -482,7 +482,7 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 /* Footer: a panel in the hero's blue where the pyramids return in particles */
 .foot.panel { color: var(--on-dark); padding: clamp(28px, 5vw, 72px) var(--pad) 28px; }
 .foot-main { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 80px); align-items: center; max-width: var(--max); margin-inline: auto; }
-.big { font: 600 clamp(44px, 6.6vw, 104px)/.92 var(--display); letter-spacing: -0.045em; max-width: 13ch; text-wrap: balance; }
+.big { font: 600 clamp(40px, 5.6vw, 88px)/.94 var(--display); letter-spacing: -0.045em; max-width: 15ch; text-wrap: balance; }
 .foot-links { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 36px; }
 .foot .pill { min-height: 50px; padding: 0 26px; font-size: 15px; background: var(--on-dark); color: var(--ink); border-color: var(--on-dark); }
 .foot .pill:hover { background: #ff6a45; border-color: #ff6a45; }
