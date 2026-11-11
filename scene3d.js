@@ -179,10 +179,13 @@ function init(font) {
         vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
         vec3 p = mix(loose, formed, m);
-        // The cursor opens a clean round hole: motes inside it are moved out to its rim, and return when it leaves.
+        // The cursor is an attractor: motes within reach are drawn in toward it and circle it, and go home when it leaves.
         vec2 d = p.xy - uPointer;
-        float len = length(d);
-        p.xy += normalize(d + 1e-4) * max(0.0, uHole - len) * 0.94;
+        float f = smoothstep(uHole, 0.0, length(d));
+        f *= f;
+        d *= 1.0 - f * 0.78;
+        float a = f * (1.2 + 0.6 * sin(uTime * 0.9 + aSeed * 31.0));
+        p.xy = uPointer + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
         // When the glass M is standing, the motes inside it shrink away.
@@ -254,7 +257,8 @@ function init(font) {
   }
   const showLead = (v) => { const s = v.toFixed(2); if (s !== leadShown) { leadShown = s; document.documentElement.style.setProperty("--lead", s); } };
   const footPanel = document.querySelector(".foot.panel");
-  const st = { form: 0, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: reduced ? 1 : 0, mode: null, hp: 0, q: 0,
+  // The pyramids are simply there on load (form and intro start complete); only the hero's text has an entrance.
+  const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: 1, mode: null, hp: 0, q: 0,
     pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2(),
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -353,7 +357,7 @@ function init(font) {
     uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
     uniforms.uFade.value = 1 - SS(q, 0.86, 1);
     uniforms.uPointer.value.copy(st.pointer);
-    uniforms.uHole.value = wl(mobile ? 46 : 68);
+    uniforms.uHole.value = wl(mobile ? 120 : 190);   // the attractor's reach
     if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
     st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;

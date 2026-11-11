@@ -28,7 +28,7 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 
 ## Capabilities and Constraints
 
-- Sections: hero with role, impact numbers and certifications; scripted "Ask this portfolio" panel; selected work (Ask Novo, Figma DS Componetizer, Novo first time experience, Logitech G); Google and AccuWeather work at Huge; experience; LinkedIn recommendations; 3D and digital art; contact.
+- Sections: hero with role, impact numbers and certifications; scripted "Ask this portfolio" panel; selected work (AI Assistant, Design System Componetizer, Novo first time experience, Logitech G); Google and AccuWeather work at Huge; experience; LinkedIn recommendations; 3D and digital art; contact.
 - The chat panel is scripted with hand-written answers and must say so; no AI model or API key runs on the page.
 - Contact is LinkedIn only; no email or phone on the public page.
 - Light (cream) page with a dark chat panel and blue hero and footer panels; no separate dark theme.

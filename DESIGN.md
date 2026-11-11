@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero follows ricardochance.com: a dark indigo ground with a slow haze of the blue (#22126d) and faint stars, the name and an italic serif headline top left, two actions bottom left, a short account bottom right, and two pyramids drawn in fine soft particles in the middle. The haze leans toward the cursor and a soft light trails it; the cursor opens a clean round hole in the pyramids, and scrolling turns them. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero follows ricardochance.com: a dark indigo ground with a slow haze of the blue (#22126d) and faint stars, the name and an italic serif headline top left, a short account bottom right (no buttons), and two pyramids drawn in fine soft particles in the middle. The pyramids are simply there on load; only the text has an entrance. The haze leans toward the cursor and a soft light trails it; the cursor attracts the pyramids' particles, and scrolling turns them. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -104,7 +104,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Logo:** two triangles side by side (▲▲), the same M the pyramids draw. It is the header mark and the favicon. The wordmark is no longer shown.
 - **Display** (600, clamp 38 to 96px, tight): the headline, section titles (up to 176px), the closing line.
 - **Figure** (600, up to 230px): one result per step in the intro.
-- **Body** (17px, 1.55), up to 54ch. **Label** (mono 12px, uppercase): tags, bracketed years.
+- **Body** (17px, 1.55), up to 54ch. **Label** (mono 12px, uppercase): tags, and the company each project was made for. Project years are not shown. In Experience the years are set large in the display face, without brackets.
 
 ## Layout
 
@@ -128,7 +128,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - The drawing is one quiet lavender. It ends at once if the page is scrolled, and with reduced motion the text simply fades in.
 
 ### Particles
-- Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The cursor opens a round hole in them: motes inside it move out to its rim and return when it leaves.
+- Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The cursor is an attractor: motes within reach are drawn in toward it and circle it, and go home when it leaves.
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.
@@ -137,7 +137,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - The serif M drawn as a real path: every vertex has an anchor, the bracketed serifs are true curves with their control handles, and guides mark the baseline, cap line and stems. It reacts to the scroll: a camera travels around the letter, each step framing another corner (top-left serif, top-right serif, the vertex, each foot), and the node in focus is picked out in the accent colour with its handles, like a selected point. Every anchor and handle can be dragged to reshape the letter (an anchor carries its handles, a handle bends its curve), with a hint that becomes "Reset shape" once something has moved. It fades back behind the education and certifications list so the list reads cleanly.
 
 ### Stamps
-- 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover, focus or tap.
+- 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover or focus. A click (or Enter) opens a spotlight: the page darkens around a card with the render, tools, year, the piece's story in Mayck's words, and previous/next. The card opens and closes with the transitions.dev modal transition.
 
 ### Spotlight
 - Dark panels carry a soft coral light at the cursor.
@@ -150,7 +150,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 ### Do:
 - **Do** keep one idea per step and per card.
 - **Do** keep text on clear ground.
-- **Do** put years in square brackets in the label row.
+- **Do** show the company a project was made for in its label row, not the year.
 
 ### Don't:
 - **Don't** let particles or gradients run behind body text.

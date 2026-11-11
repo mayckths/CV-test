@@ -21,7 +21,7 @@ const ANSWERS = [
       <p>Three things, from product to tooling:</p>
       <ul class="a-list">
         <li><a href="#ai-assistant">AI Assistant</a>: a fintech assistant live for 200,000+ businesses, with error, retry and trust states designed for non-deterministic answers.</li>
-        <li><a href="#componetizer">Figma DS Componetizer</a>: a plugin on a custom Claude skill that conforms mockups to the design system.</li>
+        <li><a href="#componetizer">Design System Componetizer</a>: a tool on a custom Claude skill that creates screens in VS Code, Claude artifacts and Figma from one connected design system.</li>
         <li>The team's AI workflow: Figma MCP and Code Connect linking the design system to the codebase, with a review step for accuracy and compliance.</li>
       </ul>`,
   },
@@ -60,7 +60,7 @@ const ANSWERS = [
     html: `
       <ul class="a-list">
         <li><b>Novo</b> (2023 to now): business banking. Onboarding, payments, lending, payroll and the AI assistant.</li>
-        <li><b>Logitech G</b> (2023): 0 to 1 audio mixing platform, patent pending.</li>
+        <li><b>Logitech G</b> (2023): 0 to 1 audio mixing platform, now a live product.</li>
         <li><b>Huge</b> (2019 to 2023): Google (Wear OS, Google TV, Chrome, Built-in Auto) and AccuWeather.</li>
         <li><b>Bizagi</b> (2015 to 2019): product and marketing design plus front-end build.</li>
       </ul>
@@ -444,9 +444,7 @@ if (heroWrap && !reduced) {
   const set = () => {
     queued = 0;
     const r = heroWrap.getBoundingClientRect();
-    const hp = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
-    heroWrap.style.setProperty("--hp", hp.toFixed(3));
-    heroWrap.classList.toggle("deep", hp > 0.16);   // the opening text has faded: its links stop taking clicks
+    heroWrap.style.setProperty("--hp", Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight))).toFixed(3));
   };
   window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(set); }, { passive: true });
   window.addEventListener("resize", set);
@@ -454,7 +452,7 @@ if (heroWrap && !reduced) {
 }
 
 // Stamps: each 3D piece prints as an ordered-dither pixel image in one ink, and resolves into the render
-// when you hover, focus or tap it.
+// when you hover or focus it. A click opens its story (see the spotlight below).
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 function dither(canvas, img, cells, ink) {
   const w = canvas.width, tmp = dither.tmp || (dither.tmp = document.createElement("canvas"));
@@ -501,5 +499,61 @@ document.querySelectorAll(".stamp").forEach((stamp) => {
   stamp.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") set(false); });
   stamp.addEventListener("focus", () => set(true));
   stamp.addEventListener("blur", () => set(false));
-  stamp.addEventListener("click", (e) => { if (e.pointerType === "touch" || e.detail === 0) set(!stamp.classList.contains("clear")); });
 });
+
+// Art spotlight: a stamp opens a dialog with the piece and its story. It opens and closes with the
+// transitions.dev modal transition (scale up from centre, a softer and quicker scale down).
+const spot = document.querySelector(".spot");
+if (spot && typeof spot.showModal === "function") {
+  const card = spot.querySelector(".spot-card"), stamps = [...document.querySelectorAll(".stamp")];
+  const $ = (sel) => spot.querySelector(sel);
+  const closeMs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--modal-close-dur")) || 150;
+  let index = 0, opener = null, closing = 0;
+  const fill = (i) => {
+    index = (i + stamps.length) % stamps.length;
+    const s = stamps[index], q = (sel) => s.querySelector(sel);
+    spot.style.setProperty("--ink", getComputedStyle(s).getPropertyValue("--ink"));
+    $(".spot-art img").src = q("img").currentSrc || q("img").src;
+    $(".spot-art img").alt = q("img").alt;
+    $(".spot-meta").textContent = q(".stamp-meta").textContent;
+    $("#spot-title").textContent = q(".stamp-title").textContent;
+    $(".spot-year").textContent = q(".stamp-year").textContent;
+    $(".spot-text").textContent = q(".stamp-info").textContent;
+    const link = $(".spot-link");
+    link.hidden = !s.dataset.link;
+    if (s.dataset.link) { link.href = s.dataset.link; link.textContent = s.dataset.linkLabel; }
+    $(".spot-count").textContent = `${index + 1} / ${stamps.length}`;
+  };
+  const open = (i, from) => {
+    clearTimeout(closing);
+    opener = from;
+    fill(i);
+    if (!spot.open) spot.showModal();
+    document.documentElement.classList.add("spot-open");
+    card.classList.remove("is-closing");
+    void card.offsetWidth;                       // so the open transition starts from the resting scale
+    card.classList.add("is-open");
+    spot.classList.add("is-open");
+  };
+  const close = () => {
+    card.classList.remove("is-open");
+    card.classList.add("is-closing");
+    spot.classList.remove("is-open");
+    closing = setTimeout(() => {
+      card.classList.remove("is-closing");
+      spot.close();
+      document.documentElement.classList.remove("spot-open");
+      if (opener) opener.focus({ preventScroll: true });
+    }, closeMs);
+  };
+  spot.addEventListener("cancel", (e) => { e.preventDefault(); close(); });                 // Escape
+  spot.addEventListener("click", (e) => { if (e.target === spot || e.target.classList.contains("spot-shade")) close(); });
+  $(".spot-close").addEventListener("click", close);
+  $(".spot-prev").addEventListener("click", () => fill(index - 1));
+  $(".spot-next").addEventListener("click", () => fill(index + 1));
+  spot.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") fill(index - 1); else if (e.key === "ArrowRight") fill(index + 1); });
+  stamps.forEach((s, i) => {
+    s.addEventListener("click", () => open(i, s));
+    s.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(i, s); } });
+  });
+}
