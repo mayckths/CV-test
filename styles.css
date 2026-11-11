@@ -13,6 +13,8 @@
   --accent-text: #c42d0c;    /* small text on cream */
   --violet: #8a4be0;
   --dark: #1f1c1c;
+  --blue: #22126d;
+  --blue-bg: radial-gradient(110% 120% at 30% 0%, #3a25a8, #22126d 50%, #190c52);
   --on-dark: #f5ebe3;
   --on-dark-muted: #cdbfb6;
   --dark-line: rgba(245, 235, 227, .16);
@@ -56,7 +58,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
   background: rgba(31, 28, 28, .78); backdrop-filter: blur(14px); color: var(--on-dark); max-width: calc(100% - 2 * var(--gap));
 }
 .mark { display: inline-flex; align-items: center; padding: 0 8px 0 10px; }
-.mark .logo { height: 30px; width: auto; fill: currentColor; transition: opacity .2s; }
+.mark .logo { height: 15px; width: auto; fill: currentColor; transition: opacity .2s; }
 .mark:hover .logo { opacity: .75; }
 .top nav { display: flex; align-items: center; gap: clamp(10px, 1.8vw, 22px); font-size: 14px; }
 .top nav a { text-decoration: none; white-space: nowrap; }
@@ -71,7 +73,8 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .pill.solid:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .top .pill { background: var(--on-dark); color: var(--ink); border-color: var(--on-dark); min-height: 36px; padding: 0 16px; }
 .top .pill:hover { background: #ff6a45; border-color: #ff6a45; color: var(--ink); }
-@media (max-width: 560px) { .mark { padding: 0 2px 0 6px; } .mark .logo { height: 24px; } .top nav { font-size: 13px; gap: 10px; } .top .pill { padding: 0 12px; } }
+@media (max-width: 360px) { .top nav a[href="#about"] { display: none; } }
+@media (max-width: 560px) { .mark { padding: 0 2px 0 6px; } .mark .logo { height: 13px; } .top nav { font-size: 13px; gap: 10px; } .top .pill { padding: 0 12px; } }
 
 /* Small label roles */
 .meta, .count, .when, .disclosure, .fine, .creds-label, .mock-note { font: 500 12px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -81,13 +84,10 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .panel-bg { position: absolute; inset: 0; z-index: 0; border-radius: inherit; overflow: hidden; }
 .panel > :not(.panel-bg) { position: relative; z-index: 2; }
 
-/* Hero: gradient panel, name, glass M */
+/* Hero: blue panel, particle pyramids, then glass words */
 .hero.panel { height: calc(100svh - 2 * var(--gap)); min-height: 520px; display: grid; place-items: center; color: var(--on-dark); }
-/* Plain blue. scene3d.js draws the same colour in WebGL so the glass words have something to bend. */
-.hero .panel-bg { background: #22126d; }
-.hero .hero-name { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; pointer-events: none; }
-.hero-logo { width: min(82%, 1180px); height: auto; fill: #ffffff; transform: translateY(calc(var(--hp, 0) * 90vh)); }
-.hero.live .hero-logo { opacity: 0; }   /* drawn in WebGL instead, so the glass can bend it */
+/* Deep blue with a soft light from the top left. scene3d.js draws the same gradient in WebGL so the glass words have something to bend. */
+.hero .panel-bg { background: var(--blue-bg); }
 /* Second part of the pinned hero: two roles either side of the turning words */
 .hero-roles { position: absolute; inset: 0; text-shadow: 0 2px 24px rgba(20, 8, 30, .45); pointer-events: none; opacity: clamp(0, calc((var(--hp, 0) - .42) * 4), 1); }
 .hero-role { position: absolute; font: 500 clamp(26px, 4.4vw, 68px)/.95 var(--display); letter-spacing: -0.035em; color: #ffffff; max-width: 9em; }
@@ -100,7 +100,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .pixel-slot { display: block; aspect-ratio: 1; padding: 0; border: 0; border-radius: 24px; background: none; cursor: grab; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
 .pixel-slot.grabbing { cursor: grabbing; }
 .hero .pixel-slot { width: min(66%, 900px); aspect-ratio: 4.6 / 1; }
-@media (max-width: 820px) { .hero .pixel-slot { width: 86%; } .hero-logo { width: 88%; } .hero-role:nth-child(1) { right: auto; left: 8%; top: 60%; text-align: left; } .hero-role:nth-child(2) { left: auto; right: 8%; bottom: 60%; text-align: right; } }
+@media (max-width: 820px) { .hero .pixel-slot { width: 86%; } .hero-role:nth-child(1) { right: auto; left: 8%; top: 60%; text-align: left; } .hero-role:nth-child(2) { left: auto; right: 8%; bottom: 60%; text-align: right; } }
 .hero-foot { opacity: clamp(0, calc(1 - var(--hp, 0) * 4), 1); position: absolute; left: 18px; right: 18px; bottom: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .hero-foot p { font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 999px; background: rgba(31, 28, 28, .5); backdrop-filter: blur(10px); }
 
@@ -189,6 +189,8 @@ h1 em { font-style: normal; color: var(--accent); }
 
 /* Dark surfaces share a spotlight that follows the cursor */
 .ask-panel, .foot .panel-bg { --sx: 70%; --sy: 0%; background: radial-gradient(520px circle at var(--sx) var(--sy), rgba(255, 106, 69, .22), transparent 70%), var(--dark); }
+/* The footer shares the hero's blue; its cursor light is a paler blue */
+.foot .panel-bg { background: radial-gradient(520px circle at var(--sx) var(--sy), rgba(126, 108, 255, .3), transparent 70%), var(--blue-bg); }
 
 /* Flagship: Ask Novo and the live panel */
 
@@ -386,7 +388,7 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .stamp-year { margin-top: 10px; font: 500 clamp(22px, 2.6vw, 38px)/1 var(--display); letter-spacing: -0.04em; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (max-width: 980px) { .stamps { grid-template-columns: 1fr 1fr; row-gap: 28px; } }
 
-/* Footer: dark panel where the M returns in particles */
+/* Footer: a panel in the hero's blue where the pyramids return in particles */
 .foot.panel { color: var(--on-dark); padding: clamp(28px, 5vw, 72px) var(--pad) 28px; }
 .foot-main { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 80px); align-items: center; max-width: var(--max); margin-inline: auto; }
 .big { font: 600 clamp(48px, 8vw, 128px)/.9 var(--display); letter-spacing: -0.045em; max-width: 11ch; text-wrap: balance; }

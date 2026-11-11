@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero is a plain deep indigo-blue panel (#22126d), also drawn in WebGL so the glass has something to bend, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero is a deep indigo-blue panel (#22126d) with a soft light from the top left, also drawn in WebGL so the glass has something to bend, with two pyramids drawn in particles standing alone as an M. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -81,7 +81,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
-- **Hero background:** one flat deep indigo-blue, #22126d. No gradient, no glares.
+- **Hero and footer background:** deep indigo-blue #22126d with a small radial gradient (#3a25a8 at the top left, through #22126d, to #190c52). The footer adds a pale blue light under the cursor.
 
 ### Secondary
 - **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
@@ -90,7 +90,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Cream** (cream) page, **Card** (card) for pinned and stacked cards and media frames, **Ink** (ink), **Muted** (muted), **Line** (line).
 
 ### Named Rules
-**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles stay inside the hero and footer panels.
+**The Clear Ground Rule.** Body text sits only on cream, card, the dark chat panel or the blue panels. Particles stay inside the hero and footer panels.
 
 ## Typography
 
@@ -99,7 +99,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 **Label/Mono Font:** Geist Mono
 
 ### Hierarchy
-- **Logo:** the wordmark is the giant name in the hero and the mark in the header.
+- **Logo:** two triangles side by side (▲▲), the same M the pyramids draw. It is the header mark and the favicon. The wordmark is no longer shown.
 - **Display** (600, clamp 38 to 96px, tight): the headline, section titles (up to 176px), the closing line.
 - **Figure** (600, up to 230px): one result per step in the intro.
 - **Body** (17px, 1.55), up to 54ch. **Label** (mono 12px, uppercase): tags, bracketed years.
@@ -119,10 +119,10 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 ## Components
 
 ### Particle pyramids and glass words (signature)
-- Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning in front of the logo. The logo and the background are drawn in WebGL so the glass can bend them, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
+- Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning on the panel. The background is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
 
 ### Particles
-- Soft round motes in white, lilac, violet and pink. They draw the pyramids on load, gather into the glass words on scroll and, on the dark footer panel, draw the two pyramids again. They step away from the cursor.
+- Soft round motes in white, lilac, violet and pink. They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. They step away from the cursor.
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.

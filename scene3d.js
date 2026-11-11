@@ -1,7 +1,7 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
-//   - hero background: plain blue.
-//   - hero figure: two pyramids drawn in soft particles (an M) in front of the name logo. As the pinned
-//     hero scrolls, the logo slides away and the particles re-form as "I DESIGN", which crystallises into
+//   - hero background: deep blue with a soft gradient.
+//   - hero figure: two pyramids drawn in soft particles (an M), alone on the panel. As the pinned
+//     hero scrolls, the particles re-form as "I DESIGN", which crystallises into
 //     glass between two role labels. When the hero leaves, the words turn back into particles, travel
 //     down and reshape into the "I design" that opens the headline.
 //   - footer: the particle pyramids again, on the dark panel.
@@ -43,7 +43,7 @@ function init(font) {
   mGeo.computeBoundingBox();
   const textW = mGeo.boundingBox.max.x - mGeo.boundingBox.min.x;
   mGeo.scale(1 / textW, 1 / textW, 1 / textW);   // width 1, so the slot's width sets its size
-  // Near-clear glass, so the name stays bright through it; a low red glow gives the faces their own colour.
+  // Near-clear glass; a low red glow gives the faces their own colour.
   const faceMat = new THREE.MeshPhysicalMaterial({
     color: "#fff1ec", roughness: 0.04, metalness: 0, transmission: 1, thickness: 0.14, ior: 1.5,
     dispersion: 14, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.7,
@@ -64,20 +64,31 @@ function init(font) {
   const pyrGeo = new THREE.ConeGeometry(PR, PH, 4, 1);
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
 
-  // --- Background: plain blue, drawn here (not only in CSS) so the glass words have something to bend. ---
+  // --- Background: deep blue with a soft light from the top left, the same gradient as the CSS one under it.
+  //     Drawn here too so the glass words have something to bend. ---
   const BG_Z = -1.6;
+  const srgb = (hex) => { const c = new THREE.Color(hex); return new THREE.Vector3(...c.convertLinearToSRGB().toArray()); };   // keep CSS values as written
   const bgMat = new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false, alphaToCoverage: true,
-    uniforms: { uColor: { value: new THREE.Color("#22126d") }, uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 } },
+    uniforms: {
+      uA: { value: srgb("#3a25a8") }, uB: { value: srgb("#22126d") }, uC: { value: srgb("#190c52") },
+      uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 },
+    },
     vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
-      uniform vec3 uColor; uniform float uRadius; uniform vec4 uRect;
+      uniform vec3 uA, uB, uC; uniform float uRadius; uniform vec4 uRect;
       void main() {
+        // radial-gradient(110% 120% at 30% 0%, A, B 50%, C)
+        vec2 uv = (gl_FragCoord.xy - uRect.xy) / uRect.zw;
+        float t = length((uv - vec2(0.3, 1.0)) / vec2(1.1, 1.2));
+        vec3 col = t < 0.5 ? mix(uA, uB, t * 2.0) : mix(uB, uC, min(1.0, t * 2.0 - 1.0));
+        col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;   // no banding
+        col = pow(max(col, 0.0), vec3(2.2));
         // Rounded corners of the panel.
         vec2 c = gl_FragCoord.xy - (uRect.xy + uRect.zw * 0.5);
         vec2 q = abs(c) - uRect.zw * 0.5 + uRadius;
         float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
-        gl_FragColor = vec4(uColor, clamp(0.5 - d, 0.0, 1.0));
+        gl_FragColor = vec4(col, clamp(0.5 - d, 0.0, 1.0));
         #include <colorspace_fragment>
       }`,
   });
@@ -88,39 +99,7 @@ function init(font) {
   bgPlane.visible = false;
   scene.add(bgPlane);
 
-  // --- The name, drawn into the scene so the glass can bend it ---
-  const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap"), logoEl = document.querySelector(".hero-logo");
-  const nameCanvas = document.createElement("canvas");
-  const nameTex = new THREE.CanvasTexture(nameCanvas);
-  nameTex.colorSpace = THREE.SRGBColorSpace;
-  nameTex.anisotropy = 4;
-  const nameMat = new THREE.MeshBasicMaterial({ map: nameTex, alphaTest: 0.5, alphaToCoverage: true, color: "#ffffff", toneMapped: false });
-  const nameGeo = new THREE.PlaneGeometry(1, 1);
-  const namePlane = new THREE.Mesh(nameGeo, nameMat);
-  namePlane.visible = false;
-  scene.add(namePlane);
-  const NAME_Z = -0.9;
-  let nameRect = null, nameReady = false;
-  function drawName() {
-    if (!logoEl) return;
-    const r = logoEl.getBoundingClientRect(), pr = hero.getBoundingClientRect();
-    if (r.width < 2) return;
-    nameRect = { x: r.left - pr.left, y: r.top - pr.top, w: r.width, h: r.height };
-    const k = Math.min(2400 / r.width, 3);
-    const cw = Math.round(r.width * k), ch = Math.round(r.height * k);
-    // A texture's storage is fixed once uploaded, so a new size needs a fresh upload.
-    if (cw !== nameCanvas.width || ch !== nameCanvas.height) nameTex.dispose();
-    nameCanvas.width = cw;
-    nameCanvas.height = ch;
-    const ctx = nameCanvas.getContext("2d");
-    ctx.clearRect(0, 0, cw, ch);
-    ctx.fillStyle = "#fff";
-    ctx.scale(cw / 198, ch / 96);   // the logo's own viewBox
-    logoEl.querySelectorAll("path").forEach((p) => ctx.fill(new Path2D(p.getAttribute("d"))));
-    nameTex.needsUpdate = true;
-    nameReady = true;
-    hero.classList.add("live");
-  }
+  const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap");
 
   // --- Particles: motes that hold the pyramids, the words, or the headline lettering ---
   const COUNT = mobile ? 2800 : 5600;
@@ -220,7 +199,6 @@ function init(font) {
     view.h = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     view.w = view.h * camera.aspect;
     uniforms.uPx.value = (view.vh * view.dpr) / view.h;
-    drawName();
   }
   const wx = (px) => (px / view.vw - 0.5) * view.w, wy = (px) => (0.5 - px / view.vh) * view.h, wl = (px) => px * (view.h / view.vh);
 
@@ -295,13 +273,6 @@ function init(font) {
         uniforms.uMote.value += (wl(lr.height * 0.55) - uniforms.uMote.value) * e;
         renderer.setScissor(0, 0, view.vw, view.vh);
       }
-      if (nameReady && nameRect) {
-        const f = (10 - NAME_Z) / 10;
-        // While the hero is pinned, the logo slides down and out so the role labels can take its place.
-        const drop = THREE.MathUtils.smoothstep(st.hp, 0.02, 0.5) * hr.height * 0.95;
-        namePlane.position.set(wx(hr.left + nameRect.x + nameRect.w / 2) * f, wy(hr.top + nameRect.y + nameRect.h / 2 + drop) * f, NAME_Z);
-        namePlane.scale.set(wl(nameRect.w) * f, wl(nameRect.h) * f, 1);
-      }
       return reduced || !lead ? clamp01(1 - (-hr.top / (hr.height * 0.6))) : 1;
     }
     return clamp01((view.vh * 0.98 - slot.top) / (view.vh * 0.45));
@@ -366,9 +337,7 @@ function init(font) {
       group.rotation.set(tx, angle + ty, 0);
       for (const m of mats) m.opacity = g;            // how much of the surface has crystallised
     }
-    namePlane.visible = isHero && nameReady && hp < 0.6;
     bgPlane.visible = isHero;
-    // The name eases from the panel's own colour to cream as the panel opens.
 
     renderer.setScissorTest(false);
     renderer.clear();
@@ -391,8 +360,8 @@ function init(font) {
   sampleLead();
   wake();
   canvas.classList.add("ready");
-  // The name is drawn with the page's display face, so redraw once that face has loaded.
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawName(); sampleLead(); wake(); });
+  // The headline is sampled in the page's display face, so sample again once that face has loaded.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { sampleLead(); wake(); });
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { resize(); sampleLead(); wake(); }, 120); });
@@ -450,7 +419,7 @@ function init(font) {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [mGeo, pyrGeo, faceMat, sideMat, bgGeo, bgMat, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
+    [mGeo, pyrGeo, faceMat, sideMat, bgGeo, bgMat, pGeo, pMat].forEach((d) => d.dispose());
     renderer.dispose();
   });
 }

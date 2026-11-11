@@ -31,13 +31,13 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 - Sections: hero with role, impact numbers and certifications; scripted "Ask this portfolio" panel; selected work (Ask Novo, Figma DS Componetizer, Novo first time experience, Logitech G); Google and AccuWeather work at Huge; experience; LinkedIn recommendations; 3D and digital art; contact.
 - The chat panel is scripted with hand-written answers and must say so; no AI model or API key runs on the page.
 - Contact is LinkedIn only; no email or phone on the public page.
-- Light (cream) page with dark panels; no separate dark theme.
+- Light (cream) page with a dark chat panel and blue hero and footer panels; no separate dark theme.
 - Case studies link out to live sites and videos; there are no in-depth case study pages yet.
 
 ## Brand Commitments
 
-- Visual world, chosen by Mayck in November 2026: a cream page of stacked rounded panels with dark text; a plain blue hero with his name and two particle pyramids standing as an M, which become the glass words "I DESIGN" on scroll (after guillaumezhu.com); content presented one step at a time with stacking cards and spotlit dark panels (after awakeagency.dev); soft particles for the pyramids and transitions (after ricardochance.com); 3D pieces shown as one-ink pixel stamps that resolve into the render (after andreas.vision). Particles never sit behind text.
-- Logo: the "Mayck Cuellar" wordmark (assets/logo.svg), used in the header and as the giant name in the hero. The hero object is two particle pyramids that become the words "I DESIGN" in glass; the footer object is the same two pyramids in particles.
+- Visual world, chosen by Mayck in November 2026: a cream page of stacked rounded panels with dark text; a deep blue hero with two particle pyramids standing as an M, which become the glass words "I DESIGN" on scroll (after guillaumezhu.com); content presented one step at a time with stacking cards and spotlit dark panels (after awakeagency.dev); soft particles for the pyramids and transitions (after ricardochance.com); 3D pieces shown as one-ink pixel stamps that resolve into the render (after andreas.vision). Particles never sit behind text.
+- Logo: two triangles (▲▲), used in the header and as the favicon. Navigation follows the page order: About, Work, Experience, Art, Ask. The hero object is two particle pyramids that become the words "I DESIGN" in glass; the footer object is the same two pyramids in particles.
 - Keep the "Ask this portfolio" panel.
 - Keep current copy word for word, including the headline and case study text and numbers.
 - The animated M (assets/m.*) is Mayck's mark and may be restyled.

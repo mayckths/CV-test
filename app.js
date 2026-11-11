@@ -181,18 +181,21 @@ const onScroll = () => header.classList.toggle("scrolled", window.scrollY > 8);
 window.addEventListener("scroll", onScroll, { passive: true });
 onScroll();
 const navLinks = [...document.querySelectorAll('.top nav a[href^="#"]:not(.pill)')];
-if ("IntersectionObserver" in window) {
-  const so = new IntersectionObserver((entries) => {
-    entries.forEach((en) => {
-      if (!en.isIntersecting) return;
-      navLinks.forEach((a) => {
-        if (a.getAttribute("href") === `#${en.target.id}`) a.setAttribute("aria-current", "true");
-        else a.removeAttribute("aria-current");
-      });
-    });
-  }, { rootMargin: "-45% 0px -50% 0px" });
-  navLinks.forEach((a) => { const t = document.querySelector(a.getAttribute("href")); if (t) so.observe(t); });
-  so.observe(document.getElementById("intro"));
+{
+  // The current link is the last section whose top has passed a line 40% down the screen,
+  // so it follows the page's order and never skips a short section.
+  const targets = navLinks.map((a) => ({ a, el: document.querySelector(a.getAttribute("href")) })).filter((t) => t.el);
+  let queued = 0;
+  const mark = () => {
+    queued = 0;
+    const line = window.innerHeight * 0.4;
+    let now = null;
+    targets.forEach((t) => { if (t.el.getBoundingClientRect().top <= line) now = t; });
+    targets.forEach((t) => { if (t === now) t.a.setAttribute("aria-current", "true"); else t.a.removeAttribute("aria-current"); });
+  };
+  window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(mark); }, { passive: true });
+  window.addEventListener("resize", mark);
+  mark();
 }
 
 // Scroll reading: the closing line and the recommendations light up word by word as they scroll in.
