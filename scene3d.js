@@ -347,7 +347,9 @@ function init(font) {
     }
     const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
-    const settle = 1 - SS(q, 0, 0.3);                       // the words face front well before they land on the sentence
+    // The words come to rest facing front before the pinned hero lets go, so nothing turns while they travel
+    // down and become the sentence.
+    const settle = (isHero ? 1 - SS(hp, 0.8, 0.98) : 1) * (1 - SS(q, 0, 0.3));
     // The figure faces the cursor: yaw and pitch follow where the pointer is. With no cursor (touch, or it has
     // left the page) it faces front and sways a little more on its own.
     const ctr = uniforms.uCenter.value, away = st.pointer.x > 50, ease = reduced ? 1 : 1 - Math.exp(-dt * 5);
@@ -357,8 +359,8 @@ function init(font) {
     st.tilt.x += ((away ? 0 : clampTo((st.pointer.y - ctr.y) / (view.h * 0.5), -1, 1) * -0.36) - st.tilt.x) * ease;
     const tx = reduced ? 0 : st.tilt.x * settle, ty = reduced ? 0 : st.tilt.y * settle;
     const sway = (reduced ? -0.35 : Math.sin(t * 0.5) * (0.06 + 0.3 * st.idle)) * settle;
-    // Scrolling turns the pyramids, and they come back to the front as they become the words.
-    const turn = isHero && !reduced ? Math.sin(Math.min(1, hp / 0.36) * Math.PI) * 1.1 : 0;
+    // One full turn to the right carries the pyramids into the words, so the words arrive from the same side.
+    const turn = isHero && !reduced ? SS(hp, 0, 0.4) * Math.PI * 2 : 0;
     const angle = sway + st.spin * settle + turn;
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
@@ -386,6 +388,11 @@ function init(font) {
       for (const m of mats) m.opacity = g;            // how much of the surface has crystallised
     }
     bgPlane.visible = isHero;
+    if (heroSlot) {
+      const words = isHero && hp > 0.28;
+      if (words !== st.words) { st.words = words; heroSlot.classList.toggle("still", words); }
+      if (words) st.vel *= Math.exp(-dt * 8);          // any spin left from a drag dies out
+    }
     if (isHero) {
       // The background's light trails the cursor slowly, like something heavy.
       st.bgPointer.lerp(st.bgGoal, reduced ? 1 : 1 - Math.exp(-dt * 1.6));
@@ -441,7 +448,10 @@ function init(font) {
     if (!slot) continue;
     slot.classList.add("live");
     let downX = 0, lastX = 0, lastT = 0, moved = 0;
+    // Only the pyramids are a toy: once they have become the words, the hero figure ignores drags, presses and keys.
+    const asWords = () => slot === heroSlot && st.mode === "hero" && st.hp > 0.28;
     slot.addEventListener("pointerdown", (e) => {
+      if (asWords()) return;
       st.dragging = true; moved = 0; downX = lastX = e.clientX; lastT = performance.now(); st.vel = 0;
       slot.setPointerCapture(e.pointerId);
       slot.classList.add("grabbing");
@@ -464,13 +474,14 @@ function init(font) {
     slot.addEventListener("pointerup", release);
     slot.addEventListener("pointercancel", release);
     slot.addEventListener("click", () => {
+      if (asWords()) { moved = 0; return; }
       if (moved < 6) {
         if (reduced) { st.spin += Math.PI / 4; still(); } else { st.burstT = 0; st.vel += 5; }
       }
       moved = 0;
     });
     slot.addEventListener("keydown", (e) => {
-      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if ((e.key !== "ArrowLeft" && e.key !== "ArrowRight") || asWords()) return;
       e.preventDefault();
       const dir = e.key === "ArrowRight" ? 1 : -1;
       if (reduced) { st.spin += dir * Math.PI / 8; still(); } else st.vel += dir * 5;
