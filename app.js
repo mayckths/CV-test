@@ -547,6 +547,7 @@ if (spot && typeof spot.showModal === "function") {
     link.hidden = !s.dataset.link;
     if (s.dataset.link) { link.href = s.dataset.link; link.textContent = s.dataset.linkLabel; }
     $(".spot-count").textContent = `${index + 1} / ${stamps.length}`;
+    $(".spot-body").scrollTop = 0;   // a new piece starts at its title, even if the last story was scrolled
   };
   const open = (i, from) => {
     clearTimeout(closing);
