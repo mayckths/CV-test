@@ -85,7 +85,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Hero text:** #f1eefd, with trailing words and secondary text dimmed. Particles are white, lilac, violet, pink and peach; the glass words keep their red glow.
 
 ### Secondary
-- **Blue panel** (blue-panel): the hero, the chat and the footer are all the same blue, with **On dark** and **On dark muted** text (one cool white, never the cream) and **Accent bright** (accent-bright) for accents. The glass "I DESIGN" is the accent orange itself, with darker sides.
+- **Blue panel** (blue-panel): the hero, the chat and the footer are all the same blue, with **On dark** and **On dark muted** text (one cool white, never the cream) and **Accent bright** (accent-bright) for accents. The glass "I DESIGN" is the page's beige (#f5ebe3), with slightly darker sides.
 - **Ink sets for the art stamps** (violet, red-orange, magenta, amber) are the only other colours, and stay inside the Art section.
 
 ### Neutral

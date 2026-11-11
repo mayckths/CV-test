@@ -43,13 +43,10 @@ function init(font) {
   mGeo.computeBoundingBox();
   const textW = mGeo.boundingBox.max.x - mGeo.boundingBox.min.x;
   mGeo.scale(1 / textW, 1 / textW, 1 / textW);   // width 1, so the slot's width sets its size
-  // The words are the portfolio's own orange (the accent, #f23a14): a deep, mostly solid glass with darker sides.
-  const faceMat = new THREE.MeshPhysicalMaterial({
-    color: "#f23a14", roughness: 0.16, metalness: 0, transmission: 0.18, thickness: 0.14, ior: 1.5,
-    dispersion: 3, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 0.45,
-    emissive: "#f23a14", emissiveIntensity: 0.32,
-  });
-  const sideMat = new THREE.MeshPhysicalMaterial({ color: "#a8250a", roughness: 0.3, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.12, envMapIntensity: 0.6 });
+  // The words are the page's own beige (#f5ebe3). The fronts are unlit, so they are exactly that colour whatever
+  // the lighting does; the sides are lit and slightly darker, which is what gives the letters their depth.
+  const faceMat = new THREE.MeshBasicMaterial({ color: "#f5ebe3", toneMapped: false });
+  const sideMat = new THREE.MeshPhysicalMaterial({ color: "#bfae9f", roughness: 0.35, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.14, envMapIntensity: 0.5 });
   // The solids never grow: they crystallise in place. A hashed dissolve lets grains of glass appear across
   // the surface where the motes have settled, until the whole figure is solid.
   for (const m of [faceMat, sideMat]) m.alphaHash = true;
