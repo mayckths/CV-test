@@ -31,13 +31,13 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 - Sections: hero with role, impact numbers and certifications; scripted "Ask this portfolio" panel; selected work (Ask Novo, Figma DS Componetizer, Novo first time experience, Logitech G); Google and AccuWeather work at Huge; experience; LinkedIn recommendations; 3D and digital art; contact.
 - The chat panel is scripted with hand-written answers and must say so; no AI model or API key runs on the page.
 - Contact is LinkedIn only; no email or phone on the public page.
-- Dark theme only.
+- Light (cream) page with dark panels; no separate dark theme.
 - Case studies link out to live sites and videos; there are no in-depth case study pages yet.
 
 ## Brand Commitments
 
-- Visual world: "pixels as matter", chosen by Mayck in November 2026 with ricardochance.com as the main reference and mats.zip and andreas.vision as supporting ones: a dark indigo ground, a WebGL field of square pixels, and his M built from pixels. It replaced the construction-sheet look.
-- The pixel M (hero and footer) is the signature object; the earlier soft sculpture and glass orb were retired with this revamp.
+- Visual world, chosen by Mayck in November 2026: a cream page of stacked rounded panels with dark text; a vivid red-orange to violet gradient hero with his name and a glass M (after guillaumezhu.com); content presented one step at a time with stacking cards and spotlit dark panels (after awakeagency.dev); soft particles for the M's second state (after ricardochance.com). Particles never sit behind text.
+- The M is the signature object: glass in the hero, particles in the footer.
 - Keep the "Ask this portfolio" panel.
 - Keep current copy word for word, including the headline and case study text and numbers.
 - The animated M (assets/m.*) is Mayck's mark and may be restyled.

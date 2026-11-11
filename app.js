@@ -224,7 +224,7 @@ if ("IntersectionObserver" in window) {
 
 // Scroll reading: the closing line and the recommendations light up word by word as they scroll in.
 if (!reduced) {
-  const lines = [...document.querySelectorAll(".statement, .foot .big, .quotes blockquote")].map((el) => {
+  const lines = [...document.querySelectorAll(".foot .big, .quotes blockquote")].map((el) => {
     const words = el.textContent.trim().split(/\s+/);
     el.textContent = "";
     el.classList.add("read");
@@ -256,12 +256,49 @@ if (!reduced) {
 
 // Project media leans toward the cursor.
 if (!reduced && matchMedia("(pointer: fine)").matches) {
-  document.querySelectorAll(".work > .case .case-media").forEach((el) => {
+  document.querySelectorAll(".stack .case-media").forEach((el) => {
     el.addEventListener("pointermove", (e) => {
       const r = el.getBoundingClientRect();
       const ry = ((e.clientX - r.left) / r.width - 0.5) * 12, rx = -((e.clientY - r.top) / r.height - 0.5) * 10;
       el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(1.02)`;
     });
     el.addEventListener("pointerleave", () => { el.style.transform = ""; });
+  });
+}
+
+// Intro scene: the card stays pinned and shows one message per scroll step; the blueprint draws as you go.
+const scene = document.querySelector(".scene");
+if (scene && !reduced) {
+  const steps = [...scene.querySelectorAll(".step")];
+  const rail = scene.querySelector(".scene-rail");
+  const ticks = steps.map(() => rail.appendChild(document.createElement("i")));
+  scene.style.setProperty("--n", steps.length);
+  scene.classList.add("js");
+  let current = -1, queued = 0;
+  const update = () => {
+    queued = 0;
+    const r = scene.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
+    const idx = Math.min(steps.length - 1, Math.floor(p * steps.length));
+    scene.style.setProperty("--draw", Math.min(1, 0.12 + p * 1.1).toFixed(3));
+    if (idx === current) return;
+    current = idx;
+    steps.forEach((s, i) => { s.classList.toggle("is-on", i === idx); s.classList.toggle("is-past", i < idx); });
+    ticks.forEach((t, i) => t.classList.toggle("on", i === idx));
+  };
+  window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(update); }, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+}
+
+// Spotlight: dark surfaces carry a soft light that follows the cursor.
+if (!reduced && matchMedia("(pointer: fine)").matches) {
+  document.querySelectorAll(".flagship, .foot.panel").forEach((el) => {
+    const target = el.classList.contains("foot") ? el.querySelector(".panel-bg") : el;
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect();
+      target.style.setProperty("--sx", `${e.clientX - r.left}px`);
+      target.style.setProperty("--sy", `${e.clientY - r.top}px`);
+    });
   });
 }

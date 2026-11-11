@@ -1,10 +1,11 @@
-// Pixel field. One WebGL layer behind the page, made only of square pixels (small cubes):
-//   - Mayck's serif M is built from pixels and turns slowly in a slot in the hero;
-//   - as the page scrolls the pixels leave the M and become a drifting field behind the content;
-//   - at the footer they gather into the M again;
-//   - everywhere, pixels move away from the cursor and show their colour when disturbed.
-// The M's slots are real buttons in the layout: drag to turn, press to scatter, arrow keys to nudge.
+// The M, in two states, on one WebGL layer that only ever draws inside a panel (hero or footer):
+//   - glass: an extruded serif M that turns in front of Mayck's name and bends the letters behind it,
+//     with colour fringes (hero);
+//   - particles: soft round motes that hold the same M. They gather into it on load, scatter when it
+//     is pressed, and are the M itself on the dark footer panel. They step away from the cursor.
+// The M's slots are real buttons: drag to turn, press to scatter, arrow keys to nudge.
 import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const canvas = document.getElementById("stage");
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -22,9 +23,17 @@ function init() {
   camera.position.z = 10;
   const mobile = window.innerWidth < 820;
 
-  // The M's outline (same letterform as the GIF: hairline left stem, heavy diagonal, heavy right stem).
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+  const key = new THREE.DirectionalLight(0xffffff, 2.4);
+  key.position.set(-3, 4, 6);
+  scene.add(key);
+
+  // The M's outline (the letterform of the GIF: hairline left stem, heavy diagonal, heavy right stem).
   const OUTLINE = [[3,0],[31,0],[31,4],[20,5],[20,94],[53,0],[58,0],[84,86.7],[84,5],[73,4],[73,0],[113,0],[113,4],
-    [102,5],[102,95],[113,96],[113,100],[83,100],[63,33.3],[41,100],[3,100],[3,96],[14,95],[14,5],[3,4]];
+    [102,5],[102,95],[113,96],[113,100],[83,100],[63,33.3],[41,100],[3,100],[3,96],[14,95],[14,5],[3,4]]
+    .map(([x, y]) => [(x - 58) / 100, (y - 50) / 100]);
   const inside = (x, y) => {
     let hit = false;
     for (let i = 0, j = OUTLINE.length - 1; i < OUTLINE.length; j = i++) {
@@ -33,160 +42,257 @@ function init() {
     }
     return hit;
   };
+  const DEPTH = 0.16;
 
-  // Sample the M on a pixel grid, a few layers deep, so it reads as a solid letter when it turns.
-  const ROWS = mobile ? 26 : 34, LAYERS = mobile ? 4 : 5, CELL = 1 / ROWS;
-  const cells = [];
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < Math.ceil(1.16 * ROWS); c++) {
-      const x = (c + 0.5) * CELL - 0.58, y = (r + 0.5) * CELL - 0.5;
-      if (!inside(x * 100 + 58, y * 100 + 50)) continue;
-      for (let l = 0; l < LAYERS; l++) cells.push([x, y, (l - (LAYERS - 1) / 2) * CELL]);
+  // --- Glass M ---
+  const shape = new THREE.Shape(OUTLINE.map(([x, y]) => new THREE.Vector2(x, y)));
+  const mGeo = new THREE.ExtrudeGeometry(shape, { depth: DEPTH, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.006, bevelSegments: 3, curveSegments: 1 });
+  mGeo.translate(0, 0, -DEPTH / 2);
+  // Near-clear glass, so the name stays bright through it; a low red glow gives the faces their own colour.
+  const faceMat = new THREE.MeshPhysicalMaterial({
+    color: "#fff1ec", roughness: 0.04, metalness: 0, transmission: 1, thickness: 0.14, ior: 1.5,
+    dispersion: 14, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.7,
+    emissive: "#ff2610", emissiveIntensity: 0.95,
+  });
+  const sideMat = new THREE.MeshPhysicalMaterial({ color: "#e76ae0", roughness: 0.22, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 1.2 });
+  const glass = new THREE.Mesh(mGeo, [faceMat, sideMat]);
+  const mGroup = new THREE.Group();
+  mGroup.add(glass);
+  scene.add(mGroup);
+
+  // --- The name, drawn into the scene so the glass can bend it ---
+  const hero = document.querySelector(".hero.panel"), nameEl = document.querySelector(".hero-name");
+  const nameCanvas = document.createElement("canvas");
+  const nameTex = new THREE.CanvasTexture(nameCanvas);
+  nameTex.colorSpace = THREE.SRGBColorSpace;
+  nameTex.anisotropy = 4;
+  const nameMat = new THREE.MeshBasicMaterial({ map: nameTex, alphaTest: 0.5, alphaToCoverage: true, color: "#f3e7e0", toneMapped: false });
+  const nameGeo = new THREE.PlaneGeometry(1, 1);
+  const namePlane = new THREE.Mesh(nameGeo, nameMat);
+  namePlane.visible = false;
+  scene.add(namePlane);
+  const NAME_Z = -0.9;
+  let nameRect = null, nameReady = false;
+  function drawName() {
+    if (!nameEl) return;
+    const spans = [...nameEl.children];
+    const rs = spans.map((s) => s.getBoundingClientRect());
+    const left = Math.min(...rs.map((r) => r.left)), right = Math.max(...rs.map((r) => r.right));
+    const top = Math.min(...rs.map((r) => r.top)), bottom = Math.max(...rs.map((r) => r.bottom));
+    const w = right - left, h = bottom - top;
+    if (w < 2) return;
+    const pr = hero.getBoundingClientRect();
+    // Kept relative to the panel, so the plane follows the panel while it scrolls.
+    nameRect = { x: left - pr.left, y: top - pr.top, w, h };
+    const k = Math.min(2400 / w, 3);
+    const cw = Math.round(w * k), ch = Math.round(h * k);
+    // A texture's storage is fixed once uploaded, so a new size needs a fresh upload.
+    if (cw !== nameCanvas.width || ch !== nameCanvas.height) nameTex.dispose();
+    nameCanvas.width = cw;
+    nameCanvas.height = ch;
+    const ctx = nameCanvas.getContext("2d");
+    const cs = getComputedStyle(nameEl);
+    ctx.clearRect(0, 0, nameCanvas.width, nameCanvas.height);
+    ctx.fillStyle = "#fff";
+    ctx.font = `${cs.fontWeight} ${parseFloat(cs.fontSize) * k}px ${cs.fontFamily}`;
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${parseFloat(cs.letterSpacing) * k || 0}px`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    spans.forEach((s, i) => {
+      const r = rs[i], text = s.textContent.toLowerCase();
+      const m = ctx.measureText(text);
+      const asc = m.fontBoundingBoxAscent || parseFloat(cs.fontSize) * k * 0.9, desc = m.fontBoundingBoxDescent || parseFloat(cs.fontSize) * k * 0.25;
+      const baseline = (r.top - top) * k + (r.height * k) * (asc / (asc + desc));
+      ctx.fillText(text, ((r.left + r.right) / 2 - left) * k, baseline);
+    });
+    nameTex.needsUpdate = true;
+    nameReady = true;
+    hero.classList.add("live");
+  }
+
+  // --- Particles: soft motes holding the same M, with its edges drawn a little denser ---
+  const COUNT = mobile ? 2600 : 5200;
+  const segs = OUTLINE.map((p, i) => [p, OUTLINE[(i + 1) % OUTLINE.length]]);
+  const segLen = segs.map(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1]));
+  const totalLen = segLen.reduce((a, b) => a + b, 0);
+  const target = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
+  const seed = new Float32Array(COUNT), sizes = new Float32Array(COUNT);
+  const palette = ["#ffffff", "#f3d9ff", "#c9a2ff", "#9a63f5", "#ff9fd0", "#ffd8c2"].map((c) => new THREE.Color(c));
+  for (let i = 0; i < COUNT; i++) {
+    let x, y, z;
+    if (i % 10 < 3) {
+      // On the outline, front or back face, or down the side walls.
+      let r = Math.random() * totalLen, s = 0;
+      while (r > segLen[s]) { r -= segLen[s]; s++; }
+      const [a, b] = segs[s], t = r / segLen[s];
+      x = a[0] + (b[0] - a[0]) * t; y = a[1] + (b[1] - a[1]) * t;
+      const side = Math.random();
+      z = side < 0.4 ? DEPTH / 2 : side < 0.8 ? -DEPTH / 2 : (Math.random() - 0.5) * DEPTH;
+    } else {
+      do { x = Math.random() * 1.14 - 0.57; y = Math.random() - 0.5; } while (!inside(x, y));
+      z = (Math.random() - 0.5) * DEPTH;
     }
-  }
-  const AMBIENT = mobile ? 220 : 460;
-  const N = cells.length + AMBIENT;
-
-  const palette = ["#9a86ff", "#ff6a45", "#62dbe0", "#5d58ff", "#f04fae", "#ffc23a", "#ffffff"].map((c) => new THREE.Color(c));
-  const target = new Float32Array(N * 3), field = new Float32Array(N * 3), color = new Float32Array(N * 3);
-  const seed = new Float32Array(N), join = new Float32Array(N);
-  for (let i = 0; i < N; i++) {
-    const isM = i < cells.length;
-    if (isM) target.set(cells[i], i * 3);
-    field.set([Math.random() * 2 - 1, Math.random() * 2 - 1, Math.pow(Math.random(), 0.8)], i * 3);
-    const col = palette[Math.floor(Math.random() * palette.length)];
-    color.set([col.r, col.g, col.b], i * 3);
+    target.set([x, y, z], i * 3);
+    scatter.set([Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1], i * 3);
+    const c = palette[Math.floor(Math.random() * palette.length)];
+    colour.set([c.r, c.g, c.b], i * 3);
     seed[i] = Math.random();
-    join[i] = isM ? 1 : 0;
+    sizes[i] = 0.007 + 0.02 * Math.pow(Math.random(), 3.2);
   }
-  const box = new THREE.BoxGeometry(1, 1, 1);
-  const geo = new THREE.InstancedBufferGeometry();
-  geo.index = box.index;
-  geo.setAttribute("position", box.getAttribute("position"));
-  geo.setAttribute("normal", box.getAttribute("normal"));
-  geo.setAttribute("iTarget", new THREE.InstancedBufferAttribute(target, 3));
-  geo.setAttribute("iField", new THREE.InstancedBufferAttribute(field, 3));
-  geo.setAttribute("iColor", new THREE.InstancedBufferAttribute(color, 3));
-  geo.setAttribute("iSeed", new THREE.InstancedBufferAttribute(seed, 1));
-  geo.setAttribute("iJoin", new THREE.InstancedBufferAttribute(join, 1));
-  geo.instanceCount = N;
-
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute("position", new THREE.BufferAttribute(target, 3));
+  pGeo.setAttribute("aScatter", new THREE.BufferAttribute(scatter, 3));
+  pGeo.setAttribute("aColor", new THREE.BufferAttribute(colour, 3));
+  pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
+  pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 1 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uScroll: { value: 0 },
-    uPix: { value: 0.034 }, uCell: { value: CELL }, uCenter: { value: new THREE.Vector3() },
-    uView: { value: new THREE.Vector2(1, 1) }, uPointer: { value: new THREE.Vector2(99, 99) },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 },
+    uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
+    uPointer: { value: new THREE.Vector2(99, 99) },
   };
-  const mat = new THREE.ShaderMaterial({
-    uniforms,
+  const pMat = new THREE.ShaderMaterial({
+    uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
-      attribute vec3 iTarget; attribute vec3 iField; attribute vec3 iColor; attribute float iSeed; attribute float iJoin;
-      uniform float uForm, uAngle, uScale, uTime, uScroll, uPix, uCell;
-      uniform vec3 uCenter; uniform vec2 uView; uniform vec2 uPointer;
-      varying vec3 vColor;
+      attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid;
+      uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
+      varying vec3 vColor; varying float vAlpha;
       void main() {
-        // Each pixel joins the M at its own moment, so the letter gathers instead of snapping.
-        float m = iJoin * smoothstep(0.0, 1.0, clamp(uForm * 1.5 - iSeed * 0.5, 0.0, 1.0));
+        // Each mote joins at its own moment, so the letter gathers instead of snapping.
+        float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
-        vec3 t = iTarget * uScale;
+        vec3 t = position * uScale;
         vec3 formed = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c) + uCenter;
-        // Field: pixels spread through depth and slide with the scroll, nearer ones faster.
-        float depth = iField.z;
-        float y = mod(iField.y + uScroll * (0.16 + 0.38 * (1.0 - depth)) + 1.0, 2.0) - 1.0;
-        vec2 span = 0.5 * uView * (1.0 + 0.62 * depth) * 1.06;
-        vec3 fld = vec3(iField.x * span.x + sin(uTime * 0.2 + iSeed * 30.0) * 0.06,
-                        y * span.y + cos(uTime * 0.17 + iSeed * 21.0) * 0.06, -depth * 6.0);
-        vec3 p = mix(fld, formed, m);
-        // Cursor: pixels step aside, measured where they appear on screen.
-        float k = 10.0 / (10.0 - p.z);
-        vec2 d = p.xy * k - uPointer;
-        float push = smoothstep(0.8, 0.0, length(d));
-        p.xy += normalize(d + 1e-4) * push * 0.42 / k;
-        // The pixel itself: a cube that turns with the M when it is part of it.
-        float rot = uAngle * m, rc = cos(rot), rs = sin(rot);
-        vec3 lp = vec3(position.x * rc + position.z * rs, position.y, -position.x * rs + position.z * rc);
-        vec3 n = vec3(normal.x * rc + normal.z * rs, normal.y, -normal.x * rs + normal.z * rc);
-        // Loose pixels are dust: the M's own pixels shrink to specks, a few free ones stay larger.
-        float dust = mix(0.5 + 0.9 * iSeed, 0.22 + 0.5 * iSeed, iJoin);
-        float size = mix(uPix * dust, uCell * uScale * 0.84, m) * (1.0 + push * 1.4);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(p + lp * size, 1.0);
-        float light = 0.46 + 0.54 * max(dot(n, normalize(vec3(0.35, 0.5, 0.8))), 0.0);
-        float twinkle = 0.6 + 0.4 * sin(uTime * (0.5 + iSeed * 1.6) + iSeed * 50.0);
-        // At rest the field is pale and dim; a pixel shows its colour when the cursor disturbs it.
-        vec3 pale = mix(vec3(0.74, 0.72, 1.0), iColor, 0.25) * mix(0.5, 0.28, iJoin);
-        vec3 fieldCol = mix(pale * twinkle * mix(1.0, 0.4, depth), iColor, push);
-        vec3 formCol = mix(vec3(1.0), iColor, 0.08 + 0.92 * push) * light;
-        vColor = mix(fieldCol, formCol, m);
+        formed.xy += vec2(sin(uTime * 0.9 + aSeed * 40.0), cos(uTime * 0.8 + aSeed * 27.0)) * 0.005 * uScale;
+        vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
+        loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
+        vec3 p = mix(loose, formed, m);
+        vec2 d = p.xy - uPointer;
+        float push = smoothstep(0.7, 0.0, length(d));
+        p.xy += normalize(d + 1e-4) * push * 0.38;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        // When the glass M is standing, the motes inside it shrink away.
+        float hide = 1.0 - uSolid * smoothstep(0.86, 1.0, uForm);
+        gl_PointSize = max(uPx * uScale * aSize * (1.0 + push) * (10.0 / -mv.z) * hide, 0.0);
+        vColor = aColor;
+        vAlpha = (0.55 + 0.45 * aSeed) * hide;
       }`,
     fragmentShader: `
-      varying vec3 vColor;
+      varying vec3 vColor; varying float vAlpha;
       void main() {
-        gl_FragColor = vec4(vColor, 1.0);
+        float r = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.2, r);
+        vec3 col = mix(vColor, vec3(1.0), smoothstep(0.3, 0.0, r) * 0.55);
+        gl_FragColor = vec4(col, a * vAlpha);
         #include <colorspace_fragment>
       }`,
   });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.frustumCulled = false;
-  scene.add(mesh);
+  const points = new THREE.Points(pGeo, pMat);
+  points.frustumCulled = false;
+  points.renderOrder = 5;
+  scene.add(points);
 
-  const view = { w: 1, h: 1, vw: 1, vh: 1 };
+  const view = { w: 1, h: 1, vw: 1, vh: 1, dpr: 1 };
   function resize() {
     view.vw = window.innerWidth;
     view.vh = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.5 : 2));
+    view.dpr = Math.min(window.devicePixelRatio, mobile ? 1.5 : 2);
+    renderer.setPixelRatio(view.dpr);
     renderer.setSize(view.vw, view.vh, false);
     camera.aspect = view.vw / view.vh;
     camera.updateProjectionMatrix();
     view.h = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     view.w = view.h * camera.aspect;
-    uniforms.uView.value.set(view.w, view.h);
+    uniforms.uPx.value = (view.vh * view.dpr) / view.h;
+    drawName();
   }
+  const wx = (px) => (px / view.vw - 0.5) * view.w, wy = (px) => (0.5 - px / view.vh) * view.h, wl = (px) => px * (view.h / view.vh);
 
-  // The two slots where the M forms. Whichever is in play anchors the letter.
   const heroSlot = document.getElementById("m-hero"), footSlot = document.getElementById("m-foot");
-  const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99) };
+  const footPanel = document.querySelector(".foot.panel");
+  const st = { form: 0, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: reduced ? 1 : 0, mode: null,
+    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2() };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
+  const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < view.vh;
+
+  // Decide which panel owns the M right now, place everything on it, and return how formed it should be.
   function anchor() {
-    const fr = footSlot ? footSlot.getBoundingClientRect() : null;
-    const footForm = fr && fr.width ? clamp01((view.vh * 0.98 - fr.top) / (view.vh * 0.5)) : 0;
-    const hr = heroSlot ? heroSlot.getBoundingClientRect() : null;
-    const heroForm = hr && hr.width ? clamp01(1 - (window.scrollY / Math.max(hr.height, 1)) * 0.9) : 0;
-    const useFoot = footForm > 0 && heroForm <= 0.02;
-    const r = useFoot ? fr : hr;
-    if (r && r.width) {
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      uniforms.uCenter.value.set((cx / view.vw - 0.5) * view.w, (0.5 - cy / view.vh) * view.h, 0);
-      uniforms.uScale.value = r.height * 0.78 * (view.h / view.vh);
+    const hr = hero ? hero.getBoundingClientRect() : null, fr = footPanel ? footPanel.getBoundingClientRect() : null;
+    const mode = onScreen(hr) ? "hero" : onScreen(fr) ? "foot" : null;
+    st.mode = mode;
+    if (!mode) return 0;
+    const panel = mode === "hero" ? hr : fr, slot = (mode === "hero" ? heroSlot : footSlot).getBoundingClientRect();
+    uniforms.uCenter.value.set(wx(slot.left + slot.width / 2), wy(slot.top + slot.height / 2), 0);
+    uniforms.uScale.value = wl(slot.height * 0.84);
+    uniforms.uPanelC.value.set(wx(panel.left + panel.width / 2), wy(panel.top + panel.height / 2));
+    uniforms.uPanelH.value.set(wl(panel.width / 2), wl(panel.height / 2));
+    // Nothing is ever drawn outside the panel.
+    const x = Math.max(0, panel.left), y = Math.max(0, panel.top), r = Math.min(view.vw, panel.right), b = Math.min(view.vh, panel.bottom);
+    renderer.setScissor(x, view.vh - b, Math.max(0, r - x), Math.max(0, b - y));
+    if (mode === "hero") {
+      if (nameReady && nameRect) {
+        const f = (10 - NAME_Z) / 10;
+        namePlane.position.set(wx(hr.left + nameRect.x + nameRect.w / 2) * f, wy(hr.top + nameRect.y + nameRect.h / 2) * f, NAME_Z);
+        namePlane.scale.set(wl(nameRect.w) * f, wl(nameRect.h) * f, 1);
+      }
+      return clamp01(1 - (-hr.top / (hr.height * 0.6)));
     }
-    return useFoot ? footForm : heroForm;
+    return clamp01((view.vh * 0.98 - slot.top) / (view.vh * 0.45));
   }
 
   const clock = new THREE.Clock();
-  let t = 0, raf = 0;
+  let t = 0, raf = 0, cleared = false;
   function step(dt) {
     t += dt;
     const goal = anchor();
-    // A press scatters the pixels, holds a beat, then lets them gather again.
+    if (!st.mode) {
+      if (!cleared) { renderer.setScissorTest(false); renderer.clear(); cleared = true; }
+      return;
+    }
+    cleared = false;
+    // Load: a short hold, then the motes gather.
+    if (st.intro < 1) st.intro = Math.min(1, st.intro + dt / 1.9);
+    const introForm = THREE.MathUtils.smoothstep(st.intro, 0.25, 1);
     if (st.burstT >= 0) {
       st.burstT += dt;
-      const b = st.burstT;
-      st.burst = b < 0.5 ? 1 - Math.pow(1 - b / 0.5, 3) : b < 0.95 ? 1 : Math.max(0, 1 - Math.pow((b - 0.95) / 1.5, 2) * (3 - 2 * (b - 0.95) / 1.5));
-      if (b > 2.45) { st.burst = 0; st.burstT = -1; }
+      const b = st.burstT, u = (b - 1.0) / 1.5;
+      st.burst = b < 0.5 ? 1 - Math.pow(1 - b / 0.5, 3) : b < 1.0 ? 1 : Math.max(0, 1 - u * u * (3 - 2 * u));
+      if (b > 2.5) { st.burst = 0; st.burstT = -1; }
     }
-    const want = goal * (1 - st.burst);
+    const want = goal * introForm * (1 - st.burst);
     st.form += (want - st.form) * (reduced ? 1 : 1 - Math.exp(-dt * 7));
     if (!st.dragging) {
       st.spin += st.vel * dt;
       st.vel *= Math.exp(-dt * 1.6);
-      // Settle back to a front-facing rest once the throw has died down.
       if (Math.abs(st.vel) < 0.6) st.spin += (Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2 - st.spin) * (1 - Math.exp(-dt * 1.2));
     }
-    const sway = reduced ? -0.42 : Math.sin(t * 0.45) * 0.55;
+    const sway = reduced ? -0.45 : Math.sin(t * 0.5) * 0.6;
+    const angle = sway + st.spin;
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
+    const isHero = st.mode === "hero";
     uniforms.uForm.value = st.form;
-    uniforms.uAngle.value = sway + st.spin;
+    uniforms.uAngle.value = angle;
     uniforms.uTime.value = reduced ? 0 : t;
-    uniforms.uScroll.value = window.scrollY / view.vh;
+    uniforms.uSolid.value = isHero ? 1 : 0;
     uniforms.uPointer.value.copy(st.pointer);
+    // Glass M: grows out of the gathered motes, leans a little toward the cursor.
+    const g = isHero ? THREE.MathUtils.smoothstep(st.form, 0.8, 1) : 0;
+    mGroup.visible = g > 0.001;
+    namePlane.visible = isHero && nameReady;
+    if (mGroup.visible) {
+      const c = uniforms.uCenter.value;
+      st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;
+      st.tilt.y += ((st.pointer.x - c.x) * 0.04 - st.tilt.y) * 0.08;
+      mGroup.position.copy(c);
+      mGroup.scale.setScalar(uniforms.uScale.value * g);
+      mGroup.rotation.set(reduced ? 0 : THREE.MathUtils.clamp(st.tilt.x, -0.18, 0.18), angle + (reduced ? 0 : THREE.MathUtils.clamp(st.tilt.y, -0.18, 0.18)), 0);
+    }
+    // The name eases from the panel's own colour to cream as the panel opens.
+    nameMat.color.set("#ff4a22").lerp(new THREE.Color("#f3e7e0"), THREE.MathUtils.smoothstep(st.intro, 0.3, 0.8));
+    renderer.setScissorTest(false);
+    renderer.clear();
+    renderer.setScissorTest(true);
     renderer.render(scene, camera);
   }
   function loop() {
@@ -200,9 +306,12 @@ function init() {
     if (!raf) { clock.getDelta(); loop(); }
   }
 
+  renderer.autoClear = false;
   resize();
   wake();
   canvas.classList.add("ready");
+  // The name is drawn with the page's display face, so redraw once that face has loaded.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawName(); wake(); });
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { resize(); wake(); }, 120); });
@@ -211,13 +320,10 @@ function init() {
     let tick = 0;
     window.addEventListener("scroll", () => { if (!tick) tick = requestAnimationFrame(() => { tick = 0; still(); }); }, { passive: true });
   } else {
-    window.addEventListener("pointermove", (e) => {
-      st.pointerGoal.set((e.clientX / view.vw - 0.5) * view.w, (0.5 - e.clientY / view.vh) * view.h);
-    }, { passive: true });
+    window.addEventListener("pointermove", (e) => st.pointerGoal.set(wx(e.clientX), wy(e.clientY)), { passive: true });
     document.addEventListener("pointerleave", () => st.pointerGoal.set(99, 99));
   }
 
-  // Slot interactions.
   for (const slot of [heroSlot, footSlot]) {
     if (!slot) continue;
     slot.classList.add("live");
@@ -261,7 +367,8 @@ function init() {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    geo.dispose(); box.dispose(); mat.dispose(); renderer.dispose();
+    [mGeo, faceMat, sideMat, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
+    renderer.dispose();
   });
 }
 

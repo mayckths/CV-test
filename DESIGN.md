@@ -1,41 +1,32 @@
 ---
 name: Mayck Cuellar Portfolio
-description: A dark single-page portfolio where square pixels are the material and Mayck's M is built from them.
+description: A cream page of stacked rounded panels, a gradient hero with a glass M, and content that arrives one step at a time.
 colors:
-  ground: "#0a0915"
-  surface: "#131127"
-  surface-raised: "#1b1838"
-  text: "#f2f0fa"
-  text-muted: "#aaa6c4"
-  line: "rgba(242, 240, 250, 0.13)"
-  line-strong: "rgba(242, 240, 250, 0.28)"
-  coral: "#ff6a45"
-  violet: "#a391ff"
-  aqua: "#62dbe0"
-  yellow: "#ffc23a"
-  indigo: "#2a2478"
+  cream: "#f5ebe3"
+  card: "#fffaf5"
+  ink: "#1f1c1c"
+  muted: "#655c57"
+  line: "rgba(31, 28, 28, 0.14)"
+  accent: "#f23a14"
+  accent-text: "#c42d0c"
+  coral-on-dark: "#ff6a45"
+  violet: "#8a4be0"
+  dark-panel: "#1f1c1c"
+  on-dark: "#f5ebe3"
+  on-dark-muted: "#cdbfb6"
 typography:
   display:
-    fontFamily: "Bodoni Moda, Didot, Bodoni MT, Georgia, serif"
-    fontSize: "clamp(40px, 5.2vw, 80px)"
-    fontWeight: 500
-    lineHeight: 1.04
-    letterSpacing: "-0.02em"
-  headline:
-    fontFamily: "Bodoni Moda, Didot, Bodoni MT, Georgia, serif"
-    fontSize: "clamp(36px, 5vw, 72px)"
-    fontWeight: 400
-    lineHeight: 1
-  statement:
-    fontFamily: "Bodoni Moda, Didot, Bodoni MT, Georgia, serif"
-    fontSize: "clamp(26px, 3.3vw, 48px)"
-    fontWeight: 500
-    lineHeight: 1.16
-  figure:
-    fontFamily: "Geist, system-ui, sans-serif"
-    fontSize: "clamp(32px, 4vw, 58px)"
-    fontWeight: 500
+    fontFamily: "Bricolage Grotesque, system-ui, sans-serif"
+    fontSize: "clamp(38px, 6.2vw, 96px)"
+    fontWeight: 600
+    lineHeight: 0.98
     letterSpacing: "-0.04em"
+  giant:
+    fontFamily: "Bricolage Grotesque, system-ui, sans-serif"
+    fontSize: "clamp(64px, 18.5vw, 290px)"
+    fontWeight: 500
+    lineHeight: 0.84
+    letterSpacing: "-0.045em"
   body:
     fontFamily: "Geist, system-ui, sans-serif"
     fontSize: "17px"
@@ -51,111 +42,108 @@ rounded:
   media: "18px"
   panel: "28px"
 spacing:
+  panel-gap: "16px"
   gutter: "clamp(20px, 4vw, 64px)"
   max-width: "1320px"
 components:
   button-primary:
-    backgroundColor: "{colors.text}"
-    textColor: "{colors.ground}"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.cream}"
     rounded: "{rounded.pill}"
-    padding: "0 22px"
     height: "46px"
+    padding: "0 22px"
   button-primary-hover:
-    backgroundColor: "{colors.coral}"
+    backgroundColor: "{colors.accent}"
   button-ghost:
-    textColor: "{colors.text}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.pill}"
-    padding: "0 18px"
     height: "40px"
+    padding: "0 18px"
 ---
 
 # Design System: Mayck Cuellar Portfolio
 
 ## Overview
 
-**Creative North Star: "Pixels as matter"**
+**Creative North Star: "One thing at a time"**
 
-The page is a dark indigo space with one material: square pixels. A single WebGL layer sits behind the content. In the hero the pixels form Mayck's serif M as a solid, turning letter; as the page scrolls they leave it and become a quiet field of dust; at the footer they gather into the M again. Everywhere, pixels step away from the cursor and show their colour when disturbed.
+A cream page built from rounded panels with a small gap between them. The hero is a vivid gradient panel (red-orange into pink and violet) that opens on load, with Mayck's name set huge and a glass M turning in front of it, bending the letters behind it. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
 
-The look was pinned by Mayck from three references: ricardochance.com (dark ground, particle form, serif statements that light up as you read, pill buttons), mats.zip (point cloud mark, small labels, bracketed years, dot-matrix bands) and andreas.vision (chunky pixels, elegant italic serif). It is adapted to his own colours and mark, not copied.
+The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
 **Key Characteristics:**
-- Dark only: indigo-black ground with soft violet glows.
-- Pixels are the only decoration: the M, the field, the dot-matrix bands, square bullets.
-- A Didone serif, chosen to match the M's own letterform, for statements; a plain sans for reading.
-- Colour appears through interaction: the field is pale until the cursor disturbs it.
+- Cream ground, dark ink, one red-orange accent. Text never sits on particles.
+- Rounded panels (28px) stacked with a 16px gap.
+- One message, one card, one project in focus at a time.
+- The M has two states: glass in the hero, particles in the footer and on press.
 
 ## Colors
 
 ### Primary
-- **Coral** (coral): the one accent on chrome: second headline phrase, link arrows, hover states, send button, quote marks.
+- **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
+- **Hero gradient:** #ff2a10 to #ff5a1c to #ff4f80 to #a44ce4, with drifting violet, orange and pink blooms.
 
 ### Secondary
-- **Violet** (violet), **Aqua** (aqua), **Yellow** (yellow): the first headline phrase, focus rings, and the flagship result. With coral, magenta and indigo they are the colours pixels reveal under the cursor.
+- **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
 
 ### Neutral
-- **Ground** (ground), **Surface** (surface) for media panels, **Text** (text), **Muted** (text-muted) for body under headings, **Line** and **Line strong** for hairlines.
+- **Cream** (cream) page, **Card** (card) for pinned and stacked cards and media frames, **Ink** (ink), **Muted** (muted), **Line** (line).
 
 ### Named Rules
-**The Pale Field Rule.** Loose pixels stay pale and dim. Saturated colour appears only where the cursor touches the field or the M.
+**The Clear Ground Rule.** Body text sits only on cream, card or the dark panel. Particles and gradients stay inside the hero and footer panels.
 
 ## Typography
 
-**Display Font:** Bodoni Moda (Didot, Georgia fallback)
+**Display Font:** Bricolage Grotesque
 **Body Font:** Geist
 **Label/Mono Font:** Geist Mono
 
-**Character:** The display face echoes the M in Mayck's mark: high contrast, flat serifs. Italics carry emphasis.
-
 ### Hierarchy
-- **Display** (500, clamp 40 to 80px): the hero headline; two phrases in italic, violet and coral.
-- **Statement** (500, clamp 26 to 48px): the intro paragraph, read word by word.
-- **Headline** (400, clamp 36 to 72px): section and project titles, the closing line.
-- **Figure** (Geist 500, tight tracking): all numbers and results.
-- **Body** (17px, 1.55): paragraphs, up to 54ch.
-- **Label** (Geist Mono 12px, uppercase): tags, years, hints.
-
-### Named Rules
-**The Sans Figures Rule.** Numbers are never set in the serif: its hairline plus and comma disappear on the dark ground.
+- **Giant** (500, up to 290px, lowercase): the name in the hero.
+- **Display** (600, clamp 38 to 96px, tight): the headline, section titles (up to 176px), the closing line.
+- **Figure** (600, up to 230px): one result per step in the intro.
+- **Body** (17px, 1.55), up to 54ch. **Label** (mono 12px, uppercase): tags, bracketed years.
 
 ## Layout
 
-A centred column up to 1320px. The hero pairs the headline with the M's slot (1.7 to 1), then the statement, four figures on hairlines and the certifications in one row. Projects alternate media and text in two columns from 820px and stack below it. Years sit in square brackets at the right of each label row. Dot-matrix bands separate the hero and footer from the middle. Four small corner marks sit on the viewport.
+Panels sit 16px from the viewport edge and from each other. The hero panel fills the first screen. The intro is a pinned card: seven steps (headline, statement, four results, certifications), about 58vh of scroll each, with a progress rail and the two calls to action fixed at the bottom of the card. The flagship is a dark panel; the three other cases are sticky cards that stack. Below 820px cards stop stacking and everything is one column. With reduced motion or without scripts, the steps are simply laid out one after another.
 
 ## Elevation & Depth
 
-Depth comes from the pixel field's own perspective and from one violet glow under project media (0 50px 120px -60px). Panels are otherwise flat with a 1px inner line.
+Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the glass M.
 
 ## Shapes
 
-Pills for buttons, chips and the composer; 18px corners on media and 28px on the flagship and art panels. Pixels and bullets are square.
+Pills for buttons, chips and the floating header; 28px panels; 18px media.
 
 ## Components
 
-### Pixel M (signature)
-- A voxel M sampled from the mark's outline, a few layers deep, drawn over an empty focusable button in the hero and in the footer. It sways slowly; drag turns it with inertia; a press scatters it and it re-forms; arrow keys nudge it. With reduced motion it rests in a three-quarter view.
+### Glass M (signature)
+- An extruded serif M with clear glass faces and pink sides, turning in front of the name. The name is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again, arrow keys nudge it.
 
-### Buttons
-- **Primary:** light pill with dark text; coral on hover.
-- **Ghost:** 1px light outline pill; fills faintly on hover.
+### Particle M
+- Soft round motes in white, lilac, violet and pink, denser along the letter's edges. They gather into the glass M on load and are the M itself on the dark footer panel. They step away from the cursor.
 
-### Links
-- Sans, 1px underline, coral drawn arrow that nudges on hover; 44px hit area.
+### Step scene
+- One step visible at a time, cross-fading with a short rise and blur; a rail shows position.
 
-### Flagship panel
-- Indigo-to-violet panel holding the Ask Novo mark animation (white product card) and the scripted Ask panel.
+### Blueprint
+- The M's outline with anchor points, handles, guides and a construction circle, drawn in as the intro scrolls.
 
-### Scroll reading
-- The statement, the recommendations and the closing line start at 22% and light up word by word.
+### Spotlight
+- Dark panels carry a soft coral light at the cursor.
+
+### Floating header
+- A dark translucent pill, centred, legible over both the gradient and the cream page.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep pixels as the only decorative material.
-- **Do** set every number in the sans.
+- **Do** keep one idea per step and per card.
+- **Do** keep text on clear ground.
 - **Do** put years in square brackets in the label row.
 
 ### Don't:
-- **Don't** add a light theme or light sections; product UI cards are the only light surfaces.
-- **Don't** brighten the resting field; it must stay behind the text.
+- **Don't** let particles or gradients run behind body text.
+- **Don't** use the accent red for small text on cream; use the darker accent-text.
 - **Don't** add ruler frames or tick marks.
