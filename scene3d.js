@@ -1,11 +1,12 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
-//   - hero: two glass pyramids standing as an M in front of the name logo, bending it with colour fringes.
-//     As the pinned hero scrolls, the logo slides away and the pyramids break into motes that re-form as the
-//     words "I DESIGN", flanked by two role labels. When the hero leaves, those words travel down onto the
-//     "I design" that opens the headline in the next card.
-//   - particles: soft round motes. They gather into the glass words on load, scatter when pressed, and on
-//     the dark footer panel they draw a stack of cubes. They step away from the cursor.
-// The slots are real buttons: drag to turn, press to scatter, arrow keys to nudge.
+//   - hero background: Mayck's "Capas" render, alive. Its layers drift, shift in depth with the cursor
+//     and are dragged by it.
+//   - hero figure: two pyramids drawn in soft particles (an M) in front of the name logo. As the pinned
+//     hero scrolls, the logo slides away and the particles re-form as "I DESIGN", which crystallises into
+//     glass between two role labels. When the hero leaves, the words turn back into particles, travel
+//     down and reshape into the "I design" that opens the headline.
+//   - footer: the particle pyramids again, on the dark panel.
+// Particles step away from the cursor. The slots are real buttons: drag to turn, press to scatter.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
@@ -53,24 +54,66 @@ function init(font) {
   // The solids never grow: they crystallise in place. A hashed dissolve lets grains of glass appear across
   // the surface where the motes have settled, until the whole figure is solid.
   for (const m of [faceMat, sideMat]) m.alphaHash = true;
-  const pyrFace = faceMat.clone(), pyrSide = sideMat.clone();
   const glass = new THREE.Mesh(mGeo, [faceMat, sideMat]);
   const mGroup = new THREE.Group();
   mGroup.add(glass);
   scene.add(mGroup);
 
-  // --- Glass pyramids: two side by side read as an M ---
+  // --- Pyramids: two side by side read as an M. They are only ever drawn in particles. ---
   const PYR = mobile ? 1.15 : 0.74;            // size relative to the width of the words
-  const PR = 0.36 * PYR, PH = 0.64 * PYR, PX = PR * Math.SQRT1_2;
+  const PR = 0.36 * PYR, PH = 0.64 * PYR, PX = PR * Math.SQRT1_2, PYR_W = 4 * PX;
   const pyrGeo = new THREE.ConeGeometry(PR, PH, 4, 1);
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
-  const pyrGroup = new THREE.Group();
-  for (const x of [-PX, PX]) {
-    const m = new THREE.Mesh(pyrGeo, [pyrFace, pyrSide, pyrSide]);
-    m.position.x = x;
-    pyrGroup.add(m);
-  }
-  scene.add(pyrGroup);
+
+  // --- Background: the Capas render, moving. It is opaque, so the glass words bend it too. ---
+  const BG_Z = -1.6;
+  let bgReady = false;
+  const bgTex = new THREE.TextureLoader().load("assets/capas.webp", (tx) => {
+    bgMat.uniforms.uImg.value = tx.image.width / tx.image.height;
+    bgReady = true;
+  });
+  bgTex.colorSpace = THREE.SRGBColorSpace;
+  const bgMat = new THREE.ShaderMaterial({
+    depthTest: false, depthWrite: false, alphaToCoverage: true,
+    uniforms: {
+      uTex: { value: bgTex }, uTime: { value: 0 }, uImg: { value: 16 / 9 }, uAspect: { value: 1 }, uZoom: { value: 1 },
+      uPointer: { value: new THREE.Vector2(0.5, 0.5) }, uVel: { value: new THREE.Vector2() },
+      uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 },
+    },
+    vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform sampler2D uTex; uniform float uTime, uImg, uAspect, uZoom, uRadius;
+      uniform vec2 uPointer, uVel; uniform vec4 uRect;
+      varying vec2 vUv;
+      void main() {
+        // Same framing as CSS "cover", so the still image underneath and this one line up.
+        vec2 c = vUv - 0.5;
+        if (uAspect > uImg) c.y *= uImg / uAspect; else c.x *= uAspect / uImg;
+        c /= uZoom;
+        vec2 uv = c + 0.5;
+        // The brighter ridges of the render read as nearer, so they travel further: layers, not a flat picture.
+        float h = dot(texture2D(uTex, uv).rgb, vec3(0.3, 0.5, 0.2));
+        vec2 depth = (uPointer - 0.5) * -0.045 * (0.25 + h);
+        vec2 flow = vec2(sin(c.y * 5.0 + uTime * 0.25 + h * 3.0), cos(c.x * 4.0 - uTime * 0.21 + h * 2.0)) * 0.007;
+        // The cursor drags the layers nearest to it.
+        vec2 dp = vUv - uPointer; dp.x *= uAspect;
+        vec2 drag = -uVel * exp(-dot(dp, dp) / 0.035) * (0.5 + h);
+        vec3 col = texture2D(uTex, uv + depth + flow + drag).rgb * 0.84;
+        // Rounded corners of the panel.
+        vec2 p = gl_FragCoord.xy - (uRect.xy + uRect.zw * 0.5);
+        vec2 q = abs(p) - uRect.zw * 0.5 + uRadius;
+        float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
+        gl_FragColor = vec4(col, clamp(0.5 - d, 0.0, 1.0));
+        #include <colorspace_fragment>
+      }`,
+  });
+  const bgGeo = new THREE.PlaneGeometry(1, 1);
+  const bgPlane = new THREE.Mesh(bgGeo, bgMat);
+  bgPlane.renderOrder = -10;
+  bgPlane.frustumCulled = false;
+  bgPlane.visible = false;
+  scene.add(bgPlane);
+  const bgState = { p: new THREE.Vector2(0.5, 0.5), goal: new THREE.Vector2(0.5, 0.5), vel: new THREE.Vector2() };
 
   // --- The name, drawn into the scene so the glass can bend it ---
   const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap"), logoEl = document.querySelector(".hero-logo");
@@ -78,7 +121,7 @@ function init(font) {
   const nameTex = new THREE.CanvasTexture(nameCanvas);
   nameTex.colorSpace = THREE.SRGBColorSpace;
   nameTex.anisotropy = 4;
-  const nameMat = new THREE.MeshBasicMaterial({ map: nameTex, alphaTest: 0.5, alphaToCoverage: true, color: "#f3e7e0", toneMapped: false });
+  const nameMat = new THREE.MeshBasicMaterial({ map: nameTex, alphaTest: 0.5, alphaToCoverage: true, color: "#ffffff", toneMapped: false });
   const nameGeo = new THREE.PlaneGeometry(1, 1);
   const namePlane = new THREE.Mesh(nameGeo, nameMat);
   namePlane.visible = false;
@@ -106,26 +149,24 @@ function init(font) {
     hero.classList.add("live");
   }
 
-  // --- Particles: motes that hold the glass words (hero) or a stack of cubes (footer) ---
+  // --- Particles: motes that hold the pyramids, the words, or the headline lettering ---
   const COUNT = mobile ? 2800 : 5600;
   const sampler = new MeshSurfaceSampler(new THREE.Mesh(mGeo)).build();
   const pyrSampler = new MeshSurfaceSampler(new THREE.Mesh(pyrGeo)).build();
-  const target = new Float32Array(COUNT * 3), pyr = new Float32Array(COUNT * 3), cube = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
+  const target = new Float32Array(COUNT * 3), pyr = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
   const seed = new Float32Array(COUNT), sizes = new Float32Array(COUNT);
   const palette = ["#ffffff", "#f3d9ff", "#c9a2ff", "#9a63f5", "#ff9fd0", "#ffd8c2"].map((c) => new THREE.Color(c));
   const v = new THREE.Vector3();
-  const S = 0.4, OFF = 0.3, rnd = () => (Math.random() - 0.5) * S, pm = () => (Math.random() < 0.5 ? -S / 2 : S / 2);
   for (let i = 0; i < COUNT; i++) {
     sampler.sample(v);
     target.set([v.x, v.y, v.z], i * 3);
-    pyrSampler.sample(v);
+    if (i % 5 < 2) {
+      // On an edge: from the apex to a base corner, or along the base.
+      const k = Math.floor(Math.random() * 4), a = (k * Math.PI) / 2 + Math.PI / 4, b = a + Math.PI / 2, u = Math.random();
+      const ax = Math.sin(a) * PR, az = Math.cos(a) * PR, bx = Math.sin(b) * PR, bz = Math.cos(b) * PR;
+      if (Math.random() < 0.55) v.set(ax * u, PH / 2 - PH * u, az * u); else v.set(ax + (bx - ax) * u, -PH / 2, az + (bz - az) * u);
+    } else pyrSampler.sample(v);
     pyr.set([v.x + (i % 2 ? PX : -PX), v.y, v.z], i * 3);
-    // Eight cubes, two by two by two, drawn mostly by their edges.
-    const c = [0, 1, 2].map(() => (Math.random() < 0.5 ? -OFF : OFF));
-    const axis = Math.floor(Math.random() * 3), q = [0, 0, 0];
-    if (Math.random() < 0.68) { for (let a = 0; a < 3; a++) q[a] = a === axis ? rnd() : pm(); }
-    else { for (let a = 0; a < 3; a++) q[a] = a === axis ? pm() : rnd(); }
-    cube.set([c[0] + q[0], c[1] + q[1], c[2] + q[2]], i * 3);
     scatter.set([Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1], i * 3);
     const col = palette[Math.floor(Math.random() * palette.length)];
     colour.set([col.r, col.g, col.b], i * 3);
@@ -139,21 +180,20 @@ function init(font) {
   const leadPts = new Float32Array(COUNT * 3);
   const leadAttr = new THREE.BufferAttribute(leadPts, 3);
   pGeo.setAttribute("aLead", leadAttr);
-  pGeo.setAttribute("aCube", new THREE.BufferAttribute(cube, 3));
   pGeo.setAttribute("aScatter", new THREE.BufferAttribute(scatter, 3));
   pGeo.setAttribute("aColor", new THREE.BufferAttribute(colour, 3));
   pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uShape: { value: 0 }, uTilt: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
     uPointer: { value: new THREE.Vector2(99, 99) },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
-      attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aCube; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uShape, uTilt, uMote, uMorph, uFade, uLand;
+      attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand;
       uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
       varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
@@ -161,11 +201,9 @@ function init(font) {
         float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
         vec3 words = mix(position, aLead, uLand);
-        vec3 t = mix(mix(aPyr, words, uMorph), aCube, uShape) * uScale;
+        vec3 t = mix(aPyr, words, uMorph) * uScale;
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
-        float ct = cos(uTilt), sn = sin(uTilt);
-        vec3 formed = vec3(turned.x, turned.y * ct - turned.z * sn, turned.y * sn + turned.z * ct) + uCenter;
-        formed.xy += vec2(sin(uTime * 0.9 + aSeed * 40.0), cos(uTime * 0.8 + aSeed * 27.0)) * 0.005 * uScale;
+        vec3 formed = turned + uCenter;
         vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
         vec3 p = mix(loose, formed, m);
@@ -180,7 +218,7 @@ function init(font) {
         // Landing on the headline, the motes take the ink of the type they are becoming.
         vColor = mix(aColor, vec3(0.015, 0.012, 0.012), uLand);
         vCore = 1.0 - uLand;
-        vAlpha = mix(0.55 + 0.45 * aSeed, 1.0, uLand) * hide * uFade;
+        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, uLand) * hide * uFade;
       }`,
     fragmentShader: `
       varying vec3 vColor; varying float vAlpha; varying float vCore;
@@ -215,6 +253,7 @@ function init(font) {
 
   const heroSlot = document.getElementById("m-hero"), footSlot = document.getElementById("m-foot");
   const lead = document.querySelector(".h1-lead");
+  const panelRadius = hero ? parseFloat(getComputedStyle(hero).borderTopLeftRadius) || 0 : 0;
   const stickyTop = hero ? parseFloat(getComputedStyle(hero).top) || 0 : 0;
   let leadShown = "";
   function sampleLead() {
@@ -256,14 +295,22 @@ function init(font) {
     if (!mode) return 0;
     const panel = mode === "hero" ? hr : fr, slot = (mode === "hero" ? heroSlot : footSlot).getBoundingClientRect();
     uniforms.uCenter.value.set(wx(slot.left + slot.width / 2), wy(slot.top + slot.height / 2), 0);
-    uniforms.uScale.value = mode === "hero" ? wl(slot.width * 0.96) : wl(slot.height * 0.6);
-    uniforms.uMote.value = wl(mode === "hero" ? slot.height * 1.5 : slot.height * 0.9);
+    uniforms.uScale.value = mode === "hero" ? wl(slot.width * 0.96) : wl((slot.width * 0.92) / PYR_W);
+    uniforms.uMote.value = wl(mode === "hero" ? slot.height * 2.3 : slot.height * 0.75);
     uniforms.uPanelC.value.set(wx(panel.left + panel.width / 2), wy(panel.top + panel.height / 2));
     uniforms.uPanelH.value.set(wl(panel.width / 2), wl(panel.height / 2));
     // Nothing is ever drawn outside the panel.
     const x = Math.max(0, panel.left), y = Math.max(0, panel.top), r = Math.min(view.vw, panel.right), b = Math.min(view.vh, panel.bottom);
     renderer.setScissor(x, view.vh - b, Math.max(0, r - x), Math.max(0, b - y));
     if (mode === "hero") {
+      // Background plane behind everything, covering the panel exactly.
+      const fb = (10 - BG_Z) / 10, u = bgMat.uniforms;
+      bgPlane.position.set(wx(hr.left + hr.width / 2) * fb, wy(hr.top + hr.height / 2) * fb, BG_Z);
+      bgPlane.scale.set(wl(hr.width) * fb, wl(hr.height) * fb, 1);
+      u.uAspect.value = hr.width / hr.height;
+      u.uRect.value.set(hr.left * view.dpr, (view.vh - hr.bottom) * view.dpr, hr.width * view.dpr, hr.height * view.dpr);
+      u.uRadius.value = panelRadius * view.dpr;
+      bgState.rect = hr;
       const wr = heroWrap ? heroWrap.getBoundingClientRect() : hr;
       st.hp = reduced ? 0 : clamp01(-wr.top / Math.max(1, wr.height - view.vh));
       // Once the pin ends the panel scrolls away; q runs 0 to 1 over that exit.
@@ -305,12 +352,13 @@ function init(font) {
     const introForm = THREE.MathUtils.smoothstep(st.intro, 0.25, 1);
     if (st.burstT >= 0) {
       st.burstT += dt;
-      const b = st.burstT, u = (b - 1.0) / 1.5;
-      st.burst = b < 0.5 ? 1 - Math.pow(1 - b / 0.5, 3) : b < 1.0 ? 1 : Math.max(0, 1 - u * u * (3 - 2 * u));
-      if (b > 2.5) { st.burst = 0; st.burstT = -1; }
+      // Out in 0.3 s, a short beat, back in 0.6 s.
+      const b = st.burstT, u = (b - 0.42) / 0.6;
+      st.burst = b < 0.3 ? 1 - Math.pow(1 - b / 0.3, 3) : b < 0.42 ? 1 : Math.max(0, 1 - u * u * (3 - 2 * u));
+      if (b > 1.02) { st.burst = 0; st.burstT = -1; }
     }
     const want = goal * introForm * (1 - st.burst);
-    st.form += (want - st.form) * (reduced ? 1 : 1 - Math.exp(-dt * 7));
+    st.form += (want - st.form) * (reduced ? 1 : 1 - Math.exp(-dt * 12));
     if (!st.dragging) {
       st.spin += st.vel * dt;
       st.vel *= Math.exp(-dt * 1.6);
@@ -323,24 +371,22 @@ function init(font) {
     const angle = sway + st.spin * settle;
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
-    const pyrSolid = 1 - SS(hp, 0.06, 0.18), wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.02, 0.22));   // back to motes for the trip down
+    const wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.02, 0.22));   // back to motes for the trip down
     const formed = SS(st.form, 0.8, 1);
     uniforms.uForm.value = st.form;
-    uniforms.uAngle.value = isHero ? angle : angle * 0.6 + Math.PI / 4;
+    uniforms.uAngle.value = angle;
     uniforms.uTime.value = reduced ? 0 : t;
-    uniforms.uSolid.value = isHero ? Math.max(pyrSolid, wordSolid) : 0;
-    uniforms.uMorph.value = SS(hp, 0.16, 0.38);
-    uniforms.uLand.value = SS(q, 0.28, 0.76);               // capitals reshape into the headline lettering
+    uniforms.uSolid.value = isHero ? wordSolid : 0;
+    uniforms.uMorph.value = isHero ? SS(hp, 0.1, 0.36) : 0;      // pyramids re-form as the words; the footer keeps the pyramids
+    uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
     uniforms.uFade.value = 1 - SS(q, 0.86, 1);
-    uniforms.uShape.value = isHero ? 0 : 1;
-    uniforms.uTilt.value = isHero ? 0 : 0.6155;   // the cubes sit in an isometric view
     uniforms.uPointer.value.copy(st.pointer);
     if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
     st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;
     st.tilt.y += ((st.pointer.x - c.x) * 0.04 - st.tilt.y) * 0.08;
     const tx = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.x, -0.18, 0.18) * settle, ty = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.y, -0.18, 0.18) * settle;
-    for (const [group, solid, mats] of [[pyrGroup, pyrSolid, [pyrFace, pyrSide]], [mGroup, wordSolid, [faceMat, sideMat]]]) {
+    for (const [group, solid, mats] of [[mGroup, wordSolid, [faceMat, sideMat]]]) {
       const g = isHero ? solid * formed : 0;
       group.visible = g > 0.001;
       if (!group.visible) continue;
@@ -350,8 +396,19 @@ function init(font) {
       for (const m of mats) m.opacity = g;            // how much of the surface has crystallised
     }
     namePlane.visible = isHero && nameReady && hp < 0.6;
+    // Background: follows the cursor with a little lag, and carries its speed as drag.
+    bgPlane.visible = isHero && bgReady;
+    if (bgPlane.visible) {
+      const u = bgMat.uniforms, before = bgState.p.clone();
+      bgState.p.lerp(bgState.goal, reduced ? 1 : 1 - Math.exp(-dt * 5));
+      if (dt > 0) bgState.vel.lerp(bgState.p.clone().sub(before).multiplyScalar(0.9 / Math.max(dt, 0.016)).clampLength(0, 0.09), 0.2);
+      u.uPointer.value.copy(bgState.p);
+      u.uVel.value.copy(reduced ? before.set(0, 0) : bgState.vel);
+      u.uTime.value = reduced ? 0 : t;
+      u.uZoom.value = 1.05 + hp * 0.14;
+    }
     // The name eases from the panel's own colour to cream as the panel opens.
-    nameMat.color.set("#ff4a22").lerp(new THREE.Color("#f3e7e0"), THREE.MathUtils.smoothstep(st.intro, 0.3, 0.8));
+
     renderer.setScissorTest(false);
     renderer.clear();
     renderer.setScissorTest(true);
@@ -383,7 +440,11 @@ function init(font) {
     let tick = 0;
     window.addEventListener("scroll", () => { if (!tick) tick = requestAnimationFrame(() => { tick = 0; still(); }); }, { passive: true });
   } else {
-    window.addEventListener("pointermove", (e) => st.pointerGoal.set(wx(e.clientX), wy(e.clientY)), { passive: true });
+    window.addEventListener("pointermove", (e) => {
+      st.pointerGoal.set(wx(e.clientX), wy(e.clientY));
+      const r = bgState.rect;
+      if (r && r.width) bgState.goal.set((e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height);
+    }, { passive: true });
     document.addEventListener("pointerleave", () => st.pointerGoal.set(99, 99));
   }
 
@@ -430,7 +491,7 @@ function init(font) {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [mGeo, pyrGeo, faceMat, sideMat, pyrFace, pyrSide, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
+    [mGeo, pyrGeo, faceMat, sideMat, bgGeo, bgMat, bgTex, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
     renderer.dispose();
   });
 }
