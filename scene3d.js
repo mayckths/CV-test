@@ -50,6 +50,10 @@ function init(font) {
     emissive: "#ff2610", emissiveIntensity: 0.95,
   });
   const sideMat = new THREE.MeshPhysicalMaterial({ color: "#e76ae0", roughness: 0.22, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 1.2 });
+  // The solids never grow: they crystallise in place. A hashed dissolve lets grains of glass appear across
+  // the surface where the motes have settled, until the whole figure is solid.
+  for (const m of [faceMat, sideMat]) m.alphaHash = true;
+  const pyrFace = faceMat.clone(), pyrSide = sideMat.clone();
   const glass = new THREE.Mesh(mGeo, [faceMat, sideMat]);
   const mGroup = new THREE.Group();
   mGroup.add(glass);
@@ -62,7 +66,7 @@ function init(font) {
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
   const pyrGroup = new THREE.Group();
   for (const x of [-PX, PX]) {
-    const m = new THREE.Mesh(pyrGeo, [faceMat, sideMat, sideMat]);
+    const m = new THREE.Mesh(pyrGeo, [pyrFace, pyrSide, pyrSide]);
     m.position.x = x;
     pyrGroup.add(m);
   }
@@ -131,28 +135,33 @@ function init(font) {
   const pGeo = new THREE.BufferGeometry();
   pGeo.setAttribute("position", new THREE.BufferAttribute(target, 3));
   pGeo.setAttribute("aPyr", new THREE.BufferAttribute(pyr, 3));
+  // Where each mote sits in the headline's own "I design", sampled from the real lettering once fonts load.
+  const leadPts = new Float32Array(COUNT * 3);
+  const leadAttr = new THREE.BufferAttribute(leadPts, 3);
+  pGeo.setAttribute("aLead", leadAttr);
   pGeo.setAttribute("aCube", new THREE.BufferAttribute(cube, 3));
   pGeo.setAttribute("aScatter", new THREE.BufferAttribute(scatter, 3));
   pGeo.setAttribute("aColor", new THREE.BufferAttribute(colour, 3));
   pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uShape: { value: 0 }, uTilt: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uShape: { value: 0 }, uTilt: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
     uPointer: { value: new THREE.Vector2(99, 99) },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
-      attribute vec3 aPyr; attribute vec3 aCube; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uShape, uTilt, uMote, uMorph, uFade;
+      attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aCube; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uShape, uTilt, uMote, uMorph, uFade, uLand;
       uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
-      varying vec3 vColor; varying float vAlpha;
+      varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
         float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
-        vec3 t = mix(mix(aPyr, position, uMorph), aCube, uShape) * uScale;
+        vec3 words = mix(position, aLead, uLand);
+        vec3 t = mix(mix(aPyr, words, uMorph), aCube, uShape) * uScale;
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
         float ct = cos(uTilt), sn = sin(uTilt);
         vec3 formed = vec3(turned.x, turned.y * ct - turned.z * sn, turned.y * sn + turned.z * ct) + uCenter;
@@ -166,17 +175,19 @@ function init(font) {
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
         // When the glass M is standing, the motes inside it shrink away.
-        float hide = 1.0 - uSolid * smoothstep(0.86, 1.0, uForm);
+        float hide = 1.0 - smoothstep(0.35, 1.0, uSolid) * smoothstep(0.86, 1.0, uForm);
         gl_PointSize = max(uPx * uMote * aSize * (1.0 + push) * (10.0 / -mv.z) * hide * uFade, 0.0);
-        vColor = aColor;
-        vAlpha = (0.55 + 0.45 * aSeed) * hide * uFade;
+        // Landing on the headline, the motes take the ink of the type they are becoming.
+        vColor = mix(aColor, vec3(0.015, 0.012, 0.012), uLand);
+        vCore = 1.0 - uLand;
+        vAlpha = mix(0.55 + 0.45 * aSeed, 1.0, uLand) * hide * uFade;
       }`,
     fragmentShader: `
-      varying vec3 vColor; varying float vAlpha;
+      varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         float r = length(gl_PointCoord - 0.5);
         float a = smoothstep(0.5, 0.2, r);
-        vec3 col = mix(vColor, vec3(1.0), smoothstep(0.3, 0.0, r) * 0.55);
+        vec3 col = mix(vColor, vec3(1.0), smoothstep(0.3, 0.0, r) * 0.55 * vCore);
         gl_FragColor = vec4(col, a * vAlpha);
         #include <colorspace_fragment>
       }`,
@@ -206,6 +217,30 @@ function init(font) {
   const lead = document.querySelector(".h1-lead");
   const stickyTop = hero ? parseFloat(getComputedStyle(hero).top) || 0 : 0;
   let leadShown = "";
+  function sampleLead() {
+    if (!lead) return;
+    const r = lead.getBoundingClientRect();
+    if (r.width < 2) return;
+    const W = 640, H = Math.max(8, Math.round((W * r.height) / r.width)), k = W / r.width;
+    const cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    const cs = getComputedStyle(lead);
+    ctx.font = `${cs.fontWeight} ${parseFloat(cs.fontSize) * k}px ${cs.fontFamily}`;
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${parseFloat(cs.letterSpacing) * k || 0}px`;
+    ctx.textBaseline = "alphabetic";
+    const m = ctx.measureText(lead.textContent);
+    const asc = m.fontBoundingBoxAscent || H * 0.78, desc = m.fontBoundingBoxDescent || H * 0.22;
+    ctx.fillText(lead.textContent, 0, (H * asc) / (asc + desc));
+    const data = ctx.getImageData(0, 0, W, H).data, filled = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (data[(y * W + x) * 4 + 3] > 128) filled.push(x, y);
+    if (!filled.length) return;
+    for (let i = 0; i < COUNT; i++) {
+      const j = Math.floor(Math.random() * (filled.length / 2)) * 2;
+      leadPts.set([(filled[j] + Math.random()) / W - 0.5, (H / 2 - filled[j + 1] - Math.random()) / W, 0], i * 3);
+    }
+    leadAttr.needsUpdate = true;
+  }
   const showLead = (v) => { const s = v.toFixed(2); if (s !== leadShown) { leadShown = s; document.documentElement.style.setProperty("--lead", s); } };
   const footPanel = document.querySelector(".foot.panel");
   const st = { form: 0, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: reduced ? 1 : 0, mode: null, hp: 0, q: 0,
@@ -238,7 +273,8 @@ function init(font) {
         const lr = lead.getBoundingClientRect(), e = THREE.MathUtils.smoothstep(st.q, 0, 0.78);   // landed before they dissolve
         const c = uniforms.uCenter.value;
         c.set(c.x + (wx(lr.left + lr.width / 2) - c.x) * e, c.y + (wy(lr.top + lr.height / 2) - c.y) * e, 0);
-        uniforms.uScale.value += (wl(lr.width * 1.04) - uniforms.uScale.value) * e;
+        uniforms.uScale.value += (wl(lr.width) - uniforms.uScale.value) * e;
+        uniforms.uMote.value += (wl(lr.height * 0.55) - uniforms.uMote.value) * e;
         renderer.setScissor(0, 0, view.vw, view.vh);
       }
       if (nameReady && nameRect) {
@@ -287,29 +323,31 @@ function init(font) {
     const angle = sway + st.spin * settle;
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
-    const pyrSolid = 1 - SS(hp, 0.06, 0.18), wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.78, 0.92));
+    const pyrSolid = 1 - SS(hp, 0.06, 0.18), wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.02, 0.22));   // back to motes for the trip down
     const formed = SS(st.form, 0.8, 1);
     uniforms.uForm.value = st.form;
     uniforms.uAngle.value = isHero ? angle : angle * 0.6 + Math.PI / 4;
     uniforms.uTime.value = reduced ? 0 : t;
     uniforms.uSolid.value = isHero ? Math.max(pyrSolid, wordSolid) : 0;
     uniforms.uMorph.value = SS(hp, 0.16, 0.38);
-    uniforms.uFade.value = 1 - SS(q, 0.9, 1);
+    uniforms.uLand.value = SS(q, 0.28, 0.76);               // capitals reshape into the headline lettering
+    uniforms.uFade.value = 1 - SS(q, 0.86, 1);
     uniforms.uShape.value = isHero ? 0 : 1;
     uniforms.uTilt.value = isHero ? 0 : 0.6155;   // the cubes sit in an isometric view
     uniforms.uPointer.value.copy(st.pointer);
-    if (isHero) showLead(SS(q, 0.86, 1));
+    if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
     st.tilt.x += ((st.pointer.y - c.y) * -0.04 - st.tilt.x) * 0.08;
     st.tilt.y += ((st.pointer.x - c.x) * 0.04 - st.tilt.y) * 0.08;
     const tx = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.x, -0.18, 0.18) * settle, ty = reduced ? 0 : THREE.MathUtils.clamp(st.tilt.y, -0.18, 0.18) * settle;
-    for (const [group, solid] of [[pyrGroup, pyrSolid], [mGroup, wordSolid]]) {
+    for (const [group, solid, mats] of [[pyrGroup, pyrSolid, [pyrFace, pyrSide]], [mGroup, wordSolid, [faceMat, sideMat]]]) {
       const g = isHero ? solid * formed : 0;
       group.visible = g > 0.001;
       if (!group.visible) continue;
       group.position.copy(c);
-      group.scale.setScalar(uniforms.uScale.value * g);
+      group.scale.setScalar(uniforms.uScale.value);   // always full size
       group.rotation.set(tx, angle + ty, 0);
+      for (const m of mats) m.opacity = g;            // how much of the surface has crystallised
     }
     namePlane.visible = isHero && nameReady && hp < 0.6;
     // The name eases from the panel's own colour to cream as the panel opens.
@@ -332,13 +370,14 @@ function init(font) {
 
   renderer.autoClear = false;
   resize();
+  sampleLead();
   wake();
   canvas.classList.add("ready");
   // The name is drawn with the page's display face, so redraw once that face has loaded.
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawName(); wake(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawName(); sampleLead(); wake(); });
 
   let resizeTimer = 0;
-  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { resize(); wake(); }, 120); });
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { resize(); sampleLead(); wake(); }, 120); });
   document.addEventListener("visibilitychange", wake);
   if (reduced) {
     let tick = 0;
@@ -391,7 +430,7 @@ function init(font) {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [mGeo, pyrGeo, faceMat, sideMat, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
+    [mGeo, pyrGeo, faceMat, sideMat, pyrFace, pyrSide, nameGeo, nameMat, nameTex, pGeo, pMat].forEach((d) => d.dispose());
     renderer.dispose();
   });
 }
