@@ -152,7 +152,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 ### Do:
 - **Do** keep one idea per step and per card.
 - **Do** keep text on clear ground.
-- **Do** show the company a project was made for in its label row, not the year.
+- **Do** show the company a project was made for as an eyebrow above the project name on the large cards. The small tiles show no company or year.
 
 ### Don't:
 - **Don't** let particles or gradients run behind body text.

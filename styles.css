@@ -78,7 +78,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 @media (max-width: 560px) { .mark { padding: 0 2px 0 6px; } .mark .logo { height: 13px; } .top nav { font-size: 13px; gap: 10px; } .top .pill { padding: 0 12px; } }
 
 /* Small label roles */
-.meta, .count, .when, .disclosure, .fine, .creds-label, .mock-note { font: 500 12px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.meta, .count, .when, .disclosure, .fine, .eyebrow, .mock-note { font: 500 12px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 
 /* Panels */
 .panel { position: relative; margin: var(--gap); border-radius: var(--r); }
@@ -272,7 +272,7 @@ h1 em { font: italic 400 1.1em/0.9 var(--serif); letter-spacing: -0.01em; color:
 .case { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(20px, 4vw, 72px); align-items: center; }
 .case h3 { font: 600 clamp(36px, 4.6vw, 68px)/.94 var(--display); letter-spacing: -0.04em; margin-bottom: 14px; }
 .meta { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 18px; }
-.client { color: var(--ink); }   /* who the project was made for */
+.eyebrow { color: var(--ink); margin-bottom: 12px; }   /* who the project was made for, above its name */
 .case-body > p:not(.meta):not(.result) { color: var(--muted); max-width: 54ch; }
 .result { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 15px; max-width: 54ch; color: var(--muted); }
 .result strong { font: 600 clamp(28px, 2.8vw, 40px)/1 var(--display); letter-spacing: -0.035em; margin-right: 12px; color: var(--ink); }
