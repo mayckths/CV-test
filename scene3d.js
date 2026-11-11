@@ -43,13 +43,13 @@ function init(font) {
   mGeo.computeBoundingBox();
   const textW = mGeo.boundingBox.max.x - mGeo.boundingBox.min.x;
   mGeo.scale(1 / textW, 1 / textW, 1 / textW);   // width 1, so the slot's width sets its size
-  // Near-clear glass; a low red glow gives the faces their own colour.
+  // The words are the portfolio's own orange (the accent, #f23a14): a deep, mostly solid glass with darker sides.
   const faceMat = new THREE.MeshPhysicalMaterial({
-    color: "#fff1ec", roughness: 0.04, metalness: 0, transmission: 1, thickness: 0.14, ior: 1.5,
-    dispersion: 14, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.7,
-    emissive: "#ff2610", emissiveIntensity: 0.95,
+    color: "#f23a14", roughness: 0.16, metalness: 0, transmission: 0.18, thickness: 0.14, ior: 1.5,
+    dispersion: 3, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 0.45,
+    emissive: "#f23a14", emissiveIntensity: 0.32,
   });
-  const sideMat = new THREE.MeshPhysicalMaterial({ color: "#e76ae0", roughness: 0.22, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 1.2 });
+  const sideMat = new THREE.MeshPhysicalMaterial({ color: "#a8250a", roughness: 0.3, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.12, envMapIntensity: 0.6 });
   // The solids never grow: they crystallise in place. A hashed dissolve lets grains of glass appear across
   // the surface where the motes have settled, until the whole figure is solid.
   for (const m of [faceMat, sideMat]) m.alphaHash = true;
@@ -189,9 +189,9 @@ function init(font) {
         float len = length(d);
         float f = smoothstep(uHole, 0.0, len);
         f *= f * free;
-        float lean = 0.085 / (1.0 + len * len * 0.12) * (0.4 + 1.2 * fract(aSeed * 5.3)) * free;
-        d *= 1.0 - f * 0.78 - lean * (1.0 - f);
-        float a = f * (1.2 + 0.6 * sin(uTime * 0.9 + aSeed * 31.0));
+        float lean = 0.05 / (1.0 + len * len * 0.12) * (0.4 + 1.2 * fract(aSeed * 5.3)) * free;
+        d *= 1.0 - f * 0.26 - lean * (1.0 - f);                    // a gentle draw, not a grab
+        float a = f * (0.22 + 0.14 * sin(uTime * 0.9 + aSeed * 31.0));
         p.xy = uPointer + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
@@ -355,13 +355,11 @@ function init(font) {
     const ctr = uniforms.uCenter.value, away = st.pointer.x > 50, ease = reduced ? 1 : 1 - Math.exp(-dt * 5);
     st.idle += ((away ? 1 : 0) - st.idle) * ease;
     const clampTo = THREE.MathUtils.clamp;
-    st.tilt.y += ((away ? 0 : clampTo((st.pointer.x - ctr.x) / (view.w * 0.5), -1, 1) * 0.62) - st.tilt.y) * ease;
-    st.tilt.x += ((away ? 0 : clampTo((st.pointer.y - ctr.y) / (view.h * 0.5), -1, 1) * -0.36) - st.tilt.x) * ease;
+    st.tilt.y += ((away ? 0 : clampTo((st.pointer.x - ctr.x) / (view.w * 0.5), -1, 1) * 0.34) - st.tilt.y) * ease;
+    st.tilt.x += ((away ? 0 : clampTo((st.pointer.y - ctr.y) / (view.h * 0.5), -1, 1) * -0.2) - st.tilt.x) * ease;
     const tx = reduced ? 0 : st.tilt.x * settle, ty = reduced ? 0 : st.tilt.y * settle;
     const sway = (reduced ? -0.35 : Math.sin(t * 0.5) * (0.06 + 0.3 * st.idle)) * settle;
-    // One full turn to the right carries the pyramids into the words, so the words arrive from the same side.
-    const turn = isHero && !reduced ? SS(hp, 0, 0.4) * Math.PI * 2 : 0;
-    const angle = sway + st.spin * settle + turn;
+    const angle = sway + st.spin * settle;   // no turn on scroll: the pyramids become the words where they stand
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
     const wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.02, 0.22));   // back to motes for the trip down

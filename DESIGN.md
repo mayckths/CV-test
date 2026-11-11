@@ -9,11 +9,11 @@ colors:
   line: "rgba(31, 28, 28, 0.14)"
   accent: "#f23a14"
   accent-text: "#c42d0c"
-  coral-on-dark: "#ff6a45"
+  accent-bright: "#ff6a45"
   violet: "#8a4be0"
-  dark-panel: "#1f1c1c"
-  on-dark: "#f5ebe3"
-  on-dark-muted: "#cdbfb6"
+  blue-panel: "#22126d"
+  on-dark: "#f1eefd"
+  on-dark-muted: "#c9c4ee"
 typography:
   display:
     fontFamily: "Bricolage Grotesque, system-ui, sans-serif"
@@ -85,7 +85,8 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Hero text:** #f1eefd, with trailing words and secondary text dimmed. Particles are white, lilac, violet, pink and peach; the glass words keep their red glow.
 
 ### Secondary
-- **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
+- **Blue panel** (blue-panel): the hero, the chat and the footer are all the same blue, with **On dark** and **On dark muted** text (one cool white, never the cream) and **Accent bright** (accent-bright) for accents. The glass "I DESIGN" is the accent orange itself, with darker sides.
+- **Ink sets for the art stamps** (violet, red-orange, magenta, amber) are the only other colours, and stay inside the Art section.
 
 ### Neutral
 - **Cream** (cream) page, **Card** (card) for pinned and stacked cards and media frames, **Ink** (ink), **Muted** (muted), **Line** (line).
@@ -96,7 +97,8 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 ## Typography
 
 **Display Font:** Bricolage Grotesque
-**Hero Font:** Instrument Serif Italic (hero headline and the two role labels only)
+**Serif:** Instrument Serif Italic, for speech and emphasis only: the hero statement and its two role labels, the emphasised words of the headline, and the recommendations. Never for body copy or labels.
+**Label sizes:** every mono label is 12px.
 **Body Font:** Geist
 **Label/Mono Font:** Geist Mono
 
@@ -140,7 +142,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover or focus. A click (or Enter) opens a spotlight: the page darkens around a card with the render, tools, year, the piece's story in Mayck's words, and previous/next. The card is one fixed size for every piece. The picture side is a square and the whole image is always shown, never cropped: a soft blurred copy of it fills the space left around tall or wide pieces. A long story scrolls inside its own side. Projects with more work show thumbnails of the other images; the Illustrations project plays its looping film; only Revista Avenida carries the link to the digital edition. The card opens and closes with the transitions.dev modal transition.
 
 ### Spotlight
-- Dark panels carry a soft coral light at the cursor.
+- The chat and footer panels carry a soft pale-blue light at the cursor.
 
 ### Floating header
 - A dark translucent pill, centred, legible over both the blue hero and the cream page.
