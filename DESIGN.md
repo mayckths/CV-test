@@ -128,10 +128,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.
 
 ### Blueprint
-- The serif M drawn as a real path: every vertex has an anchor, the bracketed serifs are true curves with their control handles, and guides mark the baseline, cap line and stems. It fades back behind the certifications so the list reads cleanly.
-
-### Bezier numerals
-- The four result figures are drawn from Bricolage Grotesque's own outlines (weight 600, optical size 96) with the path, anchor points and control handles shown in the accent colour, like a glyph in vector edit mode. The construction fades in once the step is in view.
+- The serif M drawn as a real path: every vertex has an anchor, the bracketed serifs are true curves with their control handles, and guides mark the baseline, cap line and stems. It reacts to the scroll: a camera travels around the letter, each step framing another corner (top-left serif, top-right serif, the vertex, each foot), and the node in focus is picked out in the accent colour with its handles, like a selected point. It fades back behind the education and certifications list so the list reads cleanly.
 
 ### Stamps
 - 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover, focus or tap.

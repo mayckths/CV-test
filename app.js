@@ -239,7 +239,8 @@ if (!reduced && matchMedia("(pointer: fine)").matches) {
   });
 }
 
-// Intro scene: the card stays pinned and shows one message per scroll step; the blueprint draws as you go.
+// Intro scene: the card stays pinned and shows one message per scroll step; behind it a camera travels
+// around the blueprint of the M, framing another corner and its bezier handles at each step.
 const scene = document.querySelector(".scene");
 if (scene && !reduced) {
   const steps = [...scene.querySelectorAll(".step")];
@@ -248,14 +249,67 @@ if (scene && !reduced) {
   scene.style.setProperty("--n", steps.length);
   scene.classList.add("js");
   let current = -1, queued = 0;
+
+  // Blueprint camera. Each step frames another part of the M: f is the point of the letter in focus
+  // (in the drawing's own units), a is where that point sits on the card (0 to 1), h is how many units
+  // of the drawing fit the card's height. Scrolling glides from one shot to the next.
+  const bp = scene.querySelector(".blueprint"), card = scene.querySelector(".scene-card");
+  const SHOTS = [
+    { f: [58, 50], a: [0.27, 0.72], h: 177 },   // the whole letter
+    { f: [10, 6], a: [0.16, 0.76], h: 64 },     // top-left serif and its bracket
+    { f: [106, 6], a: [0.84, 0.22], h: 64 },    // top-right serif
+    { f: [57, 97], a: [0.5, 0.86], h: 84 },     // the vertex where the diagonals meet
+    { f: [93, 95], a: [0.8, 0.78], h: 64 },     // right foot
+    { f: [17, 95], a: [0.2, 0.78], h: 64 },     // left foot
+    { f: [58, 50], a: [0.5, 0.5], h: 135 },     // the whole letter again, behind the list
+  ];
+  const anchors = bp ? [...bp.querySelectorAll(".bp-a")].map((el) => ({ el, x: +el.getAttribute("x") + 1, y: +el.getAttribute("y") + 1 })) : [];
+  const handles = bp ? [...bp.querySelectorAll(".bp-handles path")].map((el) => {
+    const n = el.getAttribute("d").match(/-?[\d.]+/g).map(Number);   // two handle lines: anchor, control, anchor, control
+    return { els: [el, el.nextElementSibling, el.nextElementSibling.nextElementSibling], x: (n[0] + n[4]) / 2, y: (n[1] + n[5]) / 2 };
+  }) : [];
+  const cam = { v: null, goal: null, raf: 0, last: 0 };
+  const shotAt = (p) => {
+    const s = Math.min(SHOTS.length - 1, Math.max(0, p * steps.length - 0.5)), i = Math.min(SHOTS.length - 2, Math.floor(s));
+    // Hold on each shot while its step is on screen; travel around the moment the steps swap.
+    let t = Math.min(1, Math.max(0, (s - i - 0.25) / 0.5)); t = t * t * (3 - 2 * t);
+    const A = SHOTS[i], B = SHOTS[i + 1], mix = (a, b) => a + (b - a) * t;
+    return [mix(A.f[0], B.f[0]), mix(A.f[1], B.f[1]), mix(A.a[0], B.a[0]), mix(A.a[1], B.a[1]), mix(Math.log(A.h), Math.log(B.h))];
+  };
+  const frame = () => {
+    const [fx, fy, ax, ay, lh] = cam.v, h = Math.exp(lh), cw = card.clientWidth, ch = Math.max(1, card.clientHeight), w = h * cw / ch;
+    bp.setAttribute("viewBox", `${(fx - ax * w).toFixed(2)} ${(fy - ay * h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
+    bp.style.setProperty("--k", (4.5 * h / ch).toFixed(3));          // anchors stay about 9px whatever the zoom
+    // Close in, the node nearest the focus reads as selected, with its handles.
+    const near = (list) => h < 110 ? list.reduce((best, o) => (Math.hypot(o.x - fx, o.y - fy) < Math.hypot(best.x - fx, best.y - fy) ? o : best)) : null;
+    const na = near(anchors), nh = near(handles);
+    anchors.forEach((o) => o.el.classList.toggle("sel", o === na));
+    handles.forEach((o) => o.els.forEach((el) => el.classList.toggle("sel", o === nh && Math.hypot(o.x - fx, o.y - fy) < 14)));
+  };
+  const glide = (now) => {
+    const dt = Math.min(0.05, (now - cam.last) / 1000); cam.last = now;
+    const k = 1 - Math.exp(-dt * 7);
+    let rest = 0;
+    cam.v = cam.v.map((v, i) => { rest += Math.abs(cam.goal[i] - v); return v + (cam.goal[i] - v) * k; });
+    frame();
+    cam.raf = rest > 0.002 ? requestAnimationFrame(glide) : 0;
+  };
+
   const update = () => {
     queued = 0;
     const r = scene.getBoundingClientRect();
     const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
     const idx = Math.min(steps.length - 1, Math.floor(p * steps.length));
     // The outline is complete early; anchors and handles follow it in.
-    scene.style.setProperty("--draw", Math.min(1, 0.35 + p * 4).toFixed(3));
+    const draw = Math.min(1, 0.35 + p * 4);
+    scene.style.setProperty("--draw", draw.toFixed(3));
+    scene.classList.toggle("drawn", draw >= 1);
     scene.style.setProperty("--points", Math.min(1, Math.max(0, p * 6 - 0.4)).toFixed(3));
+    if (bp && anchors.length) {
+      cam.goal = shotAt(p);
+      if (!cam.v) { cam.v = cam.goal.slice(); frame(); }
+      else if (!cam.raf) { cam.last = performance.now(); cam.raf = requestAnimationFrame(glide); }
+    }
     if (idx === current) return;
     current = idx;
     steps.forEach((s, i) => { s.classList.toggle("is-on", i === idx); s.classList.toggle("is-past", i < idx); });
