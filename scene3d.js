@@ -7,7 +7,6 @@
 // Particles step away from the cursor. The slots are real buttons: drag to turn, press to scatter.
 import * as THREE from "three";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
-import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 
 const FONT_URL = "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/fonts/helvetiker_bold.typeface.json";
@@ -32,14 +31,35 @@ function init(font) {
   key.position.set(-3, 4, 6);
   scene.add(key);
 
-  // --- The words, as a shape for the particles ---
-  const mGeo = new TextGeometry("I DESIGN", { font, size: 1, depth: 0.2, curveSegments: 8, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.012, bevelSegments: 3 });
-  mGeo.center();
-  mGeo.computeBoundingBox();
-  const textW = mGeo.boundingBox.max.x - mGeo.boundingBox.min.x;
-  mGeo.scale(1 / textW, 1 / textW, 1 / textW);   // width 1, so the slot's width sets its size
-  // The words are never a solid object: this geometry only gives the particles their places, on the faces,
-  // backs and sides of the extruded letters, so the words are drawn in pixels with real depth.
+  // --- The words, as places for the particles ---
+  // "I DESIGN" is never a solid object. The letters are filled with an even grid of points, like a dot-matrix
+  // print: one layer, one size, one colour, so the words read calmly. Returns points in units of the text's
+  // width (x from -0.5 to 0.5) and the spacing between them.
+  function wordGrid(text, want) {
+    const shapes = font.generateShapes(text, 100);
+    const box = new THREE.Box2();
+    const rings = shapes.map((sh) => [sh.getPoints(10), ...sh.holes.map((h) => h.getPoints(10))]);
+    rings.forEach((rs) => rs[0].forEach((pt) => box.expandByPoint(pt)));
+    const w = box.max.x - box.min.x, h = box.max.y - box.min.y, W = 1400, k = W / w, H = Math.ceil(h * k);
+    const cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.beginPath();
+    rings.forEach((rs) => rs.forEach((ring) => {
+      ring.forEach((pt, n) => { const x = (pt.x - box.min.x) * k, y = H - (pt.y - box.min.y) * k; if (n) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+      ctx.closePath();
+    }));
+    ctx.fill("evenodd");
+    const data = ctx.getImageData(0, 0, W, H).data;
+    let ink = 0;
+    for (let n = 3; n < data.length; n += 4) if (data[n] > 128) ink++;
+    const g = Math.sqrt((ink / (W * W)) / want);           // spacing that gives about `want` points
+    const pts = [];
+    for (let y = g / 2; y < H / W; y += g) for (let x = g / 2; x < 1; x += g) {
+      if (data[(Math.min(H - 1, Math.floor(y * W)) * W + Math.floor(x * W)) * 4 + 3] > 128) pts.push(x - 0.5, (H / W) / 2 - y);
+    }
+    return { pts, g };
+  }
 
   // --- Pyramids: two side by side read as an M. They are only ever drawn in particles. ---
   const PYR = mobile ? 1.0 : 0.6;            // size relative to the width of the words
@@ -106,15 +126,15 @@ function init(font) {
 
   // --- Particles: motes that hold the pyramids, the words, or the headline lettering ---
   const COUNT = mobile ? 2800 : 5600;
-  const sampler = new MeshSurfaceSampler(new THREE.Mesh(mGeo)).build();
+  const grid = wordGrid("I DESIGN", COUNT / 2);   // two motes share each point, so every point is solid
   const pyrSampler = new MeshSurfaceSampler(new THREE.Mesh(pyrGeo)).build();
   const target = new Float32Array(COUNT * 3), pyr = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
   const seed = new Float32Array(COUNT), sizes = new Float32Array(COUNT);
   const palette = ["#ffffff", "#f3d9ff", "#c9a2ff", "#9a63f5", "#ff9fd0", "#ffd8c2"].map((c) => new THREE.Color(c));
   const v = new THREE.Vector3();
   for (let i = 0; i < COUNT; i++) {
-    sampler.sample(v);
-    target.set([v.x, v.y, v.z], i * 3);
+    const gp = (i % (grid.pts.length / 2)) * 2;
+    target.set([grid.pts[gp], grid.pts[gp + 1], 0], i * 3);
     if (i % 5 < 2) {
       // On an edge: from the apex to a base corner, or along the base.
       const k = Math.floor(Math.random() * 4), a = (k * Math.PI) / 2 + Math.PI / 4, b = a + Math.PI / 2, u = Math.random();
@@ -142,15 +162,15 @@ function init(font) {
   const uniforms = {
     uForm: { value: 0 }, uAngle: { value: 0 }, uTilt: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
-    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 }, uWord: { value: new THREE.Color("#f5ebe3") },
+    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 }, uWord: { value: new THREE.Color("#f5ebe3") }, uDot: { value: grid.g * 1.75 },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uMote, uMorph, uFade, uLand, uHole;
+      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uMote, uMorph, uFade, uLand, uHole, uDot;
       uniform vec3 uCenter; uniform vec3 uWord; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
-      varying vec3 vColor; varying float vAlpha; varying float vCore;
+      varying vec3 vColor; varying float vAlpha; varying float vCore; varying float vEdge;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
         float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
@@ -165,32 +185,35 @@ function init(font) {
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
         vec3 p = mix(loose, formed, m);
         // The cursor is an attractor: motes within reach are drawn in toward it and circle it, and go home when it leaves.
-        // Wherever it is on the panel, every mote also leans a little toward it, each by its own amount.
+        // Wherever it is on the panel, every mote also leans a little toward it, each by its own amount
+        // (the dots of the words all by the same amount, so their grid stays even).
         // None of this applies while the motes are landing on the headline.
         float free = 1.0 - uLand;
         vec2 d = p.xy - uPointer;
         float len = length(d);
         float f = smoothstep(uHole, 0.0, len);
-        f *= f * free;
-        float lean = 0.05 / (1.0 + len * len * 0.12) * (0.4 + 1.2 * fract(aSeed * 5.3)) * free;
+        f *= f * free * (1.0 - 0.8 * uMorph);                     // the words' grid is barely disturbed
+        float lean = 0.05 / (1.0 + len * len * 0.12) * mix(0.4 + 1.2 * fract(aSeed * 5.3), 0.6, uMorph) * free;
         d *= 1.0 - f * 0.26 - lean * (1.0 - f);                    // a gentle draw, not a grab
         float a = f * (0.22 + 0.14 * sin(uTime * 0.9 + aSeed * 31.0));
         p.xy = uPointer + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
-        // As the words, the motes are a little larger so the letters read clearly.
-        gl_PointSize = max(uPx * uMote * aSize * (1.0 + 0.45 * uMorph * (1.0 - uLand)) * (10.0 / -mv.z) * uFade, 0.0);
+        // As the words every mote is the same size, set by the grid, so the letters are an even field of dots.
+        float word = uMorph * (1.0 - uLand);
+        gl_PointSize = max(uPx * uMote * mix(aSize, uDot, word) * (10.0 / -mv.z) * uFade, 0.0);
         // Landing on the headline, the motes take the ink of the type they are becoming.
         // As the words they warm toward the page's beige; landing on the headline they take the ink of the type.
-        vColor = mix(mix(aColor, uWord, uMorph * 0.82), vec3(0.015, 0.012, 0.012), uLand);
-        vCore = 1.0 - uLand;
-        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, max(uLand, uMorph * 0.6)) * uFade;
+        vColor = mix(mix(aColor, uWord, uMorph), vec3(0.015, 0.012, 0.012), uLand);
+        vCore = 1.0 - max(uLand, uMorph);                           // no bright core on the dots of the words
+        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, max(uLand, uMorph)) * uFade;
+        vEdge = word;
       }`,
     fragmentShader: `
-      varying vec3 vColor; varying float vAlpha; varying float vCore;
+      varying vec3 vColor; varying float vAlpha; varying float vCore; varying float vEdge;
       void main() {
         float r = length(gl_PointCoord - 0.5);
-        float a = smoothstep(0.5, 0.2, r);
+        float a = smoothstep(0.5, mix(0.2, 0.4, vEdge), r);          // the dots of the words have a crisper edge
         vec3 col = mix(vColor, vec3(1.0), smoothstep(0.3, 0.0, r) * 0.55 * vCore);
         gl_FragColor = vec4(col, a * vAlpha);
         #include <colorspace_fragment>
@@ -460,7 +483,7 @@ function init(font) {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [mGeo, pyrGeo, bgGeo, bgMat, pGeo, pMat].forEach((d) => d.dispose());
+    [pyrGeo, bgGeo, bgMat, pGeo, pMat].forEach((d) => d.dispose());
     renderer.dispose();
   });
 }
