@@ -450,13 +450,20 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .spot.is-open .spot-shade { opacity: 1; }
 .spot-card { position: relative; width: min(100%, 1040px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); background: var(--card); border-radius: var(--r); overflow: hidden; box-shadow: 0 0 140px -10px color-mix(in srgb, var(--ink) 55%, transparent), 0 40px 80px -40px rgba(0, 0, 0, .8); }
 .spot-art { background: color-mix(in srgb, var(--ink) 14%, #fff); }
-.spot-art img { display: block; width: 100%; height: 100%; aspect-ratio: 1; object-fit: cover; }
+.spot-art { aspect-ratio: 1; }
+.spot-art img, .spot-art video { display: block; width: 100%; height: 100%; object-fit: contain; }
+.spot-art [hidden], .spot-link[hidden], .spot-thumbs[hidden] { display: none; }   /* these have their own display, so hidden must be restated */
 .spot-body { display: flex; flex-direction: column; padding: clamp(22px, 3.4vw, 48px); padding-top: clamp(52px, 5vw, 64px); min-width: 0; }
 .spot-meta { font: 500 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
 .spot-body h3 { margin-top: 8px; font: 600 clamp(30px, 3.6vw, 52px)/.98 var(--display); letter-spacing: -0.04em; color: var(--ink); }
 .spot-year { margin-top: 10px; font: 500 clamp(20px, 2vw, 28px)/1 var(--display); letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
 .spot-text { margin-top: 20px; font-size: 16px; line-height: 1.6; color: #3d3632; max-width: 52ch; }
 .spot-link { margin-top: 18px; align-self: flex-start; }
+.spot-thumbs { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+.spot-thumbs button { width: 56px; height: 56px; padding: 0; border: 0; border-radius: 10px; overflow: hidden; cursor: pointer; background: color-mix(in srgb, var(--ink) 14%, #fff); opacity: .6; transition: opacity .2s, box-shadow .2s; }
+.spot-thumbs button:hover { opacity: 1; }
+.spot-thumbs button[aria-current="true"] { opacity: 1; box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--ink); }
+.spot-thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .spot-nav { margin-top: auto; padding-top: 28px; display: flex; align-items: center; gap: 12px; }
 .spot-count { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--muted); min-width: 4ch; text-align: center; }
 .spot-nav button, .spot-close { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong, rgba(31, 28, 28, .3)); background: none; color: #1f1c1c; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }

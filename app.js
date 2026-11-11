@@ -366,8 +366,8 @@ if (scene && !reduced) {
     { f: [58, 50], a: [0.27, 0.72], h: 177 },   // the whole letter
     { f: [10, 6], a: [0.16, 0.76], h: 64 },     // top-left serif and its bracket
     { f: [106, 6], a: [0.84, 0.22], h: 64 },    // top-right serif
-    { f: [57, 97], a: [0.5, 0.86], h: 84 },     // the vertex where the diagonals meet
-    { f: [93, 95], a: [0.8, 0.78], h: 64 },     // right foot
+    { f: [17, 95], a: [0.22, 0.74], h: 58 },    // down to the left foot, bottom left
+    { f: [93, 95], a: [0.78, 0.74], h: 58 },    // across to the right foot, bottom right
     { f: [58, 50], a: [0.5, 0.5], h: 135 },     // the whole letter again, behind the list
   ];
   const cam = { v: null, goal: null, raf: 0, last: 0 };
@@ -513,8 +513,32 @@ if (spot && typeof spot.showModal === "function") {
     index = (i + stamps.length) % stamps.length;
     const s = stamps[index], q = (sel) => s.querySelector(sel);
     spot.style.setProperty("--ink", getComputedStyle(s).getPropertyValue("--ink"));
-    $(".spot-art img").src = q("img").currentSrc || q("img").src;
-    $(".spot-art img").alt = q("img").alt;
+    // The piece itself, then any other images from the same project; one project is a short film instead.
+    const first = { src: q("img").currentSrc || q("img").src, alt: q("img").alt };
+    const items = [first, ...(s.dataset.gallery || "").split("|").filter(Boolean).map((it) => { const [src, alt] = it.split("::"); return { src, alt }; })];
+    const img = $(".spot-art img"), film = $(".spot-art video"), thumbs = $(".spot-thumbs");
+    const show = (k) => {
+      img.src = items[k].src; img.alt = items[k].alt;
+      thumbs.querySelectorAll("button").forEach((b, n) => b.setAttribute("aria-current", String(n === k)));
+    };
+    film.pause(); film.hidden = !s.dataset.video; img.hidden = !!s.dataset.video;
+    if (s.dataset.video) {
+      film.innerHTML = `<source src="${s.dataset.video}.webm" type="video/webm"><source src="${s.dataset.video}.mp4" type="video/mp4">`;
+      film.poster = first.src; film.setAttribute("aria-label", first.alt); film.controls = reduced;
+      film.load();
+      if (!reduced) film.play().catch(() => {});
+    } else film.innerHTML = "";
+    thumbs.textContent = "";
+    thumbs.hidden = items.length < 2;
+    if (items.length > 1) items.forEach((it, k) => {
+      const b = document.createElement("button"), t = document.createElement("img");
+      b.type = "button"; b.setAttribute("aria-label", `Image ${k + 1} of ${items.length}: ${it.alt}`);
+      t.src = it.src; t.alt = ""; t.loading = "lazy"; t.width = t.height = 64;
+      b.appendChild(t);
+      b.addEventListener("click", () => show(k));
+      thumbs.appendChild(b);
+    });
+    show(0);
     $(".spot-meta").textContent = q(".stamp-meta").textContent;
     $("#spot-title").textContent = q(".stamp-title").textContent;
     $(".spot-year").textContent = q(".stamp-year").textContent;
@@ -541,6 +565,7 @@ if (spot && typeof spot.showModal === "function") {
     spot.classList.remove("is-open");
     closing = setTimeout(() => {
       card.classList.remove("is-closing");
+      $(".spot-art video").pause();
       spot.close();
       document.documentElement.classList.remove("spot-open");
       if (opener) opener.focus({ preventScroll: true });
