@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero is a vivid gradient panel (red-orange into pink and violet) that opens on load, with Mayck's wordmark logo set huge and two glass pyramids standing as an M in front of it, bending the logo behind them. The hero stays pinned while the logo slides away, the pyramids break into particles that re-form as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero is a panel filled with Mayck's "Capas" render, drawn in WebGL so its layers drift, shift in depth with the cursor and are dragged by it, with Mayck's wordmark logo set huge and two pyramids drawn in particles standing as an M in front of it. The hero stays pinned while the logo slides away, the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, case studies are cards that slide over one another, and dark panels carry the flagship work and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -75,13 +75,13 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - Cream ground, dark ink, one red-orange accent. Text never sits on particles.
 - Rounded panels (28px) stacked with a 16px gap.
 - One message, one card, one project in focus at a time.
-- Glass pyramids, then glass words, in the hero; soft particles between the two, on press, and for the cube stack in the footer.
+- Particle pyramids, then glass words, in the hero; the particle pyramids return in the footer.
 
 ## Colors
 
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
-- **Hero gradient:** #ff2a10 to #ff5a1c to #ff4f80 to #a44ce4, with drifting violet, orange and pink blooms.
+- **Hero background:** the Capas render (yellow, magenta, violet, orange), dimmed about 16% so white type holds.
 
 ### Secondary
 - **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
@@ -128,7 +128,10 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.
 
 ### Blueprint
-- The M's outline with anchor points, handles, guides and a construction circle, drawn in as the intro scrolls.
+- The serif M drawn as a real path: every vertex has an anchor, the bracketed serifs are true curves with their control handles, and guides mark the baseline, cap line and stems. It fades back behind the certifications so the list reads cleanly.
+
+### Stamps
+- 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover, focus or tap.
 
 ### Spotlight
 - Dark panels carry a soft coral light at the cursor.

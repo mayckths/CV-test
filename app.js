@@ -253,11 +253,14 @@ if (scene && !reduced) {
     const r = scene.getBoundingClientRect();
     const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
     const idx = Math.min(steps.length - 1, Math.floor(p * steps.length));
-    scene.style.setProperty("--draw", Math.min(1, 0.12 + p * 1.1).toFixed(3));
+    // The outline is complete early; anchors and handles follow it in.
+    scene.style.setProperty("--draw", Math.min(1, 0.35 + p * 4).toFixed(3));
+    scene.style.setProperty("--points", Math.min(1, Math.max(0, p * 6 - 0.4)).toFixed(3));
     if (idx === current) return;
     current = idx;
     steps.forEach((s, i) => { s.classList.toggle("is-on", i === idx); s.classList.toggle("is-past", i < idx); });
     ticks.forEach((t, i) => t.classList.toggle("on", i === idx));
+    scene.classList.toggle("dense", steps[idx].classList.contains("creds"));
   };
   window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(update); }, { passive: true });
   window.addEventListener("resize", update);
@@ -289,3 +292,54 @@ if (heroWrap && !reduced) {
   window.addEventListener("resize", set);
   set();
 }
+
+// Stamps: each 3D piece prints as an ordered-dither pixel image in one ink, and resolves into the render
+// when you hover, focus or tap it.
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function dither(canvas, img, cells, ink) {
+  const w = canvas.width, tmp = dither.tmp || (dither.tmp = document.createElement("canvas"));
+  tmp.width = tmp.height = cells;
+  const tctx = tmp.getContext("2d", { willReadFrequently: true });
+  tctx.drawImage(img, 0, 0, cells, cells);
+  const px = tctx.getImageData(0, 0, cells, cells).data, ctx = canvas.getContext("2d"), size = w / cells;
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(ink.slice(i, i + 2), 16));
+  // Four opaque tones of one ink on paper: paper, light, mid, full. The Bayer matrix decides between neighbours.
+  const tone = (k) => `rgb(${Math.round(255 + (r - 255) * k)},${Math.round(255 + (g - 255) * k)},${Math.round(255 + (b - 255) * k)})`;
+  const tones = [tone(0.1), tone(0.36), tone(0.66), tone(1)];
+  ctx.fillStyle = tones[0];
+  ctx.fillRect(0, 0, w, w);
+  for (let y = 0; y < cells; y++) for (let x = 0; x < cells; x++) {
+    const i = (y * cells + x) * 4, lum = (px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11) / 255;
+    const level = Math.min(3, Math.floor((1 - lum) * 3 + (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16));
+    if (!level) continue;
+    ctx.fillStyle = tones[level];
+    ctx.fillRect(Math.round(x * size), Math.round(y * size), Math.ceil(size), Math.ceil(size));
+  }
+}
+document.querySelectorAll(".stamp").forEach((stamp) => {
+  const img = stamp.querySelector("img"), canvas = stamp.querySelector("canvas");
+  const ink = getComputedStyle(stamp).getPropertyValue("--ink").trim();
+  const STEPS = [48, 72, 144];
+  let timer = 0;
+  const draw = (cells) => { try { dither(canvas, img, cells, ink); } catch (e) { stamp.classList.add("clear"); } };
+  const ready = () => draw(STEPS[0]);
+  if (img.complete && img.naturalWidth) ready(); else img.addEventListener("load", ready, { once: true });
+  const set = (on) => {
+    clearTimeout(timer);
+    if (reduced) { stamp.classList.toggle("clear", on); return; }
+    if (on) {
+      // Sharpen in a couple of steps, then give way to the render.
+      draw(STEPS[1]);
+      timer = setTimeout(() => { draw(STEPS[2]); timer = setTimeout(() => stamp.classList.add("clear"), 90); }, 90);
+    } else {
+      stamp.classList.remove("clear");
+      draw(STEPS[1]);
+      timer = setTimeout(() => draw(STEPS[0]), 120);
+    }
+  };
+  stamp.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") set(true); });
+  stamp.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") set(false); });
+  stamp.addEventListener("focus", () => set(true));
+  stamp.addEventListener("blur", () => set(false));
+  stamp.addEventListener("click", (e) => { if (e.pointerType === "touch" || e.detail === 0) set(!stamp.classList.contains("clear")); });
+});
