@@ -1,13 +1,11 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
 //   - hero background: a dark ground with a drifting haze of the blue, faint stars, and a light that trails the cursor.
 //   - hero figure: two pyramids drawn in soft particles (an M), alone on the panel. As the pinned
-//     hero scrolls, the particles re-form as "I DESIGN", which crystallises into
-//     glass between two role labels. When the hero leaves, the words turn back into particles, travel
-//     down and reshape into the "I design" that opens the headline.
+//     hero scrolls, the particles re-form as "I DESIGN" in 3D, still only pixels, between two role labels.
+//     When the hero leaves, they travel down and reshape into the "I design" that opens the headline.
 //   - footer: the particle pyramids again, on the dark panel.
 // Particles step away from the cursor. The slots are real buttons: drag to turn, press to scatter.
 import * as THREE from "three";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
@@ -30,30 +28,18 @@ function init(font) {
   camera.position.z = 10;
   const mobile = window.innerWidth < 820;
 
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
   const key = new THREE.DirectionalLight(0xffffff, 2.4);
   key.position.set(-3, 4, 6);
   scene.add(key);
 
-  // --- Glass words ---
+  // --- The words, as a shape for the particles ---
   const mGeo = new TextGeometry("I DESIGN", { font, size: 1, depth: 0.2, curveSegments: 8, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.012, bevelSegments: 3 });
   mGeo.center();
   mGeo.computeBoundingBox();
   const textW = mGeo.boundingBox.max.x - mGeo.boundingBox.min.x;
   mGeo.scale(1 / textW, 1 / textW, 1 / textW);   // width 1, so the slot's width sets its size
-  // The words are the page's own beige (#f5ebe3). The fronts are unlit, so they are exactly that colour whatever
-  // the lighting does; the sides are lit and slightly darker, which is what gives the letters their depth.
-  const faceMat = new THREE.MeshBasicMaterial({ color: "#f5ebe3", toneMapped: false });
-  const sideMat = new THREE.MeshPhysicalMaterial({ color: "#bfae9f", roughness: 0.35, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.14, envMapIntensity: 0.5 });
-  // The solids never grow: they crystallise in place. A hashed dissolve lets grains of glass appear across
-  // the surface where the motes have settled, until the whole figure is solid.
-  for (const m of [faceMat, sideMat]) m.alphaHash = true;
-  const glass = new THREE.Mesh(mGeo, [faceMat, sideMat]);
-  const mGroup = new THREE.Group();
-  mGroup.add(glass);
-  scene.add(mGroup);
+  // The words are never a solid object: this geometry only gives the particles their places, on the faces,
+  // backs and sides of the extruded letters, so the words are drawn in pixels with real depth.
 
   // --- Pyramids: two side by side read as an M. They are only ever drawn in particles. ---
   const PYR = mobile ? 1.0 : 0.6;            // size relative to the width of the words
@@ -62,7 +48,7 @@ function init(font) {
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
 
   // --- Background: a dark ground with a slow haze of the blue drifting across it and a few faint stars.
-  //     The haze leans toward the cursor and a soft light follows it. Opaque, so the glass words bend it too. ---
+  //     The haze leans toward the cursor and a soft light follows it. ---
   const BG_Z = -1.6;
   const srgb = (hex) => { const c = new THREE.Color(hex); return new THREE.Vector3(...c.convertLinearToSRGB().toArray()); };   // keep CSS values as written
   const bgMat = new THREE.ShaderMaterial({
@@ -154,16 +140,16 @@ function init(font) {
   pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 0 }, uAngle: { value: 0 }, uTilt: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uTilt: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
-    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 },
+    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 }, uWord: { value: new THREE.Color("#f5ebe3") },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand, uHole;
-      uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
+      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uMote, uMorph, uFade, uLand, uHole;
+      uniform vec3 uCenter; uniform vec3 uWord; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
       varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
@@ -192,13 +178,13 @@ function init(font) {
         p.xy = uPointer + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
-        // When the glass M is standing, the motes inside it shrink away.
-        float hide = 1.0 - smoothstep(0.35, 1.0, uSolid) * smoothstep(0.86, 1.0, uForm);
-        gl_PointSize = max(uPx * uMote * aSize * (10.0 / -mv.z) * hide * uFade, 0.0);
+        // As the words, the motes are a little larger so the letters read clearly.
+        gl_PointSize = max(uPx * uMote * aSize * (1.0 + 0.45 * uMorph * (1.0 - uLand)) * (10.0 / -mv.z) * uFade, 0.0);
         // Landing on the headline, the motes take the ink of the type they are becoming.
-        vColor = mix(aColor, vec3(0.015, 0.012, 0.012), uLand);
+        // As the words they warm toward the page's beige; landing on the headline they take the ink of the type.
+        vColor = mix(mix(aColor, uWord, uMorph * 0.82), vec3(0.015, 0.012, 0.012), uLand);
         vCore = 1.0 - uLand;
-        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, uLand) * hide * uFade;
+        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, max(uLand, uMorph * 0.6)) * uFade;
       }`,
     fragmentShader: `
       varying vec3 vColor; varying float vAlpha; varying float vCore;
@@ -359,13 +345,10 @@ function init(font) {
     const angle = sway + st.spin * settle;   // no turn on scroll: the pyramids become the words where they stand
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
-    const wordSolid = SS(hp, 0.38, 0.52) * (1 - SS(q, 0.02, 0.22));   // back to motes for the trip down
-    const formed = SS(st.form, 0.8, 1);
     uniforms.uForm.value = st.form;
     uniforms.uAngle.value = angle + ty;
     uniforms.uTilt.value = tx;
     uniforms.uTime.value = reduced ? 0 : t;
-    uniforms.uSolid.value = isHero ? wordSolid : 0;
     uniforms.uMorph.value = isHero ? SS(hp, 0.1, 0.36) : 0;      // pyramids re-form as the words; the footer keeps the pyramids
     uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
     uniforms.uFade.value = 1 - SS(q, 0.86, 1);
@@ -373,15 +356,6 @@ function init(font) {
     uniforms.uHole.value = wl(mobile ? 120 : 190);   // the attractor's reach
     if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
-    for (const [group, solid, mats] of [[mGroup, wordSolid, [faceMat, sideMat]]]) {
-      const g = isHero ? solid * formed : 0;
-      group.visible = g > 0.001;
-      if (!group.visible) continue;
-      group.position.copy(c);
-      group.scale.setScalar(uniforms.uScale.value);   // always full size
-      group.rotation.set(tx, angle + ty, 0);
-      for (const m of mats) m.opacity = g;            // how much of the surface has crystallised
-    }
     bgPlane.visible = isHero;
     if (heroSlot) {
       const words = isHero && hp > 0.28;
@@ -486,10 +460,10 @@ function init(font) {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [mGeo, pyrGeo, faceMat, sideMat, bgGeo, bgMat, pGeo, pMat].forEach((d) => d.dispose());
+    [mGeo, pyrGeo, bgGeo, bgMat, pGeo, pMat].forEach((d) => d.dispose());
     renderer.dispose();
   });
 }
 
-// The glass words need a typeface; without it the hero simply shows the logo.
+// The words need a typeface for their shape; without it the canvas is removed and the page shows its still background.
 if (canvas) new FontLoader().load(FONT_URL, init, undefined, () => canvas.remove());
