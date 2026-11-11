@@ -123,6 +123,10 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 ### Particle pyramids and glass words (signature)
 - Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning on the panel. The background is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
 
+### Hero entrance (being chosen)
+- On load the hero's text is drawn as if an agent were generating it, using the transitions.dev UI generation runtime (vendor/transitions, licence included). Four options, switched with `?hero=a|b|c|d|off`, which also shows a small switcher: A traced type (glyphs outlined in dots, then inked), B the same with type guides, a focus bracket and coordinates, C dotted wireframes of the two text groups with a scan-line reveal, D traced type with an agent log and a step line. A is the default until Mayck picks.
+- The drawing is one quiet lavender. It ends at once if the page is scrolled, and with reduced motion the text simply fades in.
+
 ### Particles
 - Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The cursor opens a round hole in them: motes inside it move out to its rim and return when it leaves.
 
