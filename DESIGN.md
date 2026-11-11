@@ -85,7 +85,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - **Hero text:** #f1eefd, with trailing words and secondary text dimmed. Particles are white, lilac, violet, pink and peach; the glass words keep their red glow.
 
 ### Secondary
-- **Blue panel** (blue-panel): the hero, the chat and the footer are all the same blue, with **On dark** and **On dark muted** text (one cool white, never the cream) and **Accent bright** (accent-bright) for accents. "I DESIGN" is an even grid of dots in the page's beige (#f5ebe3), like a dot-matrix print: one layer, one size, one colour. It is never a solid object and never scattered particles (Mayck found those too busy).
+- **Blue panel** (blue-panel): the hero and the chat are the same blue; the footer is the page's beige, with its pyramids drawn in the hero's blues, with **On dark** and **On dark muted** text (one cool white, never the cream) and **Accent bright** (accent-bright) for accents. The pyramids stay through the whole pinned hero; there is no "I DESIGN" figure any more.
 - **Ink sets for the art stamps** (violet, red-orange, magenta, amber) are the only other colours, and stay inside the Art section.
 
 ### Neutral
@@ -130,7 +130,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - The drawing is one quiet lavender. It ends at once if the page is scrolled, and with reduced motion the text simply fades in.
 
 ### Particles
-- Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The figure (pyramids, then the glass words) turns to face the cursor. Every mote leans slightly toward the cursor wherever it is on the panel, and within reach they are drawn in and circle it. With no cursor the figure faces front and sways gently. Scrolling carries the pyramids through one full turn to the right into the words, so the words arrive from the same side. Only the pyramids face the cursor, sway and respond to drags and presses. The words are the same particles settled into an even dot grid that fills the letters (never a solid object); once formed they face front and stay still, through the rest of the pinned hero and down into the headline.
+- Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The figure (pyramids, then the glass words) turns to face the cursor. Every mote leans slightly toward the cursor wherever it is on the panel, and within reach they are drawn in and circle it. With no cursor the figure faces front and sways gently. Scrolling carries the pyramids through one full turn to the right into the words, so the words arrive from the same side. The pyramids face the cursor, sway and respond to drags and presses through the whole pinned hero, with the two role labels either side on the second screen. As the hero lets go they come to rest facing front, and the motes travel down and become the headline's "I design".
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.

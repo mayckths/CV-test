@@ -1,20 +1,18 @@
 // One WebGL layer that only ever draws inside a panel (hero or footer):
 //   - hero background: a dark ground with a drifting haze of the blue, faint stars, and a light that trails the cursor.
 //   - hero figure: two pyramids drawn in soft particles (an M), alone on the panel. As the pinned
-//     hero scrolls, the particles re-form as "I DESIGN" in 3D, still only pixels, between two role labels.
-//     When the hero leaves, they travel down and reshape into the "I design" that opens the headline.
+//     hero scrolls they stay, between two role labels. When the hero leaves, the motes travel down and
+//     reshape into the "I design" that opens the headline.
 //   - footer: the particle pyramids again, on the dark panel.
 // Particles step away from the cursor. The slots are real buttons: drag to turn, press to scatter.
 import * as THREE from "three";
-import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 
-const FONT_URL = "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/fonts/helvetiker_bold.typeface.json";
 
 const canvas = document.getElementById("stage");
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-function init(font) {
+function init() {
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
@@ -30,36 +28,6 @@ function init(font) {
   const key = new THREE.DirectionalLight(0xffffff, 2.4);
   key.position.set(-3, 4, 6);
   scene.add(key);
-
-  // --- The words, as places for the particles ---
-  // "I DESIGN" is never a solid object. The letters are filled with an even grid of points, like a dot-matrix
-  // print: one layer, one size, one colour, so the words read calmly. Returns points in units of the text's
-  // width (x from -0.5 to 0.5) and the spacing between them.
-  function wordGrid(text, want) {
-    const shapes = font.generateShapes(text, 100);
-    const box = new THREE.Box2();
-    const rings = shapes.map((sh) => [sh.getPoints(10), ...sh.holes.map((h) => h.getPoints(10))]);
-    rings.forEach((rs) => rs[0].forEach((pt) => box.expandByPoint(pt)));
-    const w = box.max.x - box.min.x, h = box.max.y - box.min.y, W = 1400, k = W / w, H = Math.ceil(h * k);
-    const cv = document.createElement("canvas");
-    cv.width = W; cv.height = H;
-    const ctx = cv.getContext("2d", { willReadFrequently: true });
-    ctx.beginPath();
-    rings.forEach((rs) => rs.forEach((ring) => {
-      ring.forEach((pt, n) => { const x = (pt.x - box.min.x) * k, y = H - (pt.y - box.min.y) * k; if (n) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
-      ctx.closePath();
-    }));
-    ctx.fill("evenodd");
-    const data = ctx.getImageData(0, 0, W, H).data;
-    let ink = 0;
-    for (let n = 3; n < data.length; n += 4) if (data[n] > 128) ink++;
-    const g = Math.sqrt((ink / (W * W)) / want);           // spacing that gives about `want` points
-    const pts = [];
-    for (let y = g / 2; y < H / W; y += g) for (let x = g / 2; x < 1; x += g) {
-      if (data[(Math.min(H - 1, Math.floor(y * W)) * W + Math.floor(x * W)) * 4 + 3] > 128) pts.push(x - 0.5, (H / W) / 2 - y);
-    }
-    return { pts, g };
-  }
 
   // --- Pyramids: two side by side read as an M. They are only ever drawn in particles. ---
   const PYR = mobile ? 1.0 : 0.6;            // size relative to the width of the words
@@ -126,15 +94,12 @@ function init(font) {
 
   // --- Particles: motes that hold the pyramids, the words, or the headline lettering ---
   const COUNT = mobile ? 2800 : 5600;
-  const grid = wordGrid("I DESIGN", COUNT / 2);   // two motes share each point, so every point is solid
   const pyrSampler = new MeshSurfaceSampler(new THREE.Mesh(pyrGeo)).build();
-  const target = new Float32Array(COUNT * 3), pyr = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
+  const pyr = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
   const seed = new Float32Array(COUNT), sizes = new Float32Array(COUNT);
   const palette = ["#ffffff", "#f3d9ff", "#c9a2ff", "#9a63f5", "#ff9fd0", "#ffd8c2"].map((c) => new THREE.Color(c));
   const v = new THREE.Vector3();
   for (let i = 0; i < COUNT; i++) {
-    const gp = (i % (grid.pts.length / 2)) * 2;
-    target.set([grid.pts[gp], grid.pts[gp + 1], 0], i * 3);
     if (i % 5 < 2) {
       // On an edge: from the apex to a base corner, or along the base.
       const k = Math.floor(Math.random() * 4), a = (k * Math.PI) / 2 + Math.PI / 4, b = a + Math.PI / 2, u = Math.random();
@@ -149,8 +114,9 @@ function init(font) {
     sizes[i] = 0.007 + 0.02 * Math.pow(Math.random(), 3.2);
   }
   const pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute("position", new THREE.BufferAttribute(target, 3));
-  pGeo.setAttribute("aPyr", new THREE.BufferAttribute(pyr, 3));
+  const pyrAttr = new THREE.BufferAttribute(pyr, 3);
+  pGeo.setAttribute("position", pyrAttr);   // three needs one; the shader reads the pyramid places as aPyr
+  pGeo.setAttribute("aPyr", pyrAttr);
   // Where each mote sits in the headline's own "I design", sampled from the real lettering once fonts load.
   const leadPts = new Float32Array(COUNT * 3);
   const leadAttr = new THREE.BufferAttribute(leadPts, 3);
@@ -160,23 +126,24 @@ function init(font) {
   pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 0 }, uAngle: { value: 0 }, uTilt: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uTilt: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uMote: { value: 1 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
-    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 }, uWord: { value: new THREE.Color("#f5ebe3") }, uDot: { value: grid.g * 1.75 },
+    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 },
+    // On the beige footer the motes are drawn in the hero's blues instead of light tints.
+    uFoot: { value: 0 }, uInkA: { value: new THREE.Color("#22126d") }, uInkB: { value: new THREE.Color("#5a3cf2") },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uMote, uMorph, uFade, uLand, uHole, uDot;
-      uniform vec3 uCenter; uniform vec3 uWord; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
-      varying vec3 vColor; varying float vAlpha; varying float vCore; varying float vEdge;
+      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uMote, uFade, uLand, uHole, uFoot;
+      uniform vec3 uCenter; uniform vec3 uInkA; uniform vec3 uInkB; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
+      varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
         float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
-        vec3 words = mix(position, aLead, uLand);
-        vec3 t = mix(aPyr, words, uMorph) * uScale;
+        vec3 t = mix(aPyr, aLead, uLand) * uScale;                 // the pyramids, or the headline lettering they land on
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
         float ct = cos(uTilt), sn = sin(uTilt);                    // then pitched, so the figure can face the cursor
         turned = vec3(turned.x, turned.y * ct - turned.z * sn, turned.y * sn + turned.z * ct);
@@ -185,35 +152,30 @@ function init(font) {
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
         vec3 p = mix(loose, formed, m);
         // The cursor is an attractor: motes within reach are drawn in toward it and circle it, and go home when it leaves.
-        // Wherever it is on the panel, every mote also leans a little toward it, each by its own amount
-        // (the dots of the words all by the same amount, so their grid stays even).
+        // Wherever it is on the panel, every mote also leans a little toward it, each by its own amount.
         // None of this applies while the motes are landing on the headline.
         float free = 1.0 - uLand;
         vec2 d = p.xy - uPointer;
         float len = length(d);
         float f = smoothstep(uHole, 0.0, len);
-        f *= f * free * (1.0 - 0.8 * uMorph);                     // the words' grid is barely disturbed
-        float lean = 0.05 / (1.0 + len * len * 0.12) * mix(0.4 + 1.2 * fract(aSeed * 5.3), 0.6, uMorph) * free;
+        f *= f * free;
+        float lean = 0.05 / (1.0 + len * len * 0.12) * (0.4 + 1.2 * fract(aSeed * 5.3)) * free;
         d *= 1.0 - f * 0.26 - lean * (1.0 - f);                    // a gentle draw, not a grab
         float a = f * (0.22 + 0.14 * sin(uTime * 0.9 + aSeed * 31.0));
         p.xy = uPointer + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
-        // As the words every mote is the same size, set by the grid, so the letters are an even field of dots.
-        float word = uMorph * (1.0 - uLand);
-        gl_PointSize = max(uPx * uMote * mix(aSize, uDot, word) * (10.0 / -mv.z) * uFade, 0.0);
+        gl_PointSize = max(uPx * uMote * aSize * (10.0 / -mv.z) * uFade, 0.0);
         // Landing on the headline, the motes take the ink of the type they are becoming.
-        // As the words they warm toward the page's beige; landing on the headline they take the ink of the type.
-        vColor = mix(mix(aColor, uWord, uMorph), vec3(0.015, 0.012, 0.012), uLand);
-        vCore = 1.0 - max(uLand, uMorph);                           // no bright core on the dots of the words
-        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, max(uLand, uMorph)) * uFade;
-        vEdge = word;
+        vColor = mix(mix(aColor, mix(uInkA, uInkB, fract(aSeed * 3.1)), uFoot), vec3(0.015, 0.012, 0.012), uLand);
+        vCore = (1.0 - uLand) * (1.0 - uFoot);                      // the bright core only shows on the dark hero
+        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, max(uLand, uFoot * 0.7)) * uFade;
       }`,
     fragmentShader: `
-      varying vec3 vColor; varying float vAlpha; varying float vCore; varying float vEdge;
+      varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         float r = length(gl_PointCoord - 0.5);
-        float a = smoothstep(0.5, mix(0.2, 0.4, vEdge), r);          // the dots of the words have a crisper edge
+        float a = smoothstep(0.5, 0.2, r);
         vec3 col = mix(vColor, vec3(1.0), smoothstep(0.3, 0.0, r) * 0.55 * vCore);
         gl_FragColor = vec4(col, a * vAlpha);
         #include <colorspace_fragment>
@@ -353,9 +315,9 @@ function init(font) {
     }
     const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
-    // Only the pyramids face the cursor and sway. By the time the words have formed they face front and stay
-    // still, through the rest of the pinned hero and all the way down into the sentence.
-    const settle = (isHero ? 1 - SS(hp, 0.26, 0.4) : 1) * (1 - SS(q, 0, 0.3));
+    // The pyramids stay through the whole pinned hero. They come to rest facing front as the hero lets go, so
+    // nothing turns while the motes travel down and become the headline's "I design".
+    const settle = 1 - SS(q, 0, 0.3);
     // The figure faces the cursor: yaw and pitch follow where the pointer is. With no cursor (touch, or it has
     // left the page) it faces front and sways a little more on its own.
     const ctr = uniforms.uCenter.value, away = st.pointer.x > 50, ease = reduced ? 1 : 1 - Math.exp(-dt * 5);
@@ -372,7 +334,7 @@ function init(font) {
     uniforms.uAngle.value = angle + ty;
     uniforms.uTilt.value = tx;
     uniforms.uTime.value = reduced ? 0 : t;
-    uniforms.uMorph.value = isHero ? SS(hp, 0.1, 0.36) : 0;      // pyramids re-form as the words; the footer keeps the pyramids
+    uniforms.uFoot.value = st.mode === "foot" ? 1 : 0;
     uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
     uniforms.uFade.value = 1 - SS(q, 0.86, 1);
     uniforms.uPointer.value.copy(st.pointer);
@@ -380,11 +342,6 @@ function init(font) {
     if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
     bgPlane.visible = isHero;
-    if (heroSlot) {
-      const words = isHero && hp > 0.28;
-      if (words !== st.words) { st.words = words; heroSlot.classList.toggle("still", words); }
-      if (words) st.vel *= Math.exp(-dt * 8);          // any spin left from a drag dies out
-    }
     if (isHero) {
       // The background's light trails the cursor slowly, like something heavy.
       st.bgPointer.lerp(st.bgGoal, reduced ? 1 : 1 - Math.exp(-dt * 1.6));
@@ -440,10 +397,7 @@ function init(font) {
     if (!slot) continue;
     slot.classList.add("live");
     let downX = 0, lastX = 0, lastT = 0, moved = 0;
-    // Only the pyramids are a toy: once they have become the words, the hero figure ignores drags, presses and keys.
-    const asWords = () => slot === heroSlot && st.mode === "hero" && st.hp > 0.28;
     slot.addEventListener("pointerdown", (e) => {
-      if (asWords()) return;
       st.dragging = true; moved = 0; downX = lastX = e.clientX; lastT = performance.now(); st.vel = 0;
       slot.setPointerCapture(e.pointerId);
       slot.classList.add("grabbing");
@@ -466,14 +420,13 @@ function init(font) {
     slot.addEventListener("pointerup", release);
     slot.addEventListener("pointercancel", release);
     slot.addEventListener("click", () => {
-      if (asWords()) { moved = 0; return; }
       if (moved < 6) {
         if (reduced) { st.spin += Math.PI / 4; still(); } else { st.burstT = 0; st.vel += 5; }
       }
       moved = 0;
     });
     slot.addEventListener("keydown", (e) => {
-      if ((e.key !== "ArrowLeft" && e.key !== "ArrowRight") || asWords()) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       e.preventDefault();
       const dir = e.key === "ArrowRight" ? 1 : -1;
       if (reduced) { st.spin += dir * Math.PI / 8; still(); } else st.vel += dir * 5;
@@ -488,5 +441,4 @@ function init(font) {
   });
 }
 
-// The words need a typeface for their shape; without it the canvas is removed and the page shows its still background.
-if (canvas) new FontLoader().load(FONT_URL, init, undefined, () => canvas.remove());
+if (canvas) init();

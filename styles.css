@@ -91,18 +91,17 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .hero .panel-bg { background: var(--blue-bg); }
 /* Second part of the pinned hero: two roles either side of the turning words */
 .hero-roles { position: absolute; inset: 0; text-shadow: 0 2px 24px rgba(20, 8, 30, .45); pointer-events: none; opacity: clamp(0, calc((var(--hp, 0) - .42) * 4), 1); }
-.hero-role { position: absolute; font-size: clamp(30px, 5vw, 78px); line-height: .98; color: var(--on-dark); max-width: 8.5em; }
-.hero-role:nth-child(1) { right: 56%; top: 62%; text-align: right; transform: translateY(calc((1 - var(--hp, 0)) * 60px)); }
-.hero-role:nth-child(2) { left: 56%; bottom: 62%; transform: translateY(calc((1 - var(--hp, 0)) * -60px)); }
+.hero-role { position: absolute; font-size: clamp(26px, 3.6vw, 56px); line-height: 1; color: var(--on-dark); max-width: 8em; }
+.hero-role:nth-child(1) { right: 75%; top: 60%; text-align: right; transform: translateY(calc((1 - var(--hp, 0)) * 60px)); }
+.hero-role:nth-child(2) { left: 75%; bottom: 60%; transform: translateY(calc((1 - var(--hp, 0)) * -60px)); }
 /* The pinned panel is its own stacking layer under the WebGL canvas, so its labels live in a twin layer above it */
 .hero-wrap { height: 260vh; display: grid; }
 .hero-wrap > .hero.panel, .hero-overlay { grid-area: 1 / 1; align-self: start; position: sticky; top: var(--gap); }
 .hero-overlay { z-index: 2; height: calc(100svh - 2 * var(--gap)); min-height: 520px; margin: var(--gap); pointer-events: none; color: #fff; }
 .pixel-slot { display: block; aspect-ratio: 1; padding: 0; border: 0; border-radius: 24px; background: none; cursor: grab; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
 .pixel-slot.grabbing { cursor: grabbing; }
-.pixel-slot.still { cursor: default; }   /* the words are not a toy */
 .hero .pixel-slot { width: min(66%, 900px); aspect-ratio: 4.6 / 1; }
-@media (max-width: 820px) { .hero .pixel-slot { width: 86%; } .hero-role:nth-child(1) { right: auto; left: 8%; top: 60%; text-align: left; } .hero-role:nth-child(2) { left: auto; right: 8%; bottom: 60%; text-align: right; } }
+@media (max-width: 820px) { .hero .pixel-slot { width: 86%; } .hero-role:nth-child(1) { right: auto; left: 8%; top: 70%; text-align: left; } .hero-role:nth-child(2) { left: auto; right: 8%; bottom: 70%; text-align: right; } }
 /* First part of the pinned hero, laid out like the reference: who and what top left, actions bottom left,
    a short account bottom right, the pyramids in the middle. It all drifts up and fades as the scroll begins. */
 .hero-intro, .hero-base, .hero-hint { opacity: clamp(0, calc(1 - var(--hp, 0) * 6), 1); transform: translateY(calc(var(--hp, 0) * -220px)); }
@@ -143,8 +142,6 @@ h1 em { font: italic 400 1.1em/0.9 var(--serif); letter-spacing: -0.01em; color:
 .step.creds li { font: 500 clamp(20px, 2.6vw, 36px)/1.15 var(--display); letter-spacing: -0.02em; }
 .step.creds li span { display: block; font: 400 clamp(15px, 1.5vw, 19px)/1.4 var(--text); letter-spacing: 0; color: var(--muted); margin-top: 4px; }
 .scene-foot { position: relative; z-index: 3; margin-top: clamp(32px, 5vw, 64px); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; }
-.scene-cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.scene-cta .pill { min-height: 46px; padding: 0 22px; }
 .scene-rail { display: none; }
 /* Blueprint of the M behind the steps */
 .blueprint { position: absolute; left: -4%; bottom: -18%; width: min(74%, 860px); z-index: 0; pointer-events: none; color: rgba(31, 28, 28, .32); transition: color .5s ease; }
@@ -186,11 +183,11 @@ h1 em { font: italic 400 1.1em/0.9 var(--serif); letter-spacing: -0.01em; color:
 .scene.js .step { grid-area: 1 / 1; align-self: center; opacity: 0; transform: translateY(46px) scale(.98); filter: blur(10px); transition: opacity .55s ease, transform .7s cubic-bezier(.2, .7, .2, 1), filter .55s ease; pointer-events: none; }
 .scene.js .step.is-past { transform: translateY(-46px) scale(.98); }
 .scene.js .step.is-on { opacity: 1; transform: none; filter: none; pointer-events: auto; }
-.scene.js .scene-foot { margin-top: 0; justify-content: space-between; }
+.scene.js .scene-foot { margin-top: 0; justify-content: center; }
 .scene.js .scene-rail { display: flex; gap: 6px; align-items: center; }
 .scene-rail i { width: 22px; height: 3px; border-radius: 3px; background: var(--line); transition: background .3s, width .3s; }
 .scene-rail i.on { background: var(--ink); width: 40px; }
-@media (max-width: 560px) { .scene.js .scene-foot { justify-content: center; } .scene.js .scene-rail { order: 2; } .scene-cta .pill { min-height: 44px; padding: 0 16px; } .scene-rail i { width: 14px; } .scene-rail i.on { width: 26px; } }
+@media (max-width: 560px) { .scene.js .scene-foot { justify-content: center; } .scene.js .scene-rail { order: 2; } .scene-rail i { width: 14px; } .scene-rail i.on { width: 26px; } }
 
 /* Section heads */
 .section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; padding-top: clamp(56px, 9vw, 128px); padding-bottom: 20px; }
@@ -210,10 +207,9 @@ h1 em { font: italic 400 1.1em/0.9 var(--serif); letter-spacing: -0.01em; color:
 .link:hover::after { transform: translate(2px, -2px); }
 
 /* Dark surfaces share a spotlight that follows the cursor */
-/* Every dark panel is the same blue (hero, chat, footer), with the same pale light under the cursor */
-.ask-panel, .foot .panel-bg { --sx: 70%; --sy: 0%; background: radial-gradient(520px circle at var(--sx) var(--sy), rgba(126, 108, 255, .3), transparent 70%), var(--blue-bg); }
-/* The footer shares the hero's blue; its cursor light is a paler blue */
-.foot .panel-bg { background: radial-gradient(520px circle at var(--sx) var(--sy), rgba(126, 108, 255, .3), transparent 70%), var(--blue-bg); }
+/* The dark panels (hero and chat) are the same blue; the chat carries a pale light under the cursor. The footer is the page's beige. */
+.ask-panel { --sx: 70%; --sy: 0%; background: radial-gradient(520px circle at var(--sx) var(--sy), rgba(126, 108, 255, .3), transparent 70%), var(--blue-bg); }
+.foot .panel-bg { background: var(--bg); }
 
 /* Flagship: Ask Novo and the live panel */
 
@@ -481,25 +477,23 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
   .spot-body { padding-top: 22px; }
 }
 
-/* Footer: a panel in the hero's blue where the pyramids return in particles */
-.foot.panel { color: var(--on-dark); padding: clamp(28px, 5vw, 72px) var(--pad) 28px; }
+/* Footer: on the page's beige, where the pyramids return in blue particles */
+.foot.panel { color: var(--ink); padding: clamp(28px, 5vw, 72px) var(--pad) 28px; }
 .foot-main { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 80px); align-items: center; max-width: var(--max); margin-inline: auto; }
 .big { font: 600 clamp(40px, 5.6vw, 88px)/.94 var(--display); letter-spacing: -0.045em; max-width: 15ch; text-wrap: balance; }
 .foot-links { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 36px; }
-.foot .pill { min-height: 50px; padding: 0 26px; font-size: 15px; background: var(--on-dark); color: var(--ink); border-color: var(--on-dark); }
-.foot .pill:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
-.foot .link { border-color: rgba(241, 238, 253, .4); }
-.foot .link::after { background: var(--accent-bright); }
+.foot .pill { min-height: 50px; padding: 0 26px; font-size: 15px; background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.foot .pill:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .slot-wrap { display: grid; justify-items: center; }
 .foot .pixel-slot { width: min(100%, 420px); }
 .foot.panel { margin-top: var(--gap); }
 .foot-lists { margin: clamp(40px, 6vw, 80px) auto 0; max-width: var(--max); display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 5vw, 80px); }
 .foot-lists h2 { font: 600 26px/1.1 var(--display); letter-spacing: -0.02em; margin-bottom: 12px; }
-.foot-lists li { border-top: 1px solid var(--dark-line); }
+.foot-lists li { border-top: 1px solid var(--line); }
 .foot-lists a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; text-decoration: none; font-size: 15px; transition: color .2s, padding .25s cubic-bezier(.2, .7, .2, 1); }
-.foot-lists a span { color: var(--on-dark-muted); font: 500 12px/1 var(--mono); }
-.foot-lists a:hover { color: var(--accent-bright); padding-left: 8px; }
-.foot .fine { max-width: var(--max); margin: 48px auto 0; padding-top: 18px; border-top: 1px solid var(--dark-line); color: var(--on-dark-muted); }
+.foot-lists a span { color: var(--muted); font: 500 12px/1 var(--mono); }
+.foot-lists a:hover { color: var(--accent-text); padding-left: 8px; }
+.foot .fine { max-width: var(--max); margin: 48px auto 0; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); }
 @media (max-width: 820px) {
   .foot-main { grid-template-columns: 1fr; }
   .foot .slot-wrap { order: -1; justify-items: start; }

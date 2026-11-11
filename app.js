@@ -428,7 +428,7 @@ if (scene && !reduced) {
 
 // Spotlight: dark surfaces carry a soft light that follows the cursor.
 if (!reduced && matchMedia("(pointer: fine)").matches) {
-  document.querySelectorAll(".ask-panel, .foot.panel").forEach((el) => {
+  document.querySelectorAll(".ask-panel").forEach((el) => {
     const target = el.classList.contains("foot") ? el.querySelector(".panel-bg") : el;
     el.addEventListener("pointermove", (e) => {
       const r = el.getBoundingClientRect();
