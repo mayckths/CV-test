@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero follows ricardochance.com: a dark indigo ground with a slow haze of the blue (#22126d) and faint stars, the name and an italic serif headline top left, two actions bottom left, a short account bottom right, and two pyramids built from soft blobs in the middle. The haze leans toward the cursor and a soft light trails it; the cursor opens a clean round hole in the pyramids, and scrolling turns them. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero follows ricardochance.com: a dark indigo ground with a slow haze of the blue (#22126d) and faint stars, the name and an italic serif headline top left, two actions bottom left, a short account bottom right, and two pyramids drawn in fine soft particles in the middle. The haze leans toward the cursor and a soft light trails it; the cursor opens a clean round hole in the pyramids, and scrolling turns them. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -82,7 +82,7 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
 - **Hero and footer background:** a dark ground (#0d0730) with a haze of the blue (#22126d, lifting to #4330c4). In the hero the haze drifts, slides against the cursor and carries faint twinkling stars; the footer uses a still version with a pale blue light under the cursor.
-- **One hue family in the hero:** particles are pale lavender (#b9b2e2 to #e9e6fb) with a saturated violet-blue rim (#5a3cf2 to #a160ff); hero text is #f1eefd, with trailing words and secondary text dimmed. The glass words keep their red glow as the single accent.
+- **Hero text:** #f1eefd, with trailing words and secondary text dimmed. Particles are white, lilac, violet, pink and peach; the glass words keep their red glow.
 
 ### Secondary
 - **Dark panel** (dark-panel) with **On dark** and **On dark muted** text, and **Coral on dark** (coral-on-dark) for accents and the cursor spotlight.
@@ -124,7 +124,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning on the panel. The background is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
 
 ### Particles
-- Soft round blobs with a pale core and a saturated rim, large enough to overlap into a surface while they hold the pyramids and fine grains once they become the words. They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The cursor opens a round hole in them: motes inside it move out to its rim and return when it leaves.
+- Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The cursor opens a round hole in them: motes inside it move out to its rim and return when it leaves.
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.

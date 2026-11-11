@@ -127,8 +127,7 @@ function init(font) {
   const pyrSampler = new MeshSurfaceSampler(new THREE.Mesh(pyrGeo)).build();
   const target = new Float32Array(COUNT * 3), pyr = new Float32Array(COUNT * 3), scatter = new Float32Array(COUNT * 3), colour = new Float32Array(COUNT * 3);
   const seed = new Float32Array(COUNT), sizes = new Float32Array(COUNT);
-  // One hue family, as in the reference: pale lavender cores; the rim colour is added in the shader.
-  const palette = ["#e9e6fb", "#d6d1f3", "#c6c0ea", "#dcd8f6", "#b9b2e2"].map((c) => new THREE.Color(c));
+  const palette = ["#ffffff", "#f3d9ff", "#c9a2ff", "#9a63f5", "#ff9fd0", "#ffd8c2"].map((c) => new THREE.Color(c));
   const v = new THREE.Vector3();
   for (let i = 0; i < COUNT; i++) {
     sampler.sample(v);
@@ -160,17 +159,15 @@ function init(font) {
   const uniforms = {
     uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uSolid: { value: 0 }, uMote: { value: 1 }, uMorph: { value: 0 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
-    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 }, uBlob: { value: 1 }, uBlobK: { value: mobile ? 1.7 : 1 },
-    uRimA: { value: new THREE.Color("#5a3cf2") }, uRimB: { value: new THREE.Color("#a160ff") },
+    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand, uHole, uBlob, uBlobK;
-      uniform vec3 uRimA, uRimB;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uSolid, uMote, uMorph, uFade, uLand, uHole;
       uniform vec3 uCenter; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
-      varying vec3 vColor; varying vec3 vRim; varying float vAlpha; varying float vCore;
+      varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
         float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
@@ -190,22 +187,18 @@ function init(font) {
         gl_Position = projectionMatrix * mv;
         // When the glass M is standing, the motes inside it shrink away.
         float hide = 1.0 - smoothstep(0.35, 1.0, uSolid) * smoothstep(0.86, 1.0, uForm);
-        // As pyramids the motes are large soft blobs that overlap into a surface; as words they are fine grains.
-        float size = mix(aSize, (0.019 + 0.02 * fract(aSeed * 7.31)) * uBlobK * mix(0.4, 1.0, m), uBlob);
-        gl_PointSize = max(uPx * uMote * size * (10.0 / -mv.z) * hide * uFade, 0.0);
+        gl_PointSize = max(uPx * uMote * aSize * (10.0 / -mv.z) * hide * uFade, 0.0);
         // Landing on the headline, the motes take the ink of the type they are becoming.
         vColor = mix(aColor, vec3(0.015, 0.012, 0.012), uLand);
         vCore = 1.0 - uLand;
-        vRim = mix(uRimA, uRimB, fract(aSeed * 3.17));
-        vAlpha = mix(0.86 + 0.14 * aSeed, 1.0, uLand) * hide * uFade;
+        vAlpha = mix(0.7 + 0.3 * aSeed, 1.0, uLand) * hide * uFade;
       }`,
     fragmentShader: `
-      varying vec3 vColor; varying vec3 vRim; varying float vAlpha; varying float vCore;
+      varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
-        float r = length(gl_PointCoord - 0.5) * 2.0;
-        float a = smoothstep(1.0, 0.7, r);
-        // Pale core, saturated rim: where blobs overlap, the rims draw the texture.
-        vec3 col = mix(vColor, vRim, smoothstep(0.42, 0.96, r) * vCore);
+        float r = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.2, r);
+        vec3 col = mix(vColor, vec3(1.0), smoothstep(0.3, 0.0, r) * 0.55 * vCore);
         gl_FragColor = vec4(col, a * vAlpha);
         #include <colorspace_fragment>
       }`,
@@ -360,7 +353,6 @@ function init(font) {
     uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
     uniforms.uFade.value = 1 - SS(q, 0.86, 1);
     uniforms.uPointer.value.copy(st.pointer);
-    uniforms.uBlob.value = isHero ? 1 - SS(hp, 0.08, 0.3) : 1;
     uniforms.uHole.value = wl(mobile ? 46 : 68);
     if (isHero) showLead(SS(q, 0.8, 0.96));
     const c = uniforms.uCenter.value;
