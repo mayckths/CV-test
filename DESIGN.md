@@ -1,6 +1,6 @@
 ---
 name: Mayck Cuellar Portfolio
-description: A cream page of stacked rounded panels, a plain blue hero with particle pyramids that become glass words, and content that arrives one step at a time.
+description: A cream page of stacked rounded panels, a dark blue hero with two pyramids drawn in particles, and content that arrives one step at a time.
 colors:
   cream: "#f5ebe3"
   card: "#fffaf5"
@@ -67,7 +67,7 @@ components:
 
 **Creative North Star: "One thing at a time"**
 
-A cream page built from rounded panels with a small gap between them. The hero follows ricardochance.com: a dark indigo ground with a slow haze of the blue (#22126d) and faint stars, the name and an italic serif headline top left, a short account bottom right (no buttons), and two pyramids drawn in fine soft particles in the middle. The pyramids are simply there on load; only the text has an entrance. The haze leans toward the cursor and a soft light trails it; the cursor attracts the pyramids' particles, and scrolling turns them. The hero stays pinned while the particles re-form and crystallise as the glass words "I DESIGN", and two roles (Product design, AI strategy & product growth) appear either side. The solids never scale in: particles settle into the shape and the glass crystallises across it in place. When the hero leaves, the words break back into particles, travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, and dark panels carry the chat and the footer with a soft light that follows the cursor.
+A cream page built from rounded panels with a small gap between them. The hero follows ricardochance.com: a dark indigo ground with a slow haze of the blue (#22126d) and faint stars, the name and an italic serif headline top left, a short account bottom right (no buttons), and two pyramids drawn in fine soft particles in the middle. The pyramids are simply there on load; only the text has an entrance. The haze leans toward the cursor and a soft light trails it; the pyramids turn gently toward the cursor and their particles drift toward it. The hero stays pinned while two roles (Product design, AI strategy & product growth) appear either side of the pyramids. When the hero leaves, the pyramids' particles travel down, reshape into the headline's own lettering and darken to ink, and the real "I design" takes over. After that, content arrives step by step: a pinned card shows one message per scroll step over a faint construction blueprint of the M, all four case studies, the AI Assistant included, are cards that slide over one another, the chat sits on a blue panel with a soft light that follows the cursor, and the footer sits on the page's beige.
 
 The direction was pinned by Mayck from references and adapted to his own mark and content: guillaumezhu.com for the hero and colours, awakeagency.dev for the step-by-step flow, stacked panels and the blueprint, ricardochance.com for the soft particles.
 
@@ -75,24 +75,24 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 - Cream ground, dark ink, one red-orange accent. Text never sits on particles.
 - Rounded panels (28px) stacked with a 16px gap.
 - One message, one card, one project in focus at a time.
-- Particle pyramids, then glass words, in the hero; the particle pyramids return in the footer.
+- Particle pyramids in the hero, light on blue; they return in the footer, blue on beige.
 
 ## Colors
 
 ### Primary
 - **Accent** (accent): headline phrases, quote marks, link arrows, the send button. Large type and fills only; small text on cream uses **Accent text**.
-- **Hero and footer background:** a dark ground (#0d0730) with a haze of the blue (#22126d, lifting to #4330c4). In the hero the haze drifts, slides against the cursor and carries faint twinkling stars; the footer uses a still version with a pale blue light under the cursor.
-- **Hero text:** #f1eefd, with trailing words and secondary text dimmed. Particles are white, lilac, violet, pink and peach; the glass words keep their red glow.
+- **Hero background:** a dark ground (#0d0730) with a haze of the blue (#22126d, lifting to #4330c4) that drifts, slides against the cursor and carries faint twinkling stars. The chat panel uses a still version with a pale blue light under the cursor. The footer is the page's beige (#f5ebe3).
+- **Hero text:** #f1eefd, with trailing words and secondary text dimmed. Particles are white, lilac, violet, pink and peach in the hero, and the hero's blues (#22126d to #5a3cf2) in the footer.
 
 ### Secondary
-- **Blue panel** (blue-panel): the hero and the chat are the same blue; the footer is the page's beige, with its pyramids drawn in the hero's blues, with **On dark** and **On dark muted** text (one cool white, never the cream) and **Accent bright** (accent-bright) for accents. The pyramids stay through the whole pinned hero; there is no "I DESIGN" figure any more.
+- **Blue panel** (blue-panel): the hero and the chat are the same blue; they carry **On dark** and **On dark muted** text (one cool white, never the cream) and **Accent bright** (accent-bright) for accents. The footer is the page's beige with ink text, a dark button and the standard accent.
 - **Ink sets for the art stamps** (violet, red-orange, magenta, amber) are the only other colours, and stay inside the Art section.
 
 ### Neutral
 - **Cream** (cream) page, **Card** (card) for pinned and stacked cards and media frames, **Ink** (ink), **Muted** (muted), **Line** (line).
 
 ### Named Rules
-**The Clear Ground Rule.** Body text sits only on cream, card, the dark chat panel or the blue panels. Particles stay inside the hero and footer panels.
+**The Clear Ground Rule.** Body text sits only on cream, card or the blue panels. Particles stay inside the hero and footer panels.
 
 ## Typography
 
@@ -110,11 +110,11 @@ The direction was pinned by Mayck from references and adapted to his own mark an
 
 ## Layout
 
-Panels sit 16px from the viewport edge and from each other. The hero panel fills the first screen. The intro is a pinned card: six steps (headline, four results, education and certifications), about 58vh of scroll each, with a progress rail and the two calls to action fixed at the bottom of the card. The four cases are sticky cards that stack; none is treated differently. Below 820px cards stop stacking and everything is one column. With reduced motion or without scripts, the steps are simply laid out one after another.
+Panels sit 16px from the viewport edge and from each other. The hero panel fills the first screen. The intro is a pinned card: six steps (headline, four results, education and certifications), about 58vh of scroll each, with a progress rail centred at the bottom of the card and no buttons. The four cases are sticky cards that stack; none is treated differently. Below 820px cards stop stacking and everything is one column. With reduced motion or without scripts, the steps are simply laid out one after another.
 
 ## Elevation & Depth
 
-Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the hero's glass words.
+Flat cards with a 1px inner line. Stacked cards cast a soft upward shadow onto the card they cover. Depth otherwise belongs to the hero's pyramids.
 
 ## Shapes
 
@@ -122,15 +122,15 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 
 ## Components
 
-### Particle pyramids and glass words (signature)
-- Two square pyramids side by side (an M), drawn only in particles, then "I DESIGN" extruded in clear glass with pink sides, turning on the panel. The background is drawn in WebGL so the glass can bend it, with colour fringes. Drag turns it, a press scatters it into particles that gather again in about a second, arrow keys nudge it.
+### Particle pyramids (signature)
+- Two square pyramids side by side (an M), drawn only in particles. They are never a solid object, and they do not become anything else while the hero is pinned. Drag turns them, a press scatters them into particles that gather again in about a second, arrow keys nudge them.
 
 ### Hero entrance
-- On load the hero's two text groups (name and headline; buttons and paragraph) are drawn as dotted wireframes with guides, corner handles and size labels, then the real text is revealed behind a scan line, as if an agent had just built it. It uses the transitions.dev UI generation runtime (vendor/transitions, licence included). Mayck chose this over traced-type and agent-log variants.
+- On load the hero's two text groups (name and headline; the paragraph) are drawn as dotted wireframes with guides, corner handles and size labels, then the real text is revealed behind a scan line, as if an agent had just built it. It uses the transitions.dev UI generation runtime (vendor/transitions, licence included). Mayck chose this over traced-type and agent-log variants.
 - The drawing is one quiet lavender. It ends at once if the page is scrolled, and with reduced motion the text simply fades in.
 
 ### Particles
-- Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids on load, gather into the glass words on scroll and, on the blue footer panel, draw the two pyramids again. The figure (pyramids, then the glass words) turns to face the cursor. Every mote leans slightly toward the cursor wherever it is on the panel, and within reach they are drawn in and circle it. With no cursor the figure faces front and sways gently. Scrolling carries the pyramids through one full turn to the right into the words, so the words arrive from the same side. The pyramids face the cursor, sway and respond to drags and presses through the whole pinned hero, with the two role labels either side on the second screen. As the hero lets go they come to rest facing front, and the motes travel down and become the headline's "I design".
+- Soft round motes in white, lilac, violet, pink and peach, small with a bright core (Mayck preferred these over larger rimmed blobs). They draw the pyramids in the hero and, in blue on the beige footer, draw them again. The pyramids turn gently to face the cursor. Every mote leans slightly toward the cursor wherever it is on the panel, and within reach they drift a little closer. With no cursor the figure faces front and sways gently. The pyramids face the cursor, sway and respond to drags and presses through the whole pinned hero, with the two role labels either side on the second screen. As the hero lets go they come to rest facing front, and the motes travel down and become the headline's "I design".
 
 ### Step scene
 - One step visible at a time, cross-fading with a short rise and blur; a rail shows position.
@@ -142,7 +142,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - 3D pieces shown as perforated stamps. Each prints as an ordered-dither pixel image in one ink (four tones on paper) and resolves into the full render on hover or focus. A click (or Enter) opens a spotlight: the page darkens around a card with the render, tools, year, the piece's story in Mayck's words, and previous/next. The card is one fixed size for every piece. The picture side is a square and the whole image is always shown, never cropped: a soft blurred copy of it fills the space left around tall or wide pieces. A long story scrolls inside its own side. Projects with more work show thumbnails of the other images; the Illustrations project plays its looping film; only Revista Avenida carries the link to the digital edition. The card opens and closes with the transitions.dev modal transition.
 
 ### Spotlight
-- The chat and footer panels carry a soft pale-blue light at the cursor.
+- The chat panel carries a soft pale-blue light at the cursor.
 
 ### Floating header
 - A dark translucent pill, centred, legible over both the blue hero and the cream page.
