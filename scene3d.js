@@ -126,7 +126,7 @@ function init() {
   pGeo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   pGeo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   const uniforms = {
-    uForm: { value: 0 }, uAngle: { value: 0 }, uTilt: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uMote: { value: 1 }, uFade: { value: 1 }, uLand: { value: 0 },
+    uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uMote: { value: 1 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
     uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 },
     // On the beige footer the motes are drawn in the hero's blues instead of light tints.
@@ -136,7 +136,7 @@ function init() {
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uTilt, uScale, uTime, uPx, uMote, uFade, uLand, uHole, uFoot;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uMote, uFade, uLand, uHole, uFoot;
       uniform vec3 uCenter; uniform vec3 uInkA; uniform vec3 uInkB; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
       varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
@@ -145,8 +145,6 @@ function init() {
         float c = cos(uAngle), s = sin(uAngle);
         vec3 t = mix(aPyr, aLead, uLand) * uScale;                 // the pyramids, or the headline lettering they land on
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
-        float ct = cos(uTilt), sn = sin(uTilt);                    // then pitched, so the figure can face the cursor
-        turned = vec3(turned.x, turned.y * ct - turned.z * sn, turned.y * sn + turned.z * ct);
         vec3 formed = turned + uCenter;
         vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
@@ -234,7 +232,7 @@ function init() {
   const footPanel = document.querySelector(".foot.panel");
   // The pyramids are simply there on load (form and intro start complete); only the hero's text has an entrance.
   const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: 1, mode: null, hp: 0, q: 0,
-    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), tilt: new THREE.Vector2(), idle: 1,
+    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99),
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
   const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < view.vh;
@@ -263,12 +261,6 @@ function init() {
       u.uRadius.value = panelRadius * view.dpr;
       const wr = heroWrap ? heroWrap.getBoundingClientRect() : hr;
       st.hp = reduced ? 0 : clamp01(-wr.top / Math.max(1, wr.height - view.vh));
-      if (!mobile) {
-        // As pyramids the figure sits a little right of centre and lower, clear of the headline; it centres as it becomes the words.
-        const k = 1 - THREE.MathUtils.smoothstep(st.hp, 0.05, 0.3), c0 = uniforms.uCenter.value;
-        c0.x += wl(hr.width * 0.055) * k;
-        c0.y -= wl(hr.height * 0.045) * k;
-      }
       // Once the pin ends the panel scrolls away; q runs 0 to 1 over that exit.
       st.q = reduced || !lead ? 0 : clamp01((stickyTop - hr.top) / Math.max(1, hr.height));
       if (st.q > 0) {
@@ -318,21 +310,14 @@ function init() {
     // The pyramids stay through the whole pinned hero. They come to rest facing front as the hero lets go, so
     // nothing turns while the motes travel down and become the headline's "I design".
     const settle = 1 - SS(q, 0, 0.3);
-    // The figure faces the cursor: yaw and pitch follow where the pointer is. With no cursor (touch, or it has
-    // left the page) it faces front and sways a little more on its own.
-    const ctr = uniforms.uCenter.value, away = st.pointer.x > 50, ease = reduced ? 1 : 1 - Math.exp(-dt * 5);
-    st.idle += ((away ? 1 : 0) - st.idle) * ease;
-    const clampTo = THREE.MathUtils.clamp;
-    st.tilt.y += ((away ? 0 : clampTo((st.pointer.x - ctr.x) / (view.w * 0.5), -1, 1) * 0.34) - st.tilt.y) * ease;
-    st.tilt.x += ((away ? 0 : clampTo((st.pointer.y - ctr.y) / (view.h * 0.5), -1, 1) * -0.2) - st.tilt.x) * ease;
-    const tx = reduced ? 0 : st.tilt.x * settle, ty = reduced ? 0 : st.tilt.y * settle;
-    const sway = (reduced ? -0.35 : Math.sin(t * 0.5) * (0.06 + 0.3 * st.idle)) * settle;
-    const angle = sway + st.spin * settle;   // no turn on scroll: the pyramids become the words where they stand
+    // Nothing turns the pyramids on its own: no idle motion, no facing the cursor, no turn on scroll. Only a drag
+    // turns them, and they ease back to face front afterwards (the offset from the nearest full turn, so a spin
+    // never has to unwind). They are in the same place and state on both screens of the pinned hero.
+    const angle = (st.spin - Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2) * settle;
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
     uniforms.uForm.value = st.form;
-    uniforms.uAngle.value = angle + ty;
-    uniforms.uTilt.value = tx;
+    uniforms.uAngle.value = angle;
     uniforms.uTime.value = reduced ? 0 : t;
     uniforms.uFoot.value = st.mode === "foot" ? 1 : 0;
     uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
