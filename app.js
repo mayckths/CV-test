@@ -7,8 +7,8 @@ const ANSWERS = [
     html: `
       <p>Lead Product Designer with 10+ years in fintech and consumer products. At Novo I own core banking and growth journeys, set the design team's AI strategy, and shipped the in-app AI assistant for a fintech.</p>
       <div class="a-stats">
-        <div><b>200,000+</b><span>businesses using the AI assistant and Design System</span></div>
-        <div><b>+242%</b><span>unique users on referrals after redesign</span></div>
+        <div><b>200,000+</b><span>businesses using the AI assistant I designed</span></div>
+        <div><b>+242%</b><span>lift on unique users after referrals dashboard redesign</span></div>
         <div><b>4+</b><span>design systems for Google</span></div>
       </div>
       <p>Start with the <a href="#ai-assistant">AI Assistant</a> or the <a href="#onboarding">first time experience</a>.</p>`,
@@ -34,7 +34,7 @@ const ANSWERS = [
         <thead><tr><th>Project</th><th>What changed</th><th>Result</th></tr></thead>
         <tbody>
           <tr><td><a href="#onboarding">First time experience</a></td><td>Activation rate, first month</td><td>+50%</td></tr>
-          <tr><td>Referrals dashboard</td><td>Unique users after redesign</td><td>+242%</td></tr>
+          <tr><td>Referrals dashboard</td><td>Lift on unique users after redesign</td><td>+242%</td></tr>
           <tr><td><a href="#ai-assistant">AI Assistant</a></td><td>Businesses with the assistant live</td><td>200,000+</td></tr>
           <tr><td>AI workflow</td><td>Design cycle time</td><td>1 mo → 1 wk</td></tr>
           <tr><td>Google at Huge</td><td>Components migrated to Figma</td><td>200+</td></tr>
@@ -231,6 +231,29 @@ if (!reduced) {
   read();
 }
 
+// Project cards stack as you scroll, on every screen size. A card taller than the screen first scrolls to its
+// own bottom and only then holds while the next one slides over it, so each card needs to know its height.
+const stack = document.querySelector(".stack");
+if (stack && "ResizeObserver" in window) {
+  const cards = [...stack.children];
+  const ro = new ResizeObserver((entries) => entries.forEach((en) => en.target.style.setProperty("--h", `${Math.round(en.target.offsetHeight)}px`)));
+  cards.forEach((c) => ro.observe(c));
+  stack.classList.add("stacks");
+}
+
+// Recommendations scroll sideways: swipe, trackpad, or the two arrows.
+const qrow = document.querySelector(".quotes-row");
+if (qrow) {
+  const prev = document.querySelector(".quotes-prev"), next = document.querySelector(".quotes-next");
+  const stepBy = (dir) => { const card = qrow.querySelector("figure"); qrow.scrollBy({ left: dir * (card.offsetWidth + parseFloat(getComputedStyle(qrow).columnGap || 0)), behavior: reduced ? "auto" : "smooth" }); };
+  const ends = () => { prev.disabled = qrow.scrollLeft < 8; next.disabled = qrow.scrollLeft > qrow.scrollWidth - qrow.clientWidth - 8; };
+  prev.addEventListener("click", () => stepBy(-1));
+  next.addEventListener("click", () => stepBy(1));
+  qrow.addEventListener("scroll", ends, { passive: true });
+  window.addEventListener("resize", ends);
+  ends();
+}
+
 // Project media leans toward the cursor.
 if (!reduced && matchMedia("(pointer: fine)").matches) {
   document.querySelectorAll(".stack .case-media").forEach((el) => {
@@ -266,7 +289,7 @@ const blueprint = (() => {
     } else segs.push({ end, move: m[1] === "M" });
     prev = end;
   }
-  const points = [...anchors, ...controls], home = points.map((p) => [p.x, p.y]);
+  const points = [...anchors, ...controls];
 
   // Visible points sit behind the text; an empty twin of the drawing sits above it and only carries the grab areas.
   const hits = svg.cloneNode(false);
@@ -287,25 +310,6 @@ const blueprint = (() => {
     anchors.forEach((a) => { a.el.setAttribute("x", f(a.x - 1)); a.el.setAttribute("y", f(a.y - 1)); });
     points.forEach((p) => { p.hit.setAttribute("cx", f(p.x)); p.hit.setAttribute("cy", f(p.y)); });
   };
-
-  // A hint that turns into a reset once the letter has been changed.
-  const ui = document.createElement("div");
-  ui.className = "bp-ui";
-  ui.innerHTML = '<span class="bp-hint">Drag any point of the M</span><button type="button" class="bp-reset" hidden>Reset shape</button>';
-  card.appendChild(ui);
-  const hint = ui.firstChild, resetBtn = ui.lastChild;
-  const setEdited = (on) => { hint.hidden = on; resetBtn.hidden = !on; };
-  resetBtn.addEventListener("click", () => {
-    const from = points.map((p) => [p.x, p.y]), t0 = performance.now();
-    const tick = (now) => {
-      const t = reduced ? 1 : Math.min(1, (now - t0) / 350), e = 1 - Math.pow(1 - t, 3);
-      points.forEach((p, i) => { p.x = from[i][0] + (home[i][0] - from[i][0]) * e; p.y = from[i][1] + (home[i][1] - from[i][1]) * e; });
-      render();
-      if (t < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    setEdited(false);
-  });
 
   // Dragging: an anchor carries its handles with it; a handle moves alone and bends its curve.
   const toSvg = (e) => { const m = hits.getScreenCTM().inverse(); return { x: m.a * e.clientX + m.c * e.clientY + m.e, y: m.b * e.clientX + m.d * e.clientY + m.f }; };
@@ -329,7 +333,6 @@ const blueprint = (() => {
       p.x += mx; p.y += my;
       if (!("of" in p)) controls.forEach((c) => { if (c.of === p) { c.x += mx; c.y += my; } });
       render();
-      setEdited(true);
     });
     const drop = () => { if (drag && drag.p === p) { drag = null; look(p, "grab", false); scene.classList.remove("bp-dragging"); } };
     p.hit.addEventListener("pointerup", drop);

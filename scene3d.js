@@ -1,4 +1,5 @@
-// One WebGL layer that only ever draws inside a panel (hero or footer):
+// Two WebGL layers. The hero background has its own canvas inside the hero panel. The particles have one canvas
+// that is fixed to the screen over the hero and lives inside the footer panel in the footer:
 //   - hero background: a dark ground with a drifting haze of the blue, faint stars, and a light that trails the cursor.
 //   - hero figure: two pyramids drawn in soft particles (an M), alone on the panel. As the pinned
 //     hero scrolls they stay, between two role labels. When the hero leaves, the motes travel down and
@@ -25,9 +26,6 @@ function init() {
   camera.position.z = 10;
   const mobile = window.innerWidth < 820;
 
-  const key = new THREE.DirectionalLight(0xffffff, 2.4);
-  key.position.set(-3, 4, 6);
-  scene.add(key);
 
   // --- Pyramids: two side by side read as an M. They are only ever drawn in particles. ---
   const PYR = mobile ? 1.0 : 0.6;            // size relative to the width of the words
@@ -35,20 +33,29 @@ function init() {
   const pyrGeo = new THREE.ConeGeometry(PR, PH, 4, 1);
   pyrGeo.rotateY(Math.PI / 4);                  // a flat face to the front
 
-  // --- Background: a dark ground with a slow haze of the blue drifting across it and a few faint stars.
-  //     The haze leans toward the cursor and a soft light follows it. ---
-  const BG_Z = -1.6;
+  // --- Hero background: a dark ground with a slow haze of the blue and a few faint stars. The haze leans toward
+  //     the cursor and a soft light follows it. It has its own canvas inside the hero panel, so it scrolls with the
+  //     panel exactly (a layer fixed to the screen trails the page by a frame while scrolling) and it is drawn at a
+  //     lower resolution than the particles, which keeps scrolling light. ---
+  const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap");
   const srgb = (hex) => { const c = new THREE.Color(hex); return new THREE.Vector3(...c.convertLinearToSRGB().toArray()); };   // keep CSS values as written
-  const bgMat = new THREE.ShaderMaterial({
-    depthTest: false, depthWrite: false, alphaToCoverage: true,
-    uniforms: {
-      uDeep: { value: srgb("#0d0730") }, uBase: { value: srgb("#22126d") }, uLight: { value: srgb("#4330c4") },
-      uTime: { value: 0 }, uDpr: { value: 1 }, uPointer: { value: new THREE.Vector2(0.7, 0.3) },
-      uRect: { value: new THREE.Vector4() }, uRadius: { value: 28 },
-    },
-    vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `
-      uniform vec3 uDeep, uBase, uLight; uniform float uRadius, uTime, uDpr; uniform vec4 uRect; uniform vec2 uPointer;
+  const haze = (() => {
+    const host = hero && hero.querySelector(".panel-bg");
+    if (!host) return null;
+    const cv = document.createElement("canvas");
+    cv.className = "hero-haze";
+    let r;
+    try { r = new THREE.WebGLRenderer({ canvas: cv, antialias: false, powerPreference: "low-power" }); } catch (e) { return null; }
+    host.appendChild(cv);
+    const mat = new THREE.ShaderMaterial({
+      depthTest: false, depthWrite: false,
+      uniforms: {
+        uDeep: { value: srgb("#0d0730") }, uBase: { value: srgb("#22126d") }, uLight: { value: srgb("#4330c4") },
+        uTime: { value: 0 }, uDpr: { value: 1 }, uPointer: { value: new THREE.Vector2(0.7, 0.3) }, uRes: { value: new THREE.Vector2(1, 1) },
+      },
+      vertexShader: `void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+      fragmentShader: `
+      uniform vec3 uDeep, uBase, uLight; uniform float uTime, uDpr; uniform vec2 uRes; uniform vec2 uPointer;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p) {
         vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -56,8 +63,8 @@ function init() {
       }
       float fbm(vec2 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++) { s += a * noise(p); p = p * 2.03 + 17.0; a *= 0.5; } return s; }
       void main() {
-        vec2 px = gl_FragCoord.xy - uRect.xy, uv = px / uRect.zw;
-        float A = uRect.z / uRect.w;
+        vec2 px = gl_FragCoord.xy, uv = px / uRes;
+        float A = uRes.x / uRes.y;
         vec2 p = vec2(uv.x * A, uv.y), m = vec2(uPointer.x * A, uPointer.y);
         // Haze: warped noise gives long soft bands; it drifts on its own and slides against the cursor.
         float t = uTime * 0.03;
@@ -74,23 +81,23 @@ function init() {
         float tw = 0.55 + 0.45 * sin(uTime * (0.4 + h * 1.4) + h * 40.0);
         col += step(0.5, h) * smoothstep(0.7 + h * 0.9, 0.0, length(f - o) * 56.0) * tw * vec3(0.74, 0.72, 1.0) * 0.6;
         col += (hash(gl_FragCoord.xy) - 0.5) / 255.0;                      // no banding
-        col = pow(max(col, 0.0), vec3(2.2));
-        // Rounded corners of the panel.
-        vec2 c = gl_FragCoord.xy - (uRect.xy + uRect.zw * 0.5);
-        vec2 r = abs(c) - uRect.zw * 0.5 + uRadius;
-        float d = length(max(r, 0.0)) + min(max(r.x, r.y), 0.0) - uRadius;
-        gl_FragColor = vec4(col, clamp(0.5 - d, 0.0, 1.0));
+        gl_FragColor = vec4(pow(max(col, 0.0), vec3(2.2)), 1.0);
         #include <colorspace_fragment>
       }`,
-  });
-  const bgGeo = new THREE.PlaneGeometry(1, 1);
-  const bgPlane = new THREE.Mesh(bgGeo, bgMat);
-  bgPlane.renderOrder = -10;
-  bgPlane.frustumCulled = false;
-  bgPlane.visible = false;
-  scene.add(bgPlane);
-
-  const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap");
+    });
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
+    quad.frustumCulled = false;
+    const sc = new THREE.Scene(), cam = new THREE.Camera();
+    sc.add(quad);
+    const ratio = Math.min(window.devicePixelRatio, mobile ? 1.5 : 1);
+    const size = () => {
+      const w = Math.max(1, host.clientWidth), h = Math.max(1, host.clientHeight);
+      r.setPixelRatio(ratio); r.setSize(w, h, false);
+      mat.uniforms.uRes.value.set(w * ratio, h * ratio); mat.uniforms.uDpr.value = ratio;
+    };
+    size();
+    return { mat, size, draw: () => r.render(sc, cam), dispose: () => { quad.geometry.dispose(); mat.dispose(); r.dispose(); } };
+  })();
 
   // --- Particles: motes that hold the pyramids, the words, or the headline lettering ---
   const COUNT = mobile ? 2800 : 5600;
@@ -185,9 +192,14 @@ function init() {
   scene.add(points);
 
   const view = { w: 1, h: 1, vw: 1, vh: 1, dpr: 1 };
+  // The particle canvas has two homes. Over the hero it is fixed to the screen, because the particles have to
+  // leave the panel and land on the headline. In the footer it lives inside the footer panel and scrolls with it,
+  // so the pyramids stay glued to the page while scrolling. Sizes and coordinates follow whichever home it is in.
+  const org = { x: 0, y: 0 };                 // the canvas's top-left corner on screen
   function resize() {
-    view.vw = window.innerWidth;
-    view.vh = window.innerHeight;
+    const inFoot = footPanel && canvas.parentNode === footPanel;
+    view.vw = inFoot ? footPanel.clientWidth : window.innerWidth;
+    view.vh = inFoot ? footPanel.clientHeight : window.innerHeight;
     view.dpr = Math.min(window.devicePixelRatio, mobile ? 1.5 : 2);
     renderer.setPixelRatio(view.dpr);
     renderer.setSize(view.vw, view.vh, false);
@@ -196,8 +208,16 @@ function init() {
     view.h = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     view.w = view.h * camera.aspect;
     uniforms.uPx.value = (view.vh * view.dpr) / view.h;
+    if (haze) haze.size();
   }
-  const wx = (px) => (px / view.vw - 0.5) * view.w, wy = (px) => (0.5 - px / view.vh) * view.h, wl = (px) => px * (view.h / view.vh);
+  function place(mode) {
+    if (mode === "foot") { footPanel.insertBefore(canvas, footPanel.children[1] || null); canvas.classList.add("in-panel"); }
+    else { document.body.insertBefore(canvas, document.body.firstChild); canvas.classList.remove("in-panel"); }
+    resize();
+  }
+  // Screen pixels to world units: wx and wy take a position on screen, wl a length.
+  const wx = (px) => ((px - org.x) / view.vw - 0.5) * view.w, wy = (px) => (0.5 - (px - org.y) / view.vh) * view.h, wl = (px) => px * (view.h / view.vh);
+  const HERO_FIT = mobile ? 1 : 0.62;         // how much of the hero figure's reference width its drag area covers
 
   const heroSlot = document.getElementById("m-hero"), footSlot = document.getElementById("m-foot");
   const lead = document.querySelector(".h1-lead");
@@ -228,14 +248,15 @@ function init() {
     }
     leadAttr.needsUpdate = true;
   }
-  const showLead = (v) => { const s = v.toFixed(2); if (s !== leadShown) { leadShown = s; document.documentElement.style.setProperty("--lead", s); } };
+  // Set on the word itself: a custom property on the root would make the browser restyle the whole page each time.
+  const showLead = (v) => { const s = v.toFixed(2); if (s !== leadShown && lead) { leadShown = s; lead.style.setProperty("--lead", s); } };
   const footPanel = document.querySelector(".foot.panel");
   // The pyramids are simply there on load (form and intro start complete); only the hero's text has an entrance.
-  const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: 1, mode: null, hp: 0, q: 0,
-    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99),
+  const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: 1, mode: null, home: "hero", hp: 0, q: 0, tick: 0,
+    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), client: { x: 0, y: 0, on: false },
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
-  const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < view.vh;
+  const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < window.innerHeight;
 
   // Decide which panel owns the M right now, place everything on it, and return how formed it should be.
   function anchor() {
@@ -243,24 +264,24 @@ function init() {
     const mode = onScreen(hr) ? "hero" : onScreen(fr) ? "foot" : null;
     st.mode = mode;
     if (!mode) return 0;
+    if (mode !== st.home) { st.home = mode; place(mode); }
     const panel = mode === "hero" ? hr : fr, slot = (mode === "hero" ? heroSlot : footSlot).getBoundingClientRect();
+    org.x = mode === "foot" ? fr.left : 0; org.y = mode === "foot" ? fr.top : 0;
+    const vh = window.innerHeight, base = slot.width / HERO_FIT;
     uniforms.uCenter.value.set(wx(slot.left + slot.width / 2), wy(slot.top + slot.height / 2), 0);
-    uniforms.uScale.value = mode === "hero" ? wl(slot.width * 0.96) : wl((slot.width * 0.92) / PYR_W);
-    uniforms.uMote.value = wl(mode === "hero" ? slot.height * 2.3 : slot.height * 0.75);
+    uniforms.uScale.value = mode === "hero" ? wl(base * 0.96) : wl((slot.width * 0.92) / PYR_W);
+    uniforms.uMote.value = wl(mode === "hero" ? base * 0.5 : slot.height * 0.75);
     uniforms.uPanelC.value.set(wx(panel.left + panel.width / 2), wy(panel.top + panel.height / 2));
     uniforms.uPanelH.value.set(wl(panel.width / 2), wl(panel.height / 2));
-    // Nothing is ever drawn outside the panel.
-    const x = Math.max(0, panel.left), y = Math.max(0, panel.top), r = Math.min(view.vw, panel.right), b = Math.min(view.vh, panel.bottom);
-    renderer.setScissor(x, view.vh - b, Math.max(0, r - x), Math.max(0, b - y));
+    // Nothing is ever drawn outside the panel. (In the footer the canvas is the panel.)
+    if (mode === "foot") renderer.setScissor(0, 0, view.vw, view.vh);
+    else {
+      const x = Math.max(0, panel.left), y = Math.max(0, panel.top), r = Math.min(view.vw, panel.right), b = Math.min(view.vh, panel.bottom);
+      renderer.setScissor(x, view.vh - b, Math.max(0, r - x), Math.max(0, b - y));
+    }
     if (mode === "hero") {
-      // Background plane behind everything, covering the panel exactly.
-      const fb = (10 - BG_Z) / 10, u = bgMat.uniforms;
-      bgPlane.position.set(wx(hr.left + hr.width / 2) * fb, wy(hr.top + hr.height / 2) * fb, BG_Z);
-      bgPlane.scale.set(wl(hr.width) * fb, wl(hr.height) * fb, 1);
-      u.uRect.value.set(hr.left * view.dpr, (view.vh - hr.bottom) * view.dpr, hr.width * view.dpr, hr.height * view.dpr);
-      u.uRadius.value = panelRadius * view.dpr;
       const wr = heroWrap ? heroWrap.getBoundingClientRect() : hr;
-      st.hp = reduced ? 0 : clamp01(-wr.top / Math.max(1, wr.height - view.vh));
+      st.hp = reduced ? 0 : clamp01(-wr.top / Math.max(1, wr.height - vh));
       // Once the pin ends the panel scrolls away; q runs 0 to 1 over that exit.
       st.q = reduced || !lead ? 0 : clamp01((stickyTop - hr.top) / Math.max(1, hr.height));
       if (st.q > 0) {
@@ -274,7 +295,7 @@ function init() {
       }
       return reduced || !lead ? clamp01(1 - (-hr.top / (hr.height * 0.6))) : 1;
     }
-    return clamp01((view.vh * 0.98 - slot.top) / (view.vh * 0.45));
+    return clamp01((vh * 0.98 - slot.top) / (vh * 0.45));
   }
 
   const clock = new THREE.Clock();
@@ -314,6 +335,8 @@ function init() {
     // turns them, and they ease back to face front afterwards (the offset from the nearest full turn, so a spin
     // never has to unwind). They are in the same place and state on both screens of the pinned hero.
     const angle = (st.spin - Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2) * settle;
+    // The cursor's place is worked out each frame from where it is on screen, so it stays right while the page scrolls.
+    if (st.client.on) st.pointerGoal.set(wx(st.client.x), wy(st.client.y)); else st.pointerGoal.set(99, 99);
     st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
     uniforms.uForm.value = st.form;
@@ -325,14 +348,12 @@ function init() {
     uniforms.uPointer.value.copy(st.pointer);
     uniforms.uHole.value = wl(mobile ? 120 : 190);   // the attractor's reach
     if (isHero) showLead(SS(q, 0.8, 0.96));
-    const c = uniforms.uCenter.value;
-    bgPlane.visible = isHero;
-    if (isHero) {
-      // The background's light trails the cursor slowly, like something heavy.
-      st.bgPointer.lerp(st.bgGoal, reduced ? 1 : 1 - Math.exp(-dt * 1.6));
-      bgMat.uniforms.uPointer.value.copy(st.bgPointer);
-      bgMat.uniforms.uTime.value = reduced ? 0 : t;
-      bgMat.uniforms.uDpr.value = view.dpr;
+    if (isHero && haze && (reduced || st.tick++ % 2 === 0)) {
+      // The background is drawn every other frame: it moves slowly, and its light trails the cursor like something heavy.
+      st.bgPointer.lerp(st.bgGoal, reduced ? 1 : 1 - Math.exp(-dt * 3.2));
+      haze.mat.uniforms.uPointer.value.copy(st.bgPointer);
+      haze.mat.uniforms.uTime.value = reduced ? 0 : t;
+      haze.draw();
     }
 
     renderer.setScissorTest(false);
@@ -367,13 +388,13 @@ function init() {
     window.addEventListener("scroll", () => { if (!tick) tick = requestAnimationFrame(() => { tick = 0; still(); }); }, { passive: true });
   } else {
     window.addEventListener("pointermove", (e) => {
-      st.pointerGoal.set(wx(e.clientX), wy(e.clientY));
+      st.client.x = e.clientX; st.client.y = e.clientY; st.client.on = true;
       const r = hero && hero.getBoundingClientRect();
       if (r && r.width && r.bottom > 0) st.bgGoal.set((e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height);
     }, { passive: true });
-    document.addEventListener("pointerleave", () => st.pointerGoal.set(99, 99));
+    document.addEventListener("pointerleave", () => { st.client.on = false; });
     // A finger does not hover: let the hole close when it lifts.
-    const lift = (e) => { if (e.pointerType !== "mouse") st.pointerGoal.set(99, 99); };
+    const lift = (e) => { if (e.pointerType !== "mouse") st.client.on = false; };
     window.addEventListener("pointerup", lift, { passive: true });
     window.addEventListener("pointercancel", lift, { passive: true });
   }
@@ -421,7 +442,8 @@ function init() {
   window.addEventListener("pagehide", (e) => {
     if (e.persisted) return;
     cancelAnimationFrame(raf);
-    [pyrGeo, bgGeo, bgMat, pGeo, pMat].forEach((d) => d.dispose());
+    [pyrGeo, pGeo, pMat].forEach((d) => d.dispose());
+    if (haze) haze.dispose();
     renderer.dispose();
   });
 }
