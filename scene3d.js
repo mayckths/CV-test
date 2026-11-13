@@ -252,7 +252,9 @@ function init() {
   const showLead = (v) => { const s = v.toFixed(2); if (s !== leadShown && lead) { leadShown = s; lead.style.setProperty("--lead", s); } };
   const footPanel = document.querySelector(".foot.panel");
   // The pyramids are simply there on load (form and intro start complete); only the hero's text has an entrance.
-  const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: 1, mode: null, home: "hero", hp: 0, q: 0, tick: 0,
+  // The pyramids open turned a little (TURN0) and come round to face front as the hero appears.
+  const TURN0 = -0.35;   // about 20 degrees, the right pyramid nearer
+  const st = { form: 1, burst: 0, burstT: -1, spin: reduced ? 0 : TURN0, vel: 0, dragging: false, intro: 1, mode: null, home: "hero", hp: 0, q: 0, tick: 0,
     pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), client: { x: 0, y: 0, on: false },
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -324,7 +326,9 @@ function init() {
     if (!st.dragging) {
       st.spin += st.vel * dt;
       st.vel *= Math.exp(-dt * 1.6);
-      if (Math.abs(st.vel) < 0.6) st.spin += (Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2 - st.spin) * (1 - Math.exp(-dt * 1.2));
+      // They wait, turned, under the dithered entrance (hero-pix.js) and start coming round as it gives way.
+      const held = window.__pix === true && document.documentElement.classList.contains("pix");
+      if (Math.abs(st.vel) < 0.6 && !held) st.spin += (Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2 - st.spin) * (1 - Math.exp(-dt * 1.2));
     }
     const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;

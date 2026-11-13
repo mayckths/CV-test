@@ -118,6 +118,7 @@ function run() {
   function finish(ms) {
     if (ended) return;
     ended = true;
+    window.__pix = "out";   // scene3d.js starts turning the pyramids to face front from here
     view.style.transition = `opacity ${ms}ms ease`;
     view.style.opacity = "0";
     setTimeout(() => {
