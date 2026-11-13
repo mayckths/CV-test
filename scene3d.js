@@ -436,6 +436,7 @@ function init() {
     slot.addEventListener("click", () => {
       if (moved < 6) {
         if (reduced) { st.spin += Math.PI / 4; still(); } else { st.burstT = 0; st.vel += 5; }
+        window.dispatchEvent(new CustomEvent("pyramids-press", { detail: slot.id }));   // hero-pix.js prints the hero again
       }
       moved = 0;
     });

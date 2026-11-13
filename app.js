@@ -537,6 +537,143 @@ if (spot && typeof spot.showModal === "function") {
   const $ = (sel) => spot.querySelector(sel);
   const closeMs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--modal-close-dur")) || 150;
   let index = 0, opener = null, closing = 0;
+
+  // The page behind the card is shown as a coarse dark print of itself, in the same ordered dither as the stamps.
+  // There is no way to ask the browser for a picture of the page, so the part in view is painted from the page's
+  // own boxes: backgrounds, glows, pictures, canvases and words, each where the page put it. At the size of these
+  // cells that is all that can be told apart.
+  const SHADE = [[14, 11, 17], [36, 30, 31], [64, 55, 51], [104, 90, 83]];   // dark tones of the page's ink: it stays a dimmed backdrop
+  const paintView = (k) => {
+    const vw = innerWidth, vh = innerHeight, c = document.createElement("canvas"), x = c.getContext("2d");
+    c.width = Math.max(1, Math.round(vw * k)); c.height = Math.max(1, Math.round(vh * k));
+    x.scale(c.width / vw, c.height / vh);
+    x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#f5ebe3";
+    x.fillRect(0, 0, vw, vh);
+    x.textBaseline = "alphabetic";
+    const range = document.createRange(), later = [];
+    const none = (col) => !col || col === "transparent" || /,\s*0\)$/.test(col);
+    const box = (r, rad) => { x.beginPath(); if (x.roundRect) x.roundRect(r.left, r.top, r.width, r.height, Math.min(rad, r.width / 2, r.height / 2)); else x.rect(r.left, r.top, r.width, r.height); };
+    const fit = (el, nw, nh, r, mode) => {
+      if (mode === "cover") { const f = Math.max(r.width / nw, r.height / nh), sw = r.width / f, sh = r.height / f; x.drawImage(el, (nw - sw) / 2, (nh - sh) / 2, sw, sh, r.left, r.top, r.width, r.height); }
+      else if (mode === "contain") { const f = Math.min(r.width / nw, r.height / nh), w = nw * f, h = nh * f; x.drawImage(el, r.left + (r.width - w) / 2, r.top + (r.height - h) / 2, w, h); }
+      else x.drawImage(el, r.left, r.top, r.width, r.height);
+    };
+    // Radial glows (the blue panels): each is drawn from its centre and first colour out to nothing.
+    const glows = (bg, r, rad) => {
+      const found = [...bg.matchAll(/radial-gradient\(([^,]*?)at ([\d.]+)% ([\d.]+)%, (rgba?\(([^)]*)\))/g)].reverse();
+      if (!found.length) return;
+      x.save(); box(r, rad); x.clip();
+      for (const m of found) {
+        const size = [...m[1].matchAll(/([\d.]+)(%|px)/g)].map((v, i) => v[2] === "px" ? +v[1] : (+v[1] / 100) * (i ? r.height : r.width));
+        const R = (size.length ? size.reduce((a, b) => a + b, 0) / size.length : Math.hypot(r.width, r.height)) * 0.72;
+        const cx = r.left + r.width * m[2] / 100, cy = r.top + r.height * m[3] / 100, rgb = m[5].split(",").slice(0, 3).join(",");
+        const g = x.createRadialGradient(cx, cy, 0, cx, cy, R);
+        g.addColorStop(0, m[4]); g.addColorStop(1, `rgba(${rgb}, 0)`);
+        x.fillStyle = g; x.fillRect(r.left, r.top, r.width, r.height);
+      }
+      x.restore();
+    };
+    const text = (n, cs) => {
+      x.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      x.fillStyle = cs.color;
+      if ("letterSpacing" in x) x.letterSpacing = cs.letterSpacing === "normal" ? "0px" : cs.letterSpacing;
+      const m = x.measureText("Hg"), asc = m.fontBoundingBoxAscent || m.actualBoundingBoxAscent, desc = m.fontBoundingBoxDescent || m.actualBoundingBoxDescent;
+      const upper = cs.textTransform === "uppercase";
+      for (const w of n.data.matchAll(/\S+/g)) {
+        range.setStart(n, w.index); range.setEnd(n, w.index + w[0].length);
+        const r = range.getBoundingClientRect();
+        if (r.width && r.bottom > 0 && r.top < vh) x.fillText(upper ? w[0].toUpperCase() : w[0], r.left, r.top + (r.height - asc - desc) / 2 + asc);
+      }
+    };
+    const walk = (el, alpha, top) => {
+      if (el === spot) return;
+      const cs = getComputedStyle(el);
+      if (cs.display === "none") return;
+      if (cs.position === "fixed" && !top) { later.push([el, alpha, parseInt(cs.zIndex, 10) || 0]); return; }   // the header: above the page
+      const a = alpha * parseFloat(cs.opacity);
+      if (!(a > 0.02)) return;
+      const r = el.getBoundingClientRect(), has = r.width > 0 && r.height > 0;
+      if (has && (r.bottom < -vh || r.top > 2 * vh || r.right < -vw || r.left > 2 * vw)) return;   // far off screen, with all it holds
+      const seen = has && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw && cs.visibility !== "hidden";
+      const rad = parseFloat(cs.borderTopLeftRadius) || 0, tag = el.localName;
+      x.globalAlpha = a;
+      if (seen) {
+        if (!none(cs.backgroundColor)) { x.fillStyle = cs.backgroundColor; box(r, rad); x.fill(); }
+        if (cs.backgroundImage.includes("radial-gradient")) glows(cs.backgroundImage, r, rad);
+        try {
+          if (tag === "img" && el.complete && el.naturalWidth) fit(el, el.naturalWidth, el.naturalHeight, r, cs.objectFit);
+          else if (tag === "video" && el.readyState >= 2) fit(el, el.videoWidth, el.videoHeight, r, cs.objectFit);
+          else if (tag === "canvas" && el.width && !el.matches("#stage, .hero-haze, .hero-pix")) x.drawImage(el, r.left, r.top, r.width, r.height);
+        } catch (e) { /* a picture that cannot be drawn is left out */ }
+      }
+      if (tag === "svg" || tag === "canvas" || tag === "img" || tag === "video") return;
+      const clip = has && cs.overflowX !== "visible";
+      if (clip) { x.save(); box(r, rad); x.clip(); }
+      for (const n of el.childNodes) {
+        if (n.nodeType === 1) walk(n, a);
+        else if (n.nodeType === 3 && seen && /\S/.test(n.data)) { x.globalAlpha = a; text(n, cs); }
+      }
+      if (clip) x.restore();
+    };
+    walk(document.body, 1, true);
+    later.sort((p, q) => p[2] - q[2]).forEach(([el, alpha]) => walk(el, alpha, true));
+    return c;
+  };
+  const backdrop = (() => {
+    const view = $(".spot-pix");
+    if (!view) return { open() {}, close() {} };
+    const out = view.getContext("2d"), work = document.createElement("canvas"), wx = work.getContext("2d", { willReadFrequently: true });
+    const hop = document.createElement("canvas"), hx = hop.getContext("2d");
+    let shot = null, timers = [];
+    const cells = () => (innerWidth < 700 ? [3, 6, 10] : [4, 8, 16]);   // px per cell: two steps, then where it rests
+    const stop = () => { timers.forEach(clearTimeout); timers = []; };
+    const print = (cell) => {
+      if (!shot) return;
+      const cols = Math.max(1, Math.round(innerWidth / cell)), rows = Math.max(1, Math.round(innerHeight / cell));
+      view.width = work.width = cols; view.height = work.height = rows;
+      // Down by halves, so each cell is the average of what it covers.
+      let src = shot, w = shot.width, h = shot.height;
+      hop.width = w; hop.height = h;
+      while (w > cols * 2) {
+        const nw = Math.max(cols, w >> 1), nh = Math.max(rows, h >> 1);
+        hx.drawImage(src, 0, 0, w, h, 0, 0, nw, nh);
+        src = hop; w = nw; h = nh;
+      }
+      wx.drawImage(src, 0, 0, w, h, 0, 0, cols, rows);
+      const img = wx.getImageData(0, 0, cols, rows), d = img.data;
+      for (let y = 0, p = 0; y < rows; y++) for (let xx = 0; xx < cols; xx++, p += 4) {
+        // The page is mostly pale, so the tones are spread over its light end: cream, card white and the pale stamps print apart.
+        const lum = Math.pow((d[p] * 0.3 + d[p + 1] * 0.59 + d[p + 2] * 0.11) / 255, 2.4);
+        const t = SHADE[Math.min(3, Math.floor(lum * 3 + (BAYER[(y & 3) * 4 + (xx & 3)] + 0.5) / 16))];
+        d[p] = t[0]; d[p + 1] = t[1]; d[p + 2] = t[2]; d[p + 3] = 255;
+      }
+      out.putImageData(img, 0, 0);
+    };
+    const take = () => {
+      try { shot = paintView(2 / cells()[0]); } catch (e) { shot = null; }
+      spot.classList.toggle("has-pix", !!shot);
+      return shot;
+    };
+    let resizeT = 0;
+    window.addEventListener("resize", () => { if (!spot.open) return; clearTimeout(resizeT); resizeT = setTimeout(() => { if (spot.open && take()) print(cells()[2]); }, 150); });
+    return {
+      open() {
+        stop();
+        if (!take()) return;
+        const c = cells();
+        if (reduced) { print(c[2]); return; }
+        print(c[0]);
+        timers.push(setTimeout(() => print(c[1]), 80), setTimeout(() => print(c[2]), 160));
+      },
+      close() {
+        stop();
+        if (!shot || reduced) return;
+        const c = cells();
+        print(c[1]);
+        timers.push(setTimeout(() => print(c[0]), closeMs / 2));
+      },
+    };
+  })();
   const fill = (i) => {
     index = (i + stamps.length) % stamps.length;
     const s = stamps[index], q = (sel) => s.querySelector(sel);
@@ -582,6 +719,7 @@ if (spot && typeof spot.showModal === "function") {
     clearTimeout(closing);
     opener = from;
     fill(i);
+    backdrop.open();
     if (!spot.open) spot.showModal();
     document.documentElement.classList.add("spot-open");
     card.classList.remove("is-closing");
@@ -593,6 +731,7 @@ if (spot && typeof spot.showModal === "function") {
     card.classList.remove("is-open");
     card.classList.add("is-closing");
     spot.classList.remove("is-open");
+    backdrop.close();
     closing = setTimeout(() => {
       card.classList.remove("is-closing");
       $(".spot-art video").pause();
