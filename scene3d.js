@@ -96,7 +96,7 @@ function init() {
       mat.uniforms.uRes.value.set(w * ratio, h * ratio); mat.uniforms.uDpr.value = ratio;
     };
     size();
-    return { mat, size, draw: () => r.render(sc, cam), dispose: () => { quad.geometry.dispose(); mat.dispose(); r.dispose(); } };
+    return { el: cv, mat, size, draw: () => r.render(sc, cam), dispose: () => { quad.geometry.dispose(); mat.dispose(); r.dispose(); } };
   })();
 
   // --- Particles: motes that hold the pyramids, the words, or the headline lettering ---
@@ -348,7 +348,9 @@ function init() {
     uniforms.uPointer.value.copy(st.pointer);
     uniforms.uHole.value = wl(mobile ? 120 : 190);   // the attractor's reach
     if (isHero) showLead(SS(q, 0.8, 0.96));
+    let hazeDrawn = false;
     if (isHero && haze && (reduced || st.tick++ % 2 === 0)) {
+      hazeDrawn = true;
       // The background is drawn every other frame: it moves slowly, and its light trails the cursor like something heavy.
       st.bgPointer.lerp(st.bgGoal, reduced ? 1 : 1 - Math.exp(-dt * 3.2));
       haze.mat.uniforms.uPointer.value.copy(st.bgPointer);
@@ -360,6 +362,8 @@ function init() {
     renderer.clear();
     renderer.setScissorTest(true);
     renderer.render(scene, camera);
+    // The entrance (hero-pix.js) prints the hero from these two canvases, and has to copy them before the frame is shown.
+    if (isHero && window.__heroSnap) window.__heroSnap(hazeDrawn ? haze.el : null, canvas);
   }
   function loop() {
     if (document.hidden) { raf = 0; return; }
