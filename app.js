@@ -743,8 +743,9 @@ if (spot && typeof spot.showModal === "function") {
   spot.addEventListener("cancel", (e) => { e.preventDefault(); close(); });                 // Escape
   spot.addEventListener("click", (e) => { if (e.target === spot || e.target.classList.contains("spot-shade")) close(); });
   $(".spot-close").addEventListener("click", close);
-  $(".spot-prev").addEventListener("click", () => fill(index - 1));
-  $(".spot-next").addEventListener("click", () => fill(index + 1));
+  // Two pairs of arrows: beside the count, and (wide screens) either side of the card. CSS shows one pair.
+  spot.querySelectorAll(".spot-prev").forEach((b) => b.addEventListener("click", () => fill(index - 1)));
+  spot.querySelectorAll(".spot-next").forEach((b) => b.addEventListener("click", () => fill(index + 1)));
   spot.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") fill(index - 1); else if (e.key === "ArrowRight") fill(index + 1); });
   stamps.forEach((s, i) => {
     s.addEventListener("click", () => open(i, s));

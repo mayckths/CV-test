@@ -456,7 +456,7 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 }
 
 /* Art spotlight: the page goes dark around one piece and its story */
-.spot { --ink: var(--accent); position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: clamp(12px, 3vw, 40px); border: 0; background: none; color: var(--ink-text, #1f1c1c); overflow: auto; overscroll-behavior: contain; }
+.spot { --ink: var(--accent); --pad: clamp(12px, 3vw, 40px); --side: 0px; --h: min(660px, calc(100dvh - 2 * var(--pad)), 56vw); --w: min(calc(100vw - 2 * var(--pad) - 2 * var(--side)), calc(var(--h) + 440px)); position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: clamp(12px, 3vw, 40px); border: 0; background: none; color: var(--ink-text, #1f1c1c); overflow: auto; overscroll-behavior: contain; }
 .spot[open] { display: grid; place-items: center; }
 .spot::backdrop { background: none; }
 .spot-shade { position: fixed; inset: 0; background: radial-gradient(70vmax circle at 50% 46%, rgba(31, 28, 28, .62), rgba(12, 9, 18, .95) 72%); opacity: 0; transition: opacity var(--modal-open-dur) ease; }
@@ -467,7 +467,7 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .spot.has-pix .spot-shade { background: radial-gradient(70vmax circle at 50% 46%, rgba(12, 9, 18, 0) 30%, rgba(12, 9, 18, .62) 78%); }
 /* One fixed size for every piece. The picture side is a square and the whole image is always shown: a soft, blurred copy of
    it fills whatever space is left around it, so nothing is cropped and there are no empty bands. A long story scrolls in its own side. */
-.spot-card { --h: min(660px, calc(100dvh - 2 * clamp(12px, 3vw, 40px)), 56vw); position: relative; width: min(100%, calc(var(--h) + 440px)); height: var(--h); display: grid; grid-template-columns: var(--h) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); background: var(--card); border-radius: var(--r); overflow: hidden; box-shadow: 0 0 140px -10px color-mix(in srgb, var(--ink) 55%, transparent), 0 40px 80px -40px rgba(0, 0, 0, .8); }
+.spot-card { position: relative; width: var(--w); height: var(--h); display: grid; grid-template-columns: var(--h) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); background: var(--card); border-radius: var(--r); overflow: hidden; box-shadow: 0 0 140px -10px color-mix(in srgb, var(--ink) 55%, transparent), 0 40px 80px -40px rgba(0, 0, 0, .8); }
 .spot-art { background: color-mix(in srgb, var(--ink) 14%, #fff); }
 .spot-art { position: relative; min-height: 0; overflow: hidden; background: #17131c; }
 .spot-art-bg { position: absolute; inset: -14%; background: center / cover no-repeat; filter: blur(30px) saturate(1.15) brightness(.82); }
@@ -478,7 +478,17 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .spot-body h3 { margin-top: 8px; font: 600 clamp(30px, 3.6vw, 52px)/.98 var(--display); letter-spacing: -0.04em; color: var(--ink); }
 .spot-when { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* Previous and next piece sit either side of the count, in the card's text: on the picture they read as "next image". */
-.spot-step { display: flex; align-items: center; gap: 4px; flex: none; }
+.spot-step { display: flex; align-items: center; gap: 10px; flex: none; }
+/* Wide screens: the two arrows stand either side of the whole card, and the count is left on its own. */
+.spot .spot-side { display: none; position: fixed; top: 50%; z-index: 2; transform: translateY(-50%); background: var(--card); box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .55); opacity: 0; transition: opacity var(--modal-close-dur) ease, background .2s, color .2s, border-color .2s; }
+.spot .spot-side.spot-prev { left: calc(50vw - var(--w) / 2 - 60px); }
+.spot .spot-side.spot-next { right: calc(50vw - var(--w) / 2 - 60px); }
+.spot.is-open .spot-side { opacity: 1; transition-duration: var(--modal-open-dur), .2s, .2s, .2s; }
+@media (min-width: 1100px) {
+  .spot { --side: 60px; --h: min(660px, calc(100dvh - 2 * var(--pad)), 50vw); }
+  .spot .spot-side { display: grid; }
+  .spot-step .spot-prev, .spot-step .spot-next { display: none; }
+}
 .spot-year { font: 500 clamp(20px, 2vw, 28px)/1 var(--display); letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
 .spot-text { margin-top: 20px; font-size: 16px; line-height: 1.6; color: var(--muted); max-width: 52ch; }
 .spot-link { margin-top: 18px; align-self: flex-start; }
