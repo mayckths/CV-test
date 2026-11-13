@@ -11,15 +11,19 @@ const overlay = document.querySelector(".hero-overlay");
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const TONES = [[13, 7, 48], [34, 18, 109], [111, 92, 224], [241, 238, 253]];   // deep ground, hero blue, lilac, text
-const STEPS = 5, STEP = 200, FADE = 300;   // five prints, 0.2 s each, then the fade to the real hero
+const STEPS = 5, STEP = 120, FADE = 250;   // five prints, 0.12 s each, then the fade: 0.85 s in all
+const LIMIT = 2000;                        // the whole hero is in view by this long after the page began to load
 
 function run() {
   const mk = (opts) => { const c = document.createElement("canvas"); return [c, c.getContext("2d", opts)]; };
   const [hazeC, hazeX] = mk(), [stageC, stageX] = mk(), [textC, textX] = mk(), [midC, midX] = mk(), [hopC, hopX] = mk();
   const [workC, workX] = mk({ willReadFrequently: true });
   const out = view.getContext("2d");
+  // The steps start at once: nothing is waited for. If the page was slow to get here they are run faster, so the
+  // entrance still ends inside the limit (performance.now() counts from the start of the page load).
   const born = performance.now();
-  let W = 0, H = 0, cols0 = 0, mw = 0, mh = 0, seen = false, fontsIn = false, t0 = 0, raf = 0, ended = false;
+  const pace = Math.min(1, Math.max(0.45, (LIMIT - born) / (STEP * STEPS + FADE)));
+  let W = 0, H = 0, cols0 = 0, mw = 0, mh = 0, raf = 0, ended = false;
 
   // The still ground of the hero (styles.css --blue-bg), for the frames before the drifting one arrives.
   function ground() {
@@ -82,7 +86,6 @@ function run() {
         const p = view.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = stage.width / s.width;
         stageX.clearRect(0, 0, mw, mh);
         stageX.drawImage(stage, (p.left - s.left) * k, (p.top - s.top) * k, p.width * k, p.height * k, 0, 0, mw, mh);
-        seen = true;
       }
     } catch (e) { /* a lost context: carry on with what we have */ }
   };
@@ -130,20 +133,20 @@ function run() {
   function frame(now) {
     raf = requestAnimationFrame(frame);
     if (!mw) { setup(); if (!mw) return; }
-    // The steps start once the type is in its real face and the 3D layer has drawn (or is clearly not coming).
-    if (!t0 && fontsIn && (seen || now - born > 700)) t0 = now;
-    const e = t0 ? now - t0 : 0;
+    // Whatever has arrived is printed: the 3D layer and the real type join in as soon as they are ready.
+    const e = Math.max(0, now - born) / pace;
     print(cols0 << Math.min(STEPS - 1, Math.floor(e / STEP)));
-    if (e >= STEP * STEPS) finish(FADE);
+    if (e >= STEP * STEPS) finish(FADE * pace);
   }
 
   // The hero is pinned while the page scrolls and its text drifts up, so the print would come apart: let go.
   const onScroll = () => { if (window.scrollY > 12) finish(180); };
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", setup);
-  const fonts = () => { fontsIn = true; if (mw) words(); };
+  const fonts = () => { if (mw && !ended) words(); };
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(fonts, fonts);
   setup();
+  if (mw) print(cols0);   // the first print is on the page before anything else gets the main thread
   raf = requestAnimationFrame(frame);
 }
 
