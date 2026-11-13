@@ -65,6 +65,8 @@
     <canvas class="hero-pix" aria-hidden="true"></canvas>
     </div>
     </div>
+    <!-- Run as soon as it arrives: placed here and async so it never waits for the 3D library further down -->
+    <script type="module" async src="hero-pix.js"></script>
 
     <!-- INTRO: one message at a time while the panel stays pinned -->
     <section class="scene" id="about" aria-label="Introduction">
@@ -367,6 +369,5 @@
   <script src="app.js" defer></script>
   <script src="askmark.js" defer></script>
   <script type="module" src="scene3d.js"></script>
-  <script type="module" src="hero-pix.js"></script>
 </body>
 </html>
