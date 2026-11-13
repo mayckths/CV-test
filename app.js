@@ -241,18 +241,21 @@ if (stack && "ResizeObserver" in window) {
   stack.classList.add("stacks");
 }
 
-// Recommendations move sideways with the page's own scroll: the row holds in the middle of the screen while
-// scrolling slides it from the first card to the last, then the page carries on.
+// Recommendations: side by side on desktop. On phones the row moves sideways with the page's own scroll: it
+// holds in the middle of the screen while scrolling slides it from the first card to the last, then the page carries on.
 const quotes = document.querySelector(".quotes"), qrow = document.querySelector(".quotes-row"), qpin = document.querySelector(".quotes-pin");
 if (quotes && qrow && qpin && !reduced) {
+  const phone = matchMedia("(max-width: 820px)");
   const m = { top: 0, pad: 0, dist: 0, over: 0 };
   let queued = 0;
   const slide = () => {
     queued = 0;
+    if (!phone.matches) return;
     const p = m.dist ? Math.min(1, Math.max(0, (m.top - (quotes.getBoundingClientRect().top + m.pad)) / m.dist)) : 0;
     qrow.scrollLeft = p * m.over;
   };
   const measure = () => {
+    if (!phone.matches) return;
     m.over = Math.max(0, qrow.scrollWidth - qrow.clientWidth);       // how far the row has to travel
     m.dist = Math.round(m.over * 1.3);                                // a little more scrolling than travel, so it is unhurried
     m.pad = parseFloat(getComputedStyle(quotes).paddingTop) || 0;
@@ -261,9 +264,14 @@ if (quotes && qrow && qpin && !reduced) {
     quotes.style.height = `${Math.round(m.pad + qpin.offsetHeight + m.dist)}px`;
     slide();
   };
-  quotes.classList.add("scrolls");
-  qrow.removeAttribute("tabindex");
-  measure();
+  const sync = () => {
+    quotes.classList.toggle("scrolls", phone.matches);
+    qrow.removeAttribute("tabindex");
+    if (phone.matches) measure();
+    else { quotes.style.height = ""; qpin.style.top = ""; qrow.scrollLeft = 0; }
+  };
+  sync();
+  phone.addEventListener("change", sync);
   window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(slide); }, { passive: true });
   window.addEventListener("resize", measure);
   if ("ResizeObserver" in window) new ResizeObserver(measure).observe(qpin);
