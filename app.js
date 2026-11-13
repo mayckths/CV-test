@@ -241,17 +241,33 @@ if (stack && "ResizeObserver" in window) {
   stack.classList.add("stacks");
 }
 
-// Recommendations scroll sideways: swipe, trackpad, or the two arrows.
-const qrow = document.querySelector(".quotes-row");
-if (qrow) {
-  const prev = document.querySelector(".quotes-prev"), next = document.querySelector(".quotes-next");
-  const stepBy = (dir) => { const card = qrow.querySelector("figure"); qrow.scrollBy({ left: dir * (card.offsetWidth + parseFloat(getComputedStyle(qrow).columnGap || 0)), behavior: reduced ? "auto" : "smooth" }); };
-  const ends = () => { prev.disabled = qrow.scrollLeft < 8; next.disabled = qrow.scrollLeft > qrow.scrollWidth - qrow.clientWidth - 8; };
-  prev.addEventListener("click", () => stepBy(-1));
-  next.addEventListener("click", () => stepBy(1));
-  qrow.addEventListener("scroll", ends, { passive: true });
-  window.addEventListener("resize", ends);
-  ends();
+// Recommendations move sideways with the page's own scroll: the row holds in the middle of the screen while
+// scrolling slides it from the first card to the last, then the page carries on.
+const quotes = document.querySelector(".quotes"), qrow = document.querySelector(".quotes-row"), qpin = document.querySelector(".quotes-pin");
+if (quotes && qrow && qpin && !reduced) {
+  const m = { top: 0, pad: 0, dist: 0, over: 0 };
+  let queued = 0;
+  const slide = () => {
+    queued = 0;
+    const p = m.dist ? Math.min(1, Math.max(0, (m.top - (quotes.getBoundingClientRect().top + m.pad)) / m.dist)) : 0;
+    qrow.scrollLeft = p * m.over;
+  };
+  const measure = () => {
+    m.over = Math.max(0, qrow.scrollWidth - qrow.clientWidth);       // how far the row has to travel
+    m.dist = Math.round(m.over * 1.3);                                // a little more scrolling than travel, so it is unhurried
+    m.pad = parseFloat(getComputedStyle(quotes).paddingTop) || 0;
+    m.top = Math.max(96, Math.round((window.innerHeight - qpin.offsetHeight) / 2));
+    qpin.style.top = `${m.top}px`;
+    quotes.style.height = `${Math.round(m.pad + qpin.offsetHeight + m.dist)}px`;
+    slide();
+  };
+  quotes.classList.add("scrolls");
+  qrow.removeAttribute("tabindex");
+  measure();
+  window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(slide); }, { passive: true });
+  window.addEventListener("resize", measure);
+  if ("ResizeObserver" in window) new ResizeObserver(measure).observe(qpin);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 }
 
 // Project media leans toward the cursor.

@@ -81,7 +81,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 @media (max-width: 560px) { .mark { padding: 0 2px 0 6px; } .mark .logo { height: 13px; } .top nav { font-size: 13px; gap: 10px; } .top .pill { padding: 0 12px; } }
 
 /* Small label roles */
-.meta, .count, .when, .disclosure, .fine, .eyebrow, .mock-note { font: 500 12px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.meta, .count, .when, .disclosure, .fine, .eyebrow, .creds-label, .mock-note { font: 500 12px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 
 /* Panels */
 .panel { position: relative; margin: var(--gap); border-radius: var(--r); }
@@ -374,14 +374,13 @@ h1 em { font: italic 400 1.1em/0.9 var(--serif); letter-spacing: -0.01em; color:
 
 /* Recommendations */
 .quotes { padding-top: clamp(64px, 9vw, 128px); }
-/* Recommendations sit in one row that scrolls sideways and snaps card by card */
+/* Recommendations sit in one row. With scripts on, the row holds in the middle of the screen and slides sideways as
+   the page scrolls, then lets go. Without scripts or with reduced motion it is a row you swipe, snapping card by card. */
 .quotes-row { display: flex; gap: clamp(20px, 3vw, 48px); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; margin-inline: calc(-1 * var(--pad)); padding-inline: var(--pad); scroll-padding-inline: var(--pad); }
 .quotes-row::-webkit-scrollbar { display: none; }
 .quotes-row figure { flex: 0 0 min(84%, 820px); scroll-snap-align: start; }
-.quotes-nav { display: flex; gap: 10px; margin-top: 24px; }
-.quotes-nav button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: none; color: var(--ink); cursor: pointer; transition: background .2s, color .2s, border-color .2s, opacity .2s; }
-.quotes-nav button:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-.quotes-nav button:disabled { opacity: .3; cursor: default; }
+.quotes.scrolls .quotes-pin { position: sticky; }
+.quotes.scrolls .quotes-row { overflow-x: hidden; scroll-snap-type: none; }
 .quotes figure { border-top: 1px solid var(--line-strong); padding-top: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 28px; }
 .quotes blockquote { font: italic 400 clamp(27px, 3.2vw, 44px)/1.08 var(--serif); letter-spacing: -0.01em; text-wrap: balance; }   /* quoted speech is in the serif */
 .quotes blockquote::before { content: "“"; color: var(--accent); }
