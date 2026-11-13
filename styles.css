@@ -473,10 +473,12 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .spot-art-bg { position: absolute; inset: -14%; background: center / cover no-repeat; filter: blur(30px) saturate(1.15) brightness(.82); }
 .spot-art img, .spot-art video { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; }
 .spot-art [hidden], .spot-link[hidden], .spot-thumbs[hidden] { display: none; }   /* these have their own display, so hidden must be restated */
-.spot-body { display: flex; flex-direction: column; padding: clamp(22px, 3.4vw, 48px); padding-top: clamp(52px, 5vw, 64px); padding-right: 68px; min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.spot-body { display: flex; flex-direction: column; padding: clamp(22px, 3.4vw, 48px); padding-top: clamp(52px, 5vw, 64px); min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .spot-meta { font: 500 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
 .spot-body h3 { margin-top: 8px; font: 600 clamp(30px, 3.6vw, 52px)/.98 var(--display); letter-spacing: -0.04em; color: var(--ink); }
-.spot-when { margin-top: 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.spot-when { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* Previous and next piece sit either side of the count, in the card's text: on the picture they read as "next image". */
+.spot-step { display: flex; align-items: center; gap: 4px; flex: none; }
 .spot-year { font: 500 clamp(20px, 2vw, 28px)/1 var(--display); letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
 .spot-text { margin-top: 20px; font-size: 16px; line-height: 1.6; color: var(--muted); max-width: 52ch; }
 .spot-link { margin-top: 18px; align-self: flex-start; }
@@ -487,18 +489,14 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .spot-thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .spot-count { font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--muted); min-width: 4ch; text-align: center; }
 .spot-prev, .spot-next, .spot-close { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong, rgba(31, 28, 28, .3)); background: none; color: #1f1c1c; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
-.spot-prev:hover, .spot-next:hover, .spot-close:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+@media (hover: hover) { .spot-prev:hover, .spot-next:hover, .spot-close:hover { background: var(--ink); border-color: var(--ink); color: #fff; } }   /* not on touch, where the hover would stick after a tap */
 .spot-close { position: absolute; top: 14px; right: 14px; z-index: 2; background: var(--card); }
 /* Previous and next piece: on the card's left and right edges, half way down, so they are always in view */
-.spot-prev, .spot-next { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); background: var(--card); box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .55); }
-.spot-prev { left: 10px; }
-.spot-next { right: 10px; }
 .spot-open { overflow: hidden; }
 @media (max-width: 760px) {
   .spot { place-items: start center; }
   .spot-card { --art: min(46dvh, calc(100vw - 2 * clamp(12px, 3vw, 40px))); width: 100%; grid-template-columns: 1fr; grid-template-rows: var(--art) minmax(0, 1fr); height: calc(100dvh - 24px); }
-  .spot-body { padding-top: 22px; padding-right: clamp(22px, 3.4vw, 48px); }
-  .spot-prev, .spot-next { top: calc(var(--art) / 2); }   /* on a phone, half way down the picture */
+  .spot-body { padding-top: 22px; }
 }
 
 /* Footer: on the page's beige, where the pyramids return in blue particles */
