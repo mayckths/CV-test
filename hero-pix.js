@@ -11,7 +11,7 @@ const overlay = document.querySelector(".hero-overlay");
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const TONES = [[13, 7, 48], [34, 18, 109], [111, 92, 224], [241, 238, 253]];   // deep ground, hero blue, lilac, text
-const STEPS = 5, STEP = 480, FADE = 520;   // five prints, 0.48 s each, then the fade to the real hero
+const STEPS = 5, STEP = 200, FADE = 300;   // five prints, 0.2 s each, then the fade to the real hero
 
 function run() {
   const mk = (opts) => { const c = document.createElement("canvas"); return [c, c.getContext("2d", opts)]; };
@@ -131,7 +131,7 @@ function run() {
     raf = requestAnimationFrame(frame);
     if (!mw) { setup(); if (!mw) return; }
     // The steps start once the type is in its real face and the 3D layer has drawn (or is clearly not coming).
-    if (!t0 && fontsIn && (seen || now - born > 1500)) t0 = now;
+    if (!t0 && fontsIn && (seen || now - born > 700)) t0 = now;
     const e = t0 ? now - t0 : 0;
     print(cols0 << Math.min(STEPS - 1, Math.floor(e / STEP)));
     if (e >= STEP * STEPS) finish(FADE);
