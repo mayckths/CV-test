@@ -75,7 +75,7 @@ const ANSWERS = [
       <p class="a-quote">"He's leveled up our design process and language, and I've been inspired by his creativity and eye for detail."</p>
       <small>John Chang · Senior Product Designer, Netflix</small>
       <p class="a-quote">"Not only reliable, but also delivers at premium quality every time."</p>
-      <small>Amar Mehta · Program Management and Product Strategy</small>`,
+      <small>Amar Mehta · Sr UX Program Manager @ Google</small>`,
   },
 ];
 
