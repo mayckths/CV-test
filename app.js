@@ -76,7 +76,7 @@ const ANSWERS = [
       <small>John Chang · Senior Product Designer @ Netflix</small>
       <p class="a-quote">"Not only reliable, but also delivers at premium quality every time."</p>
       <small>Amar Mehta · Sr UX Program Manager @ Google</small>
-      <p class="a-quote">"A 'triple threat' with the top design skills to deliver high quality work across a broad range of requirements, a true passion for what he does, and the communication skills to pragmatically manage projects effectively under pressure."</p>
+      <p class="a-quote">"He is a 'triple threat' with the top design skills to deliver high quality work across a broad range of requirements, a true passion for what he does, and the communication skills to pragmatically manage projects effectively under pressure."</p>
       <small>Tim Burton · VP of Marketing @ Bizagi</small>`,
   },
 ];
@@ -257,6 +257,26 @@ if (stack && "ResizeObserver" in window) {
 // Recommendations: side by side on desktop. On phones the row moves sideways with the page's own scroll: it
 // holds in the middle of the screen while scrolling slides it from the first card to the last, then the page carries on.
 const quotes = document.querySelector(".quotes"), qrow = document.querySelector(".quotes-row"), qpin = document.querySelector(".quotes-pin");
+// Desktop: the third card shows only its edge. The arrows slide the row to its end and back; a swipe does the same.
+if (quotes && qrow) {
+  const prev = quotes.querySelector(".quotes-prev"), next = quotes.querySelector(".quotes-next");
+  if (prev && next) {
+    const state = () => {
+      const max = qrow.scrollWidth - qrow.clientWidth, at = qrow.scrollLeft;
+      prev.hidden = max < 8 || at < 8;
+      next.hidden = max < 8 || at > max - 8;
+      quotes.classList.toggle("at-start", max >= 8 && at < 8);
+      quotes.classList.toggle("at-end", max >= 8 && at > max - 8);
+    };
+    const to = (left) => qrow.scrollTo({ left, behavior: reduced ? "auto" : "smooth" });
+    next.addEventListener("click", () => to(qrow.scrollWidth));
+    prev.addEventListener("click", () => to(0));
+    qrow.addEventListener("scroll", state, { passive: true });
+    window.addEventListener("resize", state);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(state);
+    state();
+  }
+}
 if (quotes && qrow && qpin && !reduced) {
   const phone = matchMedia("(max-width: 820px)");
   const m = { top: 0, pad: 0, dist: 0, over: 0 };
