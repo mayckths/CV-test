@@ -46,7 +46,7 @@ if (view && overlay) {
     textX.clearRect(0, 0, mw, mh);
     textX.setTransform(k, 0, 0, k, 0, 0);
     textX.textBaseline = "alphabetic";
-    for (const el of overlay.querySelectorAll(".hero-roles, .hero-intro, .hero-base, .hero-hint, .hero-cue")) {
+    for (const el of overlay.querySelectorAll(".hero-roles, .hero-intro, .hero-base, .hero-cue")) {
       const group = getComputedStyle(el), alpha = parseFloat(group.opacity);
       if (group.display === "none" || !(alpha > 0.01)) continue;
       textX.globalAlpha = alpha;

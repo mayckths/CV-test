@@ -158,14 +158,14 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - The chat panel carries a soft pale-blue light at the cursor.
 
 ### Floating header
-- Two pieces, centred together: the "Say hi" button on the left, outside the island, and the island (a dark translucent pill with the logo and the five section links). Mayck asked for "Say hi" to the left of the island in November 2026.
-- Link states are deliberately far apart: idle links are dim (62% lilac-white), hover lifts them to white on a faint chip, and the section in view is a solid light chip with dark text. Nothing else in the island is light, which is why "Say hi" moved out and is filled in the bright accent with dark text (it has to hold on both the indigo hero and the cream page).
+- Two pieces, centred together: the island (a dark translucent pill with the logo and the five section links) and, to its right and outside it, the "Say hi" button as a white pill. Mayck tried it on the left in orange first and chose white on the right.
+- Link states are deliberately far apart: idle links are dim (62% lilac-white), hover lifts them to white on a faint chip, and the section in view is a solid light chip with dark text. Nothing else in the island is light, which is why "Say hi" stands outside it. A hairline and a soft shadow keep the white pill visible on the cream page; it turns the bright accent on hover.
 - On phones the links tighten; at 380 px and below the logo gives way so the links still fit; at 340 px and below "About" goes too.
 
 ### Scroll cues
 - People testing the page found the scroll confusing where the page holds still while you scroll, so those places carry a cue: a pill button labelled "Scroll" with a bobbing down arrow, which also does the scrolling when pressed.
-- Hero: bottom left, through both screens of the pinned hero. It goes to the roles screen, then on to the introduction.
-- Introduction: the foot of the pinned card shows the message count ("3 / 6"), the rail, and the cue, which goes to the next message and after the last one to Selected work.
+- Hero: bottom centre, through both screens of the pinned hero. It replaced the "Drag to turn · Press to scatter" line, which is gone (the button's label for assistive tech still says how the pyramids respond). It goes to the roles screen, then on to the introduction.
+- Introduction: the foot of the pinned card shows the message count ("3 / 6") on the left, the cue in the centre and the rail on the right; the cue which goes to the next message and after the last one to Selected work.
 - The arrow does not bob with reduced motion, and the cue's scrolling is then instant.
 
 ## Do's and Don'ts
