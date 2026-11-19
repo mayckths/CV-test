@@ -137,18 +137,21 @@ function init() {
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
     uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 },
     // On the beige footer the motes are drawn in the hero's blues instead of light tints.
+    uRest: { value: 0.84 },
     uFoot: { value: 0 }, uInkA: { value: new THREE.Color("#22126d") }, uInkB: { value: new THREE.Color("#5a3cf2") },
   };
   const pMat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uMote, uFade, uLand, uHole, uFoot;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uMote, uFade, uLand, uHole, uFoot, uRest;
       uniform vec3 uCenter; uniform vec3 uInkA; uniform vec3 uInkB; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
       varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
-        float m = smoothstep(0.0, 1.0, clamp(uForm * 1.5 - aSeed * 0.5, 0.0, 1.0));
+        // The pyramids never close up completely: at rest (uRest) the later motes stop a little short of their
+        // places, so the edges stay soft and a few float around the shape. Landing on the headline is exact.
+        float m = smoothstep(0.0, 1.0, clamp(uForm * mix(uRest, 1.0, uLand) * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
         vec3 t = mix(aPyr, aLead, uLand) * uScale;                 // the pyramids, or the headline lettering they land on
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
@@ -156,6 +159,9 @@ function init() {
         vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
         vec3 p = mix(loose, formed, m);
+        // A slow float, each mote on its own small loop: slight on the shape, wider for the ones adrift. Still on the headline.
+        float adrift = 1.0 - m;
+        p.xy += vec2(sin(uTime * 0.55 + aSeed * 41.0), cos(uTime * 0.47 + aSeed * 27.0)) * uScale * (0.0045 + 0.05 * adrift) * (0.5 + aSeed) * (1.0 - uLand);
         // The cursor is an attractor: motes within reach are drawn in toward it and circle it, and go home when it leaves.
         // Wherever it is on the panel, every mote also leans a little toward it, each by its own amount.
         // None of this applies while the motes are landing on the headline.
