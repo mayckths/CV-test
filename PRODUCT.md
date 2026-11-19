@@ -46,7 +46,7 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 ## Evidence on Hand
 
 - Impact numbers from the CV: the fintech AI assistant used by 200,000+ businesses (figure supplied by Mayck in November 2026; the project is shown as "AI Assistant" and is not named after Novo); +50% activation in the first month after the Days 0 to 30 redesign; 4+ design systems for Google surfaces; design cycle time from 1 month to 1 week.
-- Recommendations from John Chang (Senior Product Designer, Netflix) and Amar Mehta (Sr UX Program Manager @ Google), linked to LinkedIn.
+- Recommendations from John Chang (Senior Product Designer @ Netflix), Amar Mehta (Sr UX Program Manager @ Google) and Tim Burton (VP of Marketing @ Bizagi, who managed Mayck directly for over 3 years), linked to LinkedIn.
 - Project media in assets/ taken from mayck.design (stills and looping videos converted from the original GIFs).
 - No real Ask Novo screenshots: the Ask Novo visual is a coded mock-up. Do not fabricate further metrics, clients or quotes.
 

@@ -73,9 +73,11 @@ const ANSWERS = [
     keys: ["say", "recommend", "reference", "colleague", "feedback", "testimonial", "people"],
     html: `
       <p class="a-quote">"He's leveled up our design process and language, and I've been inspired by his creativity and eye for detail."</p>
-      <small>John Chang · Senior Product Designer, Netflix</small>
+      <small>John Chang · Senior Product Designer @ Netflix</small>
       <p class="a-quote">"Not only reliable, but also delivers at premium quality every time."</p>
-      <small>Amar Mehta · Sr UX Program Manager @ Google</small>`,
+      <small>Amar Mehta · Sr UX Program Manager @ Google</small>
+      <p class="a-quote">"A 'triple threat' with the top design skills to deliver high quality work across a broad range of requirements, a true passion for what he does, and the communication skills to pragmatically manage projects effectively under pressure."</p>
+      <small>Tim Burton · VP of Marketing @ Bizagi</small>`,
   },
 ];
 
@@ -176,6 +178,17 @@ if (!reduced && "IntersectionObserver" in window) {
   loops.forEach((v) => vo.observe(v));
 }
 
+// Scroll cues take the page to a place, smoothly unless motion is reduced.
+const go = (y) => window.scrollTo({ top: Math.max(0, Math.round(y)), behavior: reduced ? "auto" : "smooth" });
+// Hero: from the first screen to the roles, and from there on to the introduction.
+{
+  const cue = document.querySelector(".hero-cue"), wrap = document.querySelector(".hero-wrap"), about = document.querySelector("#about");
+  if (cue && wrap && about) cue.addEventListener("click", () => {
+    const r = wrap.getBoundingClientRect(), pin = r.height - window.innerHeight;
+    if (pin > 40 && -r.top / pin < 0.45) go(window.scrollY + r.top + pin * 0.6);
+    else go(window.scrollY + about.getBoundingClientRect().top);
+  });
+}
 // Header: hairline once scrolled, and mark the nav link for the section in view.
 const header = document.querySelector(".top");
 const onScroll = () => header.classList.toggle("scrolled", window.scrollY > 8);
@@ -247,12 +260,16 @@ const quotes = document.querySelector(".quotes"), qrow = document.querySelector(
 if (quotes && qrow && qpin && !reduced) {
   const phone = matchMedia("(max-width: 820px)");
   const m = { top: 0, pad: 0, dist: 0, over: 0 };
+  const cards = qrow.querySelectorAll("figure").length, dotsBox = quotes.querySelector(".quotes-dots");
+  const dots = dotsBox ? Array.from({ length: cards }, () => dotsBox.appendChild(document.createElement("i"))) : [];
   let queued = 0;
   const slide = () => {
     queued = 0;
     if (!phone.matches) return;
     const p = m.dist ? Math.min(1, Math.max(0, (m.top - (quotes.getBoundingClientRect().top + m.pad)) / m.dist)) : 0;
     qrow.scrollLeft = p * m.over;
+    const at = Math.round(p * (cards - 1));
+    dots.forEach((d, i) => d.classList.toggle("on", i === at));
   };
   const measure = () => {
     if (!phone.matches) return;
@@ -384,6 +401,7 @@ if (scene && !reduced) {
   const rail = scene.querySelector(".scene-rail");
   const ticks = steps.map(() => rail.appendChild(document.createElement("i")));
   scene.style.setProperty("--n", steps.length);
+  const count = scene.querySelector(".scene-count"), cue = scene.querySelector(".scene-cue");
   scene.classList.add("js");
   let current = -1, queued = 0;
 
@@ -446,11 +464,18 @@ if (scene && !reduced) {
     current = idx;
     steps.forEach((s, i) => { s.classList.toggle("is-on", i === idx); s.classList.toggle("is-past", i < idx); });
     ticks.forEach((t, i) => t.classList.toggle("on", i === idx));
+    if (count) count.textContent = `${idx + 1} / ${steps.length}`;
     scene.classList.toggle("dense", steps[idx].classList.contains("creds"));
   };
   window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(update); }, { passive: true });
   window.addEventListener("resize", update);
   update();
+  // The cue goes to the middle of the next message's stretch of scroll, and after the last one to what follows.
+  if (cue) cue.addEventListener("click", () => {
+    const r = scene.getBoundingClientRect(), span = r.height - window.innerHeight, top = window.scrollY + r.top;
+    if (current < steps.length - 1) go(top + span * (current + 1.5) / steps.length);
+    else { const next = scene.nextElementSibling; go(next ? window.scrollY + next.getBoundingClientRect().top - 24 : top + r.height); }
+  });
 }
 
 // Spotlight: dark surfaces carry a soft light that follows the cursor.

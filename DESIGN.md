@@ -148,7 +148,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - Behind the open spotlight the page is shown as a coarse dark print of itself, in the same ordered dither: four dark tones of the page's ink (#0e0b11 to #685a53), cells of 4, then 8, then 16 px as the card opens (3, 6, 10 px on a phone), and back down as it closes. The browser cannot hand over a picture of the page, so app.js paints the part in view from the page's own boxes (backgrounds, radial glows, pictures, 2D canvases, words) and prints that; the WebGL canvases and SVGs are left out. A soft shade still darkens the edges, and if the painting fails the old plain shade shows. With reduced motion the print is shown at rest with no steps.
 
 ### Recommendations
-- On desktop the two LinkedIn recommendations sit side by side on the same screen. On phones they sit in one row that moves sideways with the page's own scroll: the row holds in the middle of the screen while scrolling slides it from the first card to the last, then the page carries on, with the last card resting at the left edge exactly as the first one starts. No buttons. With reduced motion or without scripts it is a row you swipe.
+- On desktop the three LinkedIn recommendations sit side by side on the same screen, each one sentence quoted exactly, with name and role written "Role @ Company". On phones, three small bars under the row show which card the scroll has reached. On phones they sit in one row that moves sideways with the page's own scroll: the row holds in the middle of the screen while scrolling slides it from the first card to the last, then the page carries on, with the last card resting at the left edge exactly as the first one starts. No buttons. With reduced motion or without scripts it is a row you swipe.
 
 ### How the 3D layers are attached
 - The hero background is its own canvas inside the hero panel, and the footer pyramids are drawn in a canvas inside the footer panel, so both scroll with the page exactly. Only the hero's particles use a canvas fixed to the screen, because they have to leave the panel and land on the headline. Do not go back to one fixed canvas for everything: it trails the page by a frame while scrolling.
@@ -158,7 +158,15 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - The chat panel carries a soft pale-blue light at the cursor.
 
 ### Floating header
-- A dark translucent pill, centred, legible over both the blue hero and the cream page.
+- Two pieces, centred together: the "Say hi" button on the left, outside the island, and the island (a dark translucent pill with the logo and the five section links). Mayck asked for "Say hi" to the left of the island in November 2026.
+- Link states are deliberately far apart: idle links are dim (62% lilac-white), hover lifts them to white on a faint chip, and the section in view is a solid light chip with dark text. Nothing else in the island is light, which is why "Say hi" moved out and is filled in the bright accent with dark text (it has to hold on both the indigo hero and the cream page).
+- On phones the links tighten; at 380 px and below the logo gives way so the links still fit; at 340 px and below "About" goes too.
+
+### Scroll cues
+- People testing the page found the scroll confusing where the page holds still while you scroll, so those places carry a cue: a pill button labelled "Scroll" with a bobbing down arrow, which also does the scrolling when pressed.
+- Hero: bottom left, through both screens of the pinned hero. It goes to the roles screen, then on to the introduction.
+- Introduction: the foot of the pinned card shows the message count ("3 / 6"), the rail, and the cue, which goes to the next message and after the last one to Selected work.
+- The arrow does not bob with reduced motion, and the cue's scrolling is then instant.
 
 ## Do's and Don'ts
 
