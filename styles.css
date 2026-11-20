@@ -404,7 +404,9 @@ h1 em { font: italic 400 1.1em/0.9 var(--serif); letter-spacing: -0.01em; color:
    of the screen and slides sideways as the page scrolls (or, without scripts or with reduced motion, a row you
    swipe, snapping card by card). */
 .quotes-pin { position: relative; }
-.quotes-row { --qgap: clamp(24px, 4vw, 64px); display: flex; gap: var(--qgap); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+/* It scrolls sideways only. Without overflow-y: hidden the row would also be a vertical scroller (a few pixels of
+   overhang are enough), and it would swallow the start of every wheel scroll made over it. The padding keeps that overhang visible. */
+.quotes-row { --qgap: clamp(24px, 4vw, 64px); display: flex; gap: var(--qgap); overflow-x: auto; overflow-y: hidden; padding-bottom: 14px; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 .quotes-row::-webkit-scrollbar { display: none; }
 .quotes-row figure { flex: 0 0 calc((100% - 2 * var(--qgap)) * .44); scroll-snap-align: start; }   /* two cards and 12% of the next */
 .quotes-row figure:last-child { scroll-snap-align: end; }
