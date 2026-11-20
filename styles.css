@@ -136,7 +136,10 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .hero-title { font-size: clamp(36px, 4.3vw, 64px); line-height: .98; color: var(--on-dark); text-wrap: balance; }
 .hero-title span { color: rgba(226, 221, 250, .52); }
 .hero-base { position: absolute; left: clamp(22px, 5.5vw, 80px); right: clamp(22px, 5.5vw, 80px); bottom: clamp(26px, 6vh, 72px); display: flex; align-items: flex-end; justify-content: flex-end; }
-.hero-blurb { max-width: 36ch; font-size: clamp(15px, 1.15vw, 17px); line-height: 1.5; color: var(--on-dark-muted); text-wrap: pretty; }
+/* The years and the company names are the facts to take away, so they are white and heavier; the rest stays a shade back.
+   The soft dark halo keeps it readable when particles drift behind it. */
+.hero-blurb { max-width: 31ch; font-size: clamp(18px, 1.55vw, 23px); line-height: 1.42; letter-spacing: -0.005em; color: rgba(241, 238, 253, .8); text-wrap: pretty; text-shadow: 0 0 22px rgba(13, 7, 48, .9), 0 0 6px rgba(13, 7, 48, .6); }
+.hero-blurb strong { color: #fff; font-weight: 600; }
 /* Bottom centre. Stays through both screens of the pinned hero: first to the roles, then on to the introduction. */
 .hero-cue { --cue-fg: var(--on-dark); --cue-bg: #0d0730; position: absolute; left: 50%; bottom: clamp(18px, 3.4vh, 34px); transform: translateX(-50%); pointer-events: auto; }
 /* Hero entrance (hero-pix.js): the hero opens under a coarse dithered print of itself, in four tones of its own
@@ -147,7 +150,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
   .hero-intro { max-width: none; right: 22px; top: 88px; }
   .hero-base { justify-content: flex-start; bottom: 84px; }
   .hero-cue { bottom: 20px; }
-  .hero-blurb { max-width: 40ch; }
+  .hero-blurb { max-width: 34ch; font-size: 18px; }
 }
 
 /* Intro scene: a pinned card that shows one message at a time (all stacked when scripts are off) */
