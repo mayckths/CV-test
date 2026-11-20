@@ -278,6 +278,7 @@ function init() {
   // The pyramids open turned a little (TURN0) and come round to face front as the hero appears.
   const TURN0 = -0.35;   // about 20 degrees, the right pyramid nearer
   const st = { form: 1, burst: 0, burstT: -1, spin: reduced ? 0 : TURN0, vel: 0, dragging: false, intro: 1, mode: null, home: "hero", hp: 0, q: 0, tick: 0,
+    dir: 1,   // which way the pyramids were last turned: they finish the turn that way
     pointer: new THREE.Vector2(99, 99), pointerSlow: new THREE.Vector2(99, 99), pull: 0, pointerGoal: new THREE.Vector2(99, 99), client: { x: 0, y: 0, on: false },
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -347,11 +348,25 @@ function init() {
     const want = goal * introForm * (1 - st.burst);
     st.form += (want - st.form) * (reduced ? 1 : 1 - Math.exp(-dt * 12));
     if (!st.dragging) {
-      st.spin += st.vel * dt;
-      st.vel *= Math.exp(-dt * 1.6);
+      // After a turn the pyramids are never pulled back. They carry on the way they were going, round to the next
+      // front-facing position: a throw coasts down first, then they cruise and slow into place.
       // They wait, turned, under the dithered entrance (hero-pix.js) and start coming round as it gives way.
       const held = window.__pix === true && document.documentElement.classList.contains("pix");
-      if (Math.abs(st.vel) < 0.6 && !held) st.spin += (Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2 - st.spin) * (1 - Math.exp(-dt * 1.2));
+      const TAU = Math.PI * 2;
+      if (Math.abs(st.vel) > 0.3) st.dir = Math.sign(st.vel);
+      const home = (st.dir > 0 ? Math.ceil(st.spin / TAU - 1e-4) : Math.floor(st.spin / TAU + 1e-4)) * TAU;
+      const left = Math.abs(home - st.spin);
+      if (held) st.vel = 0;
+      else if (left < 0.004 && Math.abs(st.vel) < 0.5) { st.spin = home; st.vel = 0; }
+      else {
+        const want = st.dir * Math.max(0.12, Math.min(3, left * 2.2));       // cruise, then slow as the front comes round
+        if (Math.abs(st.vel) > 3.2) st.vel *= Math.exp(-dt * 1.6);            // a hard throw keeps its own momentum for a while
+        else st.vel += (want - st.vel) * (1 - Math.exp(-dt * 5));
+        const before = st.spin;
+        st.spin += st.vel * dt;
+        // Arriving gently: stop on the front instead of slipping past it into another turn.
+        if ((before - home) * (st.spin - home) < 0 && Math.abs(st.vel) < 0.8) { st.spin = home; st.vel = 0; }
+      }
     }
     const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
@@ -359,8 +374,8 @@ function init() {
     // nothing turns while the motes travel down and become the headline's "I design".
     const settle = 1 - SS(q, 0, 0.3);
     // Nothing turns the pyramids on its own: no idle motion, no facing the cursor, no turn on scroll. Only a drag
-    // turns them, and they ease back to face front afterwards (the offset from the nearest full turn, so a spin
-    // never has to unwind). They are in the same place and state on both screens of the pinned hero.
+    // turns them, and afterwards they finish that turn the same way round to face front (see above). The angle is
+    // taken from the nearest full turn, so several turns never have to unwind. They are in the same place and state on both screens of the pinned hero.
     const angle = (st.spin - Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2) * settle;
     // The cursor's place is worked out each frame from where it is on screen, so it stays right while the page scrolls.
     // When it leaves, the pull fades out where the cursor last was instead of being dragged away across the screen.
@@ -460,6 +475,7 @@ function init() {
       if (!st.dragging) return;
       st.dragging = false;
       slot.classList.remove("grabbing");
+      if (Math.abs(lastX - downX) > 3) st.dir = Math.sign(lastX - downX);   // a slow drag still says which way to finish
       if (reduced || performance.now() - lastT > 120) st.vel = 0;
     };
     slot.addEventListener("pointerup", release);
@@ -475,7 +491,7 @@ function init() {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       e.preventDefault();
       const dir = e.key === "ArrowRight" ? 1 : -1;
-      if (reduced) { st.spin += dir * Math.PI / 8; still(); } else st.vel += dir * 5;
+      if (reduced) { st.spin += dir * Math.PI / 8; still(); } else { st.vel += dir * 5; st.dir = dir; }
     });
   }
 
