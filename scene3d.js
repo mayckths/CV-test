@@ -157,9 +157,8 @@ function init() {
         // places, so the edges stay soft. Landing on the headline is exact.
         float m = smoothstep(0.0, 1.0, clamp(uForm * mix(uRest, 1.0, max(uLand, isFree)) * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
-        vec3 t = mix(aPyr, aLead, uLand) * uScale;                 // the pyramids, or the headline lettering they land on
-        vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
-        vec3 formed = turned + uCenter;
+        vec3 turned = vec3(aPyr.x * c + aPyr.z * s, aPyr.y, -aPyr.x * s + aPyr.z * c);   // only the pyramids turn
+        vec3 formed = mix(turned, aLead, uLand) * uScale + uCenter;   // the pyramids, or the headline lettering they land on
         // The molecules' field: wider and taller than the pyramids, but never past the panel's edges.
         vec2 room = max(uPanelH * 0.94 - abs(uCenter.xy - uPanelC), vec2(0.0));
         vec2 field = min(uSpan * uScale * vec2(1.75, 2.0), room);
@@ -352,35 +351,37 @@ function init() {
     const want = goal * introForm * (1 - st.burst);
     st.form += (want - st.form) * (reduced ? 1 : 1 - Math.exp(-dt * 12));
     if (!st.dragging) {
-      // After a turn the pyramids are never pulled back. They carry on the way they were going, round to the next
-      // front-facing position: a throw coasts down first, then they cruise and slow into place.
+      // After a turn nothing pulls the pyramids anywhere and nothing speeds them up. They slow down on their own,
+      // as a thrown thing does, until only a small steady drift is left (DRIFT), and that drift carries them the way
+      // they were going to the next position that looks like the front, where they come to rest. The pair looks the
+      // same every half turn, so that is never more than half a turn away.
       // They wait, turned, under the dithered entrance (hero-pix.js) and start coming round as it gives way.
       const held = window.__pix === true && document.documentElement.classList.contains("pix");
-      const TAU = Math.PI * 2;
-      if (Math.abs(st.vel) > 0.3) st.dir = Math.sign(st.vel);
-      const home = (st.dir > 0 ? Math.ceil(st.spin / TAU - 1e-4) : Math.floor(st.spin / TAU + 1e-4)) * TAU;
+      const HALF = Math.PI, DRIFT = 0.5;
+      if (Math.abs(st.vel) > 0.05) st.dir = Math.sign(st.vel);
+      const home = (st.dir > 0 ? Math.ceil(st.spin / HALF - 1e-4) : Math.floor(st.spin / HALF + 1e-4)) * HALF;
       const left = Math.abs(home - st.spin);
+      let speed = Math.abs(st.vel);
       if (held) st.vel = 0;
-      else if (left < 0.004 && Math.abs(st.vel) < 0.5) { st.spin = home; st.vel = 0; }
+      else if (left < 0.003 && speed <= DRIFT * 1.3) { st.spin = home; st.vel = 0; }
       else {
-        const want = st.dir * Math.max(0.12, Math.min(3, left * 2.2));       // cruise, then slow as the front comes round
-        if (Math.abs(st.vel) > 3.2) st.vel *= Math.exp(-dt * 1.6);            // a hard throw keeps its own momentum for a while
-        else st.vel += (want - st.vel) * (1 - Math.exp(-dt * 5));
+        if (speed > DRIFT) speed = Math.max(DRIFT, speed * Math.exp(-dt * 1.6));   // the throw dying away
+        else speed += (DRIFT - speed) * (1 - Math.exp(-dt * 3));                    // let go at rest: ease up to the drift
+        // Over the last few degrees the drift itself fades, so they settle instead of stopping dead. Only ever slower.
+        if (speed <= DRIFT * 1.3) speed = Math.min(speed, Math.max(0.06, left * 2.4));
+        st.vel = st.dir * speed;
         const before = st.spin;
         st.spin += st.vel * dt;
-        // Arriving gently: stop on the front instead of slipping past it into another turn.
-        if ((before - home) * (st.spin - home) < 0 && Math.abs(st.vel) < 0.8) { st.spin = home; st.vel = 0; }
+        if ((before - home) * (st.spin - home) < 0 && speed <= DRIFT * 1.3) { st.spin = home; st.vel = 0; }   // arrived
       }
     }
     const isHero = st.mode === "hero", SS = THREE.MathUtils.smoothstep;
     const hp = isHero ? st.hp : 0, q = isHero ? st.q : 0;
-    // The pyramids stay through the whole pinned hero. They come to rest facing front as the hero lets go, so
-    // nothing turns while the motes travel down and become the headline's "I design".
-    const settle = 1 - SS(q, 0, 0.3);
     // Nothing turns the pyramids on its own: no idle motion, no facing the cursor, no turn on scroll. Only a drag
-    // turns them, and afterwards they finish that turn the same way round to face front (see above). The angle is
-    // taken from the nearest full turn, so several turns never have to unwind. They are in the same place and state on both screens of the pinned hero.
-    const angle = (st.spin - Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2) * settle;
+    // turns them, and afterwards they drift on the same way to rest (see above). The turn applies to the pyramids
+    // alone, not to the headline lettering the motes land on, so nothing has to be turned back as the hero lets go.
+    // They are in the same place and state on both screens of the pinned hero.
+    const angle = st.spin - Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2;
     // The cursor's place is worked out each frame from where it is on screen, so it stays right while the page scrolls.
     // When it leaves, the pull fades out where the cursor last was instead of being dragged away across the screen.
     if (st.client.on) {
