@@ -321,7 +321,11 @@ function init() {
       }
       return reduced || !lead ? clamp01(1 - (-hr.top / (hr.height * 0.6))) : 1;
     }
-    return clamp01((vh * 0.98 - slot.top) / (vh * 0.45));
+    // Footer: the pyramids gather as they scroll up the screen and are only complete once they sit in the middle of it.
+    // If the page ends before they can get that far (a very tall screen), they finish where the page ends.
+    const doc = document.documentElement, topAtEnd = slot.top + window.scrollY - Math.max(0, doc.scrollHeight - vh);
+    const done = Math.max((vh - slot.height) / 2, topAtEnd), from = vh * 0.98;
+    return clamp01((from - slot.top) / Math.max(1, from - done));
   }
 
   const clock = new THREE.Clock();
