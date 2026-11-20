@@ -421,7 +421,7 @@ if (scene && !reduced) {
   const rail = scene.querySelector(".scene-rail");
   const ticks = steps.map(() => rail.appendChild(document.createElement("i")));
   scene.style.setProperty("--n", steps.length);
-  const count = scene.querySelector(".scene-count"), cue = scene.querySelector(".scene-cue");
+  const cue = scene.querySelector(".scene-cue");
   scene.classList.add("js");
   let current = -1, queued = 0;
 
@@ -484,7 +484,6 @@ if (scene && !reduced) {
     current = idx;
     steps.forEach((s, i) => { s.classList.toggle("is-on", i === idx); s.classList.toggle("is-past", i < idx); });
     ticks.forEach((t, i) => t.classList.toggle("on", i === idx));
-    if (count) count.textContent = `${idx + 1} / ${steps.length}`;
     scene.classList.toggle("dense", steps[idx].classList.contains("creds"));
   };
   window.addEventListener("scroll", () => { if (!queued) queued = requestAnimationFrame(update); }, { passive: true });

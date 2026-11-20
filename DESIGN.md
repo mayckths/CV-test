@@ -155,6 +155,11 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - In the spotlight, the previous and next piece arrows are never over the picture: Mayck found that there they read as "next image", which is what the thumbnails do. On wide screens (1100 px and up) they stand outside the card, either side of the whole modal at mid-height, and the card leaves room for them. Below that, down to phones, they sit either side of the count ("2 / 4") in the card's text, beside the year. The markup holds both pairs and CSS shows one.
 - Behind the open spotlight the page is shown as a coarse dark print of itself, in the same ordered dither: four dark tones of the page's ink (#0e0b11 to #685a53), cells of 4, then 8, then 16 px as the card opens (3, 6, 10 px on a phone), and back down as it closes. The browser cannot hand over a picture of the page, so app.js paints the part in view from the page's own boxes (backgrounds, radial glows, pictures, 2D canvases, words) and prints that; the WebGL canvases and SVGs are left out. A soft shade still darkens the edges, and if the painting fails the old plain shade shows. With reduced motion the print is shown at rest with no steps.
 
+### Work
+- Selected work is four large stacking cards, in this order: AI Assistant (Novo Platform), Logitech G audio mixer, With Google Built-in Auto (Google, at Huge) and AccuWeather app (AccuWeather, at Huge). Mayck chose this line-up in November 2026 to lead with the best-known names.
+- The rest sits in a four-tile row headed "Also designed and shipped" (a working title): Design System Componetizer, First time experience, Wear OS by Google, Google TV. Tiles carry a title, one or two lines and a link where there is one; no company or year.
+- The two cards promoted from tiles (Built-in Auto, AccuWeather) only say what is known: role, scope and that the work is live. No invented numbers.
+
 ### Recommendations
 - On desktop the first two LinkedIn recommendations sit side by side at full size and the third (Tim Burton's, a longer passage set a little smaller) shows only its edge, fading out: a round arrow on that edge, or a sideways swipe, slides the row to bring it in, and an arrow on the other edge slides back. Mayck asked for the first two to stay as they were, with an arrow to the third. Each is quoted exactly, with name and role written "Role @ Company". On phones, three small bars under the row show which card the scroll has reached. On phones they sit in one row that moves sideways with the page's own scroll: the row holds in the middle of the screen while scrolling slides it from the first card to the last, then the page carries on, with the last card resting at the left edge exactly as the first one starts. No buttons. With reduced motion or without scripts it is a row you swipe.
 
@@ -174,7 +179,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 ### Scroll cues
 - People testing the page found the scroll confusing where the page holds still while you scroll, so those places carry a cue: a pill button labelled "Scroll" with a bobbing down arrow, which also does the scrolling when pressed.
 - Hero: bottom centre, through both screens of the pinned hero. It replaced the "Drag to turn · Press to scatter" line, which is gone (the button's label for assistive tech still says how the pyramids respond). It goes to the roles screen, then on to the introduction.
-- Introduction: the foot of the pinned card shows the message count ("3 / 6") on the left, the cue in the centre and the rail on the right; the cue which goes to the next message and after the last one to Selected work.
+- Introduction: the foot of the pinned card shows the cue in the centre and the rail on the right (the "3 / 6" count was removed at Mayck's request); the cue which goes to the next message and after the last one to Selected work.
 - The arrow does not bob with reduced motion, and the cue's scrolling is then instant.
 
 ## Do's and Don'ts

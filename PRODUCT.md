@@ -28,7 +28,7 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 
 ## Capabilities and Constraints
 
-- Sections: hero with role, impact numbers and certifications; scripted "Ask this portfolio" panel; selected work (AI Assistant, Design System Componetizer, Novo first time experience, Logitech G); Google and AccuWeather work at Huge; experience; LinkedIn recommendations; 3D and digital art; contact.
+- Sections: hero with role, impact numbers and certifications; scripted "Ask this portfolio" panel; selected work as four large cards (AI Assistant, Logitech G audio mixer, With Google Built-in Auto, AccuWeather app); then "Also designed and shipped", four tiles (Design System Componetizer, First time experience, Wear OS by Google, Google TV); experience; LinkedIn recommendations; 3D and digital art; contact.
 - The chat panel is scripted with hand-written answers and must say so; no AI model or API key runs on the page.
 - Contact is LinkedIn and email (mayckths@gmail.com, added at Mayck's request in November 2026); no phone on the public page. This site is the portfolio, so it does not link out to mayck.design.
 - Light (cream) page with blue hero and chat panels and a beige footer; no separate dark theme.
