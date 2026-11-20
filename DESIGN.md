@@ -161,6 +161,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 
 ### Spotlight
 - The chat panel carries a soft pale-blue light at the cursor.
+- In the chat's answers the small marks are white, not the accent: list bullets, link underlines and the link arrow. Every link in an answer carries the small up-right arrow, the same one the page's other links use, so it reads as something to click. The orange stays on the question bubbles and the send button.
 
 ### Floating header
 - Two pieces, centred together: the island (a dark translucent pill with the logo and the five section links) and, to its right and outside it, the "Say hi" button as a white pill. Mayck tried it on the left in orange first and chose white on the right.
