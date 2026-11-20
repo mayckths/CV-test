@@ -751,7 +751,7 @@ if (spot && typeof spot.showModal === "function") {
     show(0);
     $(".spot-meta").textContent = q(".stamp-meta").textContent;
     $("#spot-title").textContent = q(".stamp-title").textContent;
-    $(".spot-year").textContent = q(".stamp-year").textContent;
+    $(".spot-year").textContent = s.dataset.year || "";   // the year shows in the spotlight only, not on the stamp
     $(".spot-text").textContent = q(".stamp-info").textContent;
     const link = $(".spot-link");
     link.hidden = !s.dataset.link;
