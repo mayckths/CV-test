@@ -135,7 +135,8 @@ function init() {
   const uniforms = {
     uForm: { value: 0 }, uAngle: { value: 0 }, uScale: { value: 1 }, uTime: { value: 0 }, uPx: { value: 1 }, uMote: { value: 1 }, uFade: { value: 1 }, uLand: { value: 0 },
     uCenter: { value: new THREE.Vector3() }, uPanelC: { value: new THREE.Vector2() }, uPanelH: { value: new THREE.Vector2(1, 1) },
-    uPointer: { value: new THREE.Vector2(99, 99) }, uHole: { value: 0.5 },
+    uPointer: { value: new THREE.Vector2(99, 99) }, uPointerSlow: { value: new THREE.Vector2(99, 99) }, uPull: { value: 0 }, uHole: { value: 0.5 },
+    uSpan: { value: new THREE.Vector2(PYR_W / 2, PH / 2) },   // half the pyramids' width and height, before scaling
     // On the beige footer the motes are drawn in the hero's blues instead of light tints.
     uRest: { value: 0.84 },
     uFoot: { value: 0 }, uInkA: { value: new THREE.Color("#22126d") }, uInkB: { value: new THREE.Color("#5a3cf2") },
@@ -144,36 +145,52 @@ function init() {
     uniforms, transparent: true, depthTest: false, depthWrite: false,
     vertexShader: `
       attribute vec3 aPyr; attribute vec3 aLead; attribute vec3 aScatter; attribute vec3 aColor; attribute float aSeed; attribute float aSize;
-      uniform float uForm, uAngle, uScale, uTime, uPx, uMote, uFade, uLand, uHole, uFoot, uRest;
-      uniform vec3 uCenter; uniform vec3 uInkA; uniform vec3 uInkB; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer;
+      uniform float uForm, uAngle, uScale, uTime, uPx, uMote, uFade, uLand, uHole, uFoot, uRest, uPull;
+      uniform vec3 uCenter; uniform vec3 uInkA; uniform vec3 uInkB; uniform vec2 uPanelC; uniform vec2 uPanelH; uniform vec2 uPointer; uniform vec2 uPointerSlow; uniform vec2 uSpan;
       varying vec3 vColor; varying float vAlpha; varying float vCore;
       void main() {
         // Each mote joins at its own moment, so the letter gathers instead of snapping.
+        // About a fifth of the motes are molecules: they never join the shape. They float in a wide field around the
+        // pyramids on their own slow currents, do not turn with them, and only come in to land on the headline.
+        float isFree = step(0.8, aSeed);
         // The pyramids never close up completely: at rest (uRest) the later motes stop a little short of their
-        // places, so the edges stay soft and a few float around the shape. Landing on the headline is exact.
-        float m = smoothstep(0.0, 1.0, clamp(uForm * mix(uRest, 1.0, uLand) * 1.5 - aSeed * 0.5, 0.0, 1.0));
+        // places, so the edges stay soft. Landing on the headline is exact.
+        float m = smoothstep(0.0, 1.0, clamp(uForm * mix(uRest, 1.0, max(uLand, isFree)) * 1.5 - aSeed * 0.5, 0.0, 1.0));
         float c = cos(uAngle), s = sin(uAngle);
         vec3 t = mix(aPyr, aLead, uLand) * uScale;                 // the pyramids, or the headline lettering they land on
         vec3 turned = vec3(t.x * c + t.z * s, t.y, -t.x * s + t.z * c);
         vec3 formed = turned + uCenter;
+        // The molecules' field: wider and taller than the pyramids, but never past the panel's edges.
+        vec2 room = max(uPanelH * 0.94 - abs(uCenter.xy - uPanelC), vec2(0.0));
+        vec2 field = min(uSpan * uScale * vec2(1.75, 2.0), room);
+        // Thicker near the shape and thinning outwards, so they read as its cloud and not as a scatter over the page.
+        float reachOut = 0.38 + 0.62 * abs(aScatter.z);
+        vec3 home = uCenter + vec3(aScatter.xy * field * reachOut, (fract(aSeed * 57.0) - 0.5) * uSpan.x * uScale);
+        float ft = uTime * 0.16;
+        vec2 flow = vec2(sin(ft + aSeed * 43.0) + 0.6 * sin(ft * 1.7 + aScatter.y * 5.0 + aSeed * 17.0),
+                         cos(ft * 0.9 + aSeed * 31.0) + 0.6 * cos(ft * 1.6 + aScatter.x * 5.0 + aSeed * 23.0));
+        home.xy += flow * uSpan.x * uScale * 0.11;
+        vec3 rest = mix(formed, mix(home, formed, uLand), isFree);
         vec3 loose = vec3(uPanelC + aScatter.xy * uPanelH * 0.96, aScatter.z * 1.2);
         loose.xy += vec2(sin(uTime * 0.25 + aSeed * 30.0), cos(uTime * 0.21 + aSeed * 21.0)) * 0.08;
-        vec3 p = mix(loose, formed, m);
+        vec3 p = mix(loose, rest, m);
         // A slow float, each mote on its own small loop: slight on the shape, wider for the ones adrift. Still on the headline.
         float adrift = 1.0 - m;
         p.xy += vec2(sin(uTime * 0.55 + aSeed * 41.0), cos(uTime * 0.47 + aSeed * 27.0)) * uScale * (0.0045 + 0.05 * adrift) * (0.5 + aSeed) * (1.0 - uLand);
-        // The cursor is an attractor: motes within reach are drawn in toward it and circle it, and go home when it leaves.
-        // Wherever it is on the panel, every mote also leans a little toward it, each by its own amount.
-        // None of this applies while the motes are landing on the headline.
-        float free = 1.0 - uLand;
-        vec2 d = p.xy - uPointer;
+        // The cursor is an attractor. Each mote follows its own blend of a quick and a slow copy of the cursor, so
+        // the pull trails behind the hand like something moving through liquid instead of snapping to it. Motes within
+        // reach are drawn in and circle it; the molecules feel it from further off and swirl more. uPull fades the whole
+        // effect in and out as the cursor arrives and leaves. None of it applies while landing on the headline.
+        float free = (1.0 - uLand) * uPull;
+        vec2 ptr = mix(uPointer, uPointerSlow, fract(aSeed * 9.7));
+        vec2 d = p.xy - ptr;
         float len = length(d);
-        float f = smoothstep(uHole, 0.0, len);
-        f *= f * free;
+        float f = smoothstep(uHole * mix(1.0, 2.1, isFree), 0.0, len);
+        f = mix(f * f, f, isFree) * free;
         float lean = 0.05 / (1.0 + len * len * 0.12) * (0.4 + 1.2 * fract(aSeed * 5.3)) * free;
-        d *= 1.0 - f * 0.26 - lean * (1.0 - f);                    // a gentle draw, not a grab
-        float a = f * (0.22 + 0.14 * sin(uTime * 0.9 + aSeed * 31.0));
-        p.xy = uPointer + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
+        d *= 1.0 - f * mix(0.26, 0.4, isFree) - lean * (1.0 - f);  // a gentle draw, not a grab
+        float a = f * (mix(0.22, 0.7, isFree) + 0.14 * sin(uTime * 0.9 + aSeed * 31.0));
+        p.xy = ptr + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
         gl_PointSize = max(uPx * uMote * aSize * (10.0 / -mv.z) * uFade, 0.0);
@@ -261,7 +278,7 @@ function init() {
   // The pyramids open turned a little (TURN0) and come round to face front as the hero appears.
   const TURN0 = -0.35;   // about 20 degrees, the right pyramid nearer
   const st = { form: 1, burst: 0, burstT: -1, spin: reduced ? 0 : TURN0, vel: 0, dragging: false, intro: 1, mode: null, home: "hero", hp: 0, q: 0, tick: 0,
-    pointer: new THREE.Vector2(99, 99), pointerGoal: new THREE.Vector2(99, 99), client: { x: 0, y: 0, on: false },
+    pointer: new THREE.Vector2(99, 99), pointerSlow: new THREE.Vector2(99, 99), pull: 0, pointerGoal: new THREE.Vector2(99, 99), client: { x: 0, y: 0, on: false },
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
   const clamp01 = (x) => Math.min(1, Math.max(0, x));
   const onScreen = (r) => r && r.width > 0 && r.bottom > 0 && r.top < window.innerHeight;
@@ -346,8 +363,14 @@ function init() {
     // never has to unwind). They are in the same place and state on both screens of the pinned hero.
     const angle = (st.spin - Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2) * settle;
     // The cursor's place is worked out each frame from where it is on screen, so it stays right while the page scrolls.
-    if (st.client.on) st.pointerGoal.set(wx(st.client.x), wy(st.client.y)); else st.pointerGoal.set(99, 99);
-    st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 10));
+    // When it leaves, the pull fades out where the cursor last was instead of being dragged away across the screen.
+    if (st.client.on) {
+      st.pointerGoal.set(wx(st.client.x), wy(st.client.y));
+      if (st.pull < 0.02) { st.pointer.copy(st.pointerGoal); st.pointerSlow.copy(st.pointerGoal); }   // arriving: start where it is
+    }
+    st.pull += ((st.client.on ? 1 : 0) - st.pull) * (reduced ? 1 : 1 - Math.exp(-dt * 3.2));
+    st.pointer.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 8));
+    st.pointerSlow.lerp(st.pointerGoal, reduced ? 1 : 1 - Math.exp(-dt * 2.2));
     // Hero choreography: pyramids, then motes that re-form, then the words, then the landing.
     uniforms.uForm.value = st.form;
     uniforms.uAngle.value = angle;
@@ -356,6 +379,8 @@ function init() {
     uniforms.uLand.value = isHero ? SS(q, 0.28, 0.76) : 0;               // capitals reshape into the headline lettering
     uniforms.uFade.value = 1 - SS(q, 0.86, 1);
     uniforms.uPointer.value.copy(st.pointer);
+    uniforms.uPointerSlow.value.copy(st.pointerSlow);
+    uniforms.uPull.value = st.pull;
     uniforms.uHole.value = wl(mobile ? 120 : 190);   // the attractor's reach
     if (isHero) showLead(SS(q, 0.8, 0.96));
     let hazeDrawn = false;
