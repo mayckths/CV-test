@@ -157,7 +157,7 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 
 ### Work
 - Selected work is four large stacking cards, in this order: AI Assistant (Novo Platform), Logitech G audio mixer, With Google Built-in Auto (Google, at Huge) and AccuWeather app (AccuWeather, at Huge). Mayck chose this line-up in November 2026 to lead with the best-known names.
-- The rest sits in a four-tile row headed "Also designed and shipped" (a working title): Design System Componetizer, First time experience, Wear OS by Google, Google TV. Tiles carry a title, one or two lines and a link where there is one; no company or year.
+- The rest sits in a four-tile row headed "Also designed and shipped" (a working title): Design System Componetizer, First time experience, Wear OS by Google, Google TV. Tiles carry a title, a text of at most two lines and a link where there is one; no company or year. The row is four across down to 1241 px, two across to 561 px, then one, which is what keeps every text to two lines.
 - The two cards promoted from tiles (Built-in Auto, AccuWeather) only say what is known: role, scope and that the work is live. No invented numbers.
 
 ### Recommendations
