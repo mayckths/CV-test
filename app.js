@@ -76,7 +76,7 @@ const ANSWERS = [
       <small>John Chang · Senior Product Designer @ Netflix</small>
       <p class="a-quote">"Not only reliable, but also delivers at premium quality every time."</p>
       <small>Amar Mehta · Sr UX Program Manager @ Google</small>
-      <p class="a-quote">"He is a 'triple threat' with the top design skills to deliver high quality work across a broad range of requirements, a true passion for what he does, and the communication skills to pragmatically manage projects effectively under pressure."</p>
+      <p class="a-quote">"He is a 'triple threat' with the top design skills to deliver high quality work across a broad range of requirements, a true passion for what he does, and the communication skills to pragmatically manage projects effectively…"</p>
       <small>Tim Burton · VP of Marketing @ Bizagi</small>`,
   },
 ];
