@@ -893,6 +893,21 @@ if (spot && typeof spot.showModal === "function") {
     };
     const run = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
     const to = (g) => { goal = Math.round(g); run(); };
+    // The wheel also moves on by itself, one stamp every two seconds, while it is on screen and left alone. Anything
+    // the visitor does (pointing at it, dragging, the arrows, the keyboard, an open story) holds it still, and it
+    // waits a few seconds after they stop. It never moves on its own with reduced motion.
+    const EVERY = 2000, AFTER = 3000;
+    let onScreen = false, over = false, quietUntil = 0;
+    const rest = () => { quietUntil = performance.now() + AFTER; };
+    const nudge = (by) => { rest(); to(goal + by); };
+    if (!reduced) setInterval(() => {
+      const spotEl = document.querySelector(".spot");
+      if (!onScreen || document.hidden || over || drag || performance.now() < quietUntil) return;
+      if ((spotEl && spotEl.open) || wheel.querySelector(":focus-visible")) return;
+      to(goal + 1);
+    }, EVERY);
+    if ("IntersectionObserver" in window) new IntersectionObserver((en) => { onScreen = en[en.length - 1].isIntersecting; }, { threshold: 0.3 }).observe(wheel);
+    else onScreen = true;
     // How many pixels of drag move the wheel on by one stamp: the distance between two stamps on the rim.
     const pitch = () => { const cs = getComputedStyle(wheel); return (parseFloat(cs.getPropertyValue("--s")) || real[0].offsetWidth) * 1.12; };
 
@@ -917,7 +932,7 @@ if (spot && typeof spot.showModal === "function") {
       const v = performance.now() - drag.lastT > 120 ? 0 : drag.v;
       drag = null;
       wheel.classList.remove("grabbing");
-      if (moved) to(turn + Math.max(-2, Math.min(2, v * 0.22)));   // a flick carries it on a stamp or two
+      if (moved) { rest(); to(turn + Math.max(-2, Math.min(2, v * 0.22))); }   // a flick carries it on a stamp or two
     };
     wheel.addEventListener("pointerup", drop);
     wheel.addEventListener("pointercancel", drop);
@@ -925,23 +940,50 @@ if (spot && typeof spot.showModal === "function") {
     wheel.addEventListener("click", (e) => {
       if (letThrough) return;
       const card = e.target.closest(".stamp");
-      if (!card) { moved = false; return; }
+      if (!card) {                       // the open part of the wheel: step one stamp towards the side that was pressed
+        if (!moved && !e.target.closest("button")) { const r = wheel.getBoundingClientRect(); nudge(e.clientX < r.left + r.width / 2 ? -1 : 1); }
+        moved = false; return;
+      }
       if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; return; }   // the click that ends a drag
       const d = off(cards.indexOf(card));
-      if (Math.abs(d) >= 0.5) { e.stopPropagation(); to(turn + d); return; }
+      if (Math.abs(d) >= 0.5) { e.stopPropagation(); rest(); to(turn + d); return; }
       if (card.dataset.of) {            // a repeat: open the real stamp it stands for
         e.stopPropagation();
         letThrough = true; real[+card.dataset.of].click(); letThrough = false;
       }
     }, true);
     // Keyboard: tabbing to a stamp brings it to the front; the arrow keys turn the wheel.
-    real.forEach((o, i) => o.addEventListener("focus", () => { if (!drag) to(turn + off(i)); }));
+    real.forEach((o, i) => o.addEventListener("focus", () => { if (!drag) { rest(); to(turn + off(i)); } }));
     wheel.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft") { e.stopPropagation(); to(goal - 1); } else if (e.key === "ArrowRight") { e.stopPropagation(); to(goal + 1); }
+      if (e.key === "ArrowLeft") { e.stopPropagation(); nudge(-1); } else if (e.key === "ArrowRight") { e.stopPropagation(); nudge(1); }
     });
     const prev = wheel.parentNode.querySelector(".wheel-prev"), next = wheel.parentNode.querySelector(".wheel-next");
-    if (prev) prev.addEventListener("click", () => to(goal - 1));
-    if (next) next.addEventListener("click", () => to(goal + 1));
+    if (prev) prev.addEventListener("click", () => nudge(-1));
+    if (next) next.addEventListener("click", () => nudge(1));
+    // With a mouse the cursor over the wheel is a round arrow: left on the left half, right on the right half, and
+    // up-right over the front stamp, which is the one that opens. It says what a press there will do.
+    if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      const tip = document.createElement("div");
+      tip.className = "wheel-cursor"; tip.setAttribute("aria-hidden", "true");
+      tip.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      document.body.appendChild(tip);
+      let tx = 0, ty = 0, tq = 0;
+      const put = () => { tq = 0; tip.style.transform = `translate(${tx}px, ${ty}px)`; };
+      const point = (e) => {
+        if (e.pointerType !== "mouse") return;
+        over = true;
+        tx = e.clientX; ty = e.clientY;
+        const card = e.target.closest && e.target.closest(".stamp"), r = wheel.getBoundingClientRect();
+        const front = card && Math.abs(off(cards.indexOf(card))) < 0.5;
+        tip.dataset.way = front ? "open" : e.clientX < r.left + r.width / 2 ? "prev" : "next";
+        wheel.classList.add("pointed"); tip.classList.add("on");
+        if (!tq) tq = requestAnimationFrame(put);
+      };
+      wheel.addEventListener("pointermove", point);
+      wheel.addEventListener("pointerenter", point);
+      wheel.addEventListener("pointerleave", (e) => { if (e.pointerType !== "mouse") return; over = false; rest(); tip.classList.remove("on"); wheel.classList.remove("pointed"); });
+      window.addEventListener("scroll", () => tip.classList.remove("on"), { passive: true });   // the page moved under a still cursor
+    }
     // A sideways swipe on a trackpad turns it too; up and down still scrolls the page.
     let wheelAcc = 0, wheelT = 0;
     wheel.addEventListener("wheel", (e) => {
