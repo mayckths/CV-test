@@ -594,19 +594,31 @@ if (spot && typeof spot.showModal === "function") {
   // open, and it is taken away again when the story changes or closes, so it costs the page nothing otherwise.
   let embedT = 0, gl2;
   const hasGL2 = () => { if (gl2 === undefined) { try { gl2 = !!document.createElement("canvas").getContext("webgl2"); } catch (e) { gl2 = false; } } return gl2; };
-  const clearEmbed = () => { clearTimeout(embedT); spot.querySelectorAll(".spot-art iframe, .spot-play").forEach((n) => n.remove()); };
+  const clearEmbed = () => { clearTimeout(embedT); $(".spot-art").classList.remove("live"); spot.querySelectorAll(".spot-art iframe, .spot-play").forEach((n) => n.remove()); };
   const embed = (s, alt) => {
     clearEmbed();
     if (!s.dataset.embed || !hasGL2()) return;        // without WebGL 2 the still picture stays
     const stage = $(".spot-art");
     const load = () => {
+      // The finished picture is put away, or the piece would look like an image. What shows instead is the piece
+      // itself from its first frame: the wireframe, held for a moment, and then the materials filling in.
+      stage.classList.add("live");
       const f = document.createElement("iframe");
       f.title = s.dataset.embedTitle || alt;
       // Fewer refinement passes on touch devices, where the graphics chip is smaller.
       f.src = s.dataset.embed + (matchMedia("(pointer: coarse)").matches ? "?samples=200" : "");
       f.addEventListener("load", () => {
-        try { f.contentWindow.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }); } catch (e) { /* not our page */ }
-        setTimeout(() => f.classList.add("on"), 250);
+        let w = null;
+        try { w = f.contentWindow; w.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }); } catch (e) { /* not our page */ }
+        // Asking the piece to redraw keeps it in its wireframe; letting go starts the fill-in. So the build-up
+        // always begins in view, however long the piece took to load.
+        const t0 = performance.now();
+        const hold = () => {
+          if (!f.isConnected || performance.now() - t0 > 650) return;
+          try { if (w && w.__cats) w.__cats.redraw(); } catch (e) { return; }
+          requestAnimationFrame(hold);
+        };
+        hold();
       });
       stage.appendChild(f);
     };
@@ -615,7 +627,7 @@ if (spot && typeof spot.showModal === "function") {
       b.type = "button"; b.className = "spot-play"; b.textContent = "Play in 3D";
       b.addEventListener("click", () => { b.remove(); load(); });
       stage.appendChild(b);
-    } else embedT = setTimeout(load, spot.open ? 120 : 340);   // after the card has finished opening
+    } else embedT = setTimeout(load, spot.open ? 60 : 180);   // as the card finishes opening
   };
 
   // The page behind the card is shown as a coarse dark print of itself, in the same ordered dither as the stamps.
