@@ -590,6 +590,33 @@ if (spot && typeof spot.showModal === "function") {
   const $ = (sel) => spot.querySelector(sel);
   const closeMs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--modal-close-dur")) || 150;
   let index = 0, opener = null, closing = 0;
+  // A live piece: its own page in a frame, put over the still picture. It is only ever loaded while its story is
+  // open, and it is taken away again when the story changes or closes, so it costs the page nothing otherwise.
+  let embedT = 0, gl2;
+  const hasGL2 = () => { if (gl2 === undefined) { try { gl2 = !!document.createElement("canvas").getContext("webgl2"); } catch (e) { gl2 = false; } } return gl2; };
+  const clearEmbed = () => { clearTimeout(embedT); spot.querySelectorAll(".spot-art iframe, .spot-play").forEach((n) => n.remove()); };
+  const embed = (s, alt) => {
+    clearEmbed();
+    if (!s.dataset.embed || !hasGL2()) return;        // without WebGL 2 the still picture stays
+    const stage = $(".spot-art");
+    const load = () => {
+      const f = document.createElement("iframe");
+      f.title = s.dataset.embedTitle || alt;
+      // Fewer refinement passes on touch devices, where the graphics chip is smaller.
+      f.src = s.dataset.embed + (matchMedia("(pointer: coarse)").matches ? "?samples=200" : "");
+      f.addEventListener("load", () => {
+        try { f.contentWindow.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }); } catch (e) { /* not our page */ }
+        setTimeout(() => f.classList.add("on"), 250);
+      });
+      stage.appendChild(f);
+    };
+    if (reduced) {                                     // it opens with an animation, so it waits to be asked
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "spot-play"; b.textContent = "Play in 3D";
+      b.addEventListener("click", () => { b.remove(); load(); });
+      stage.appendChild(b);
+    } else embedT = setTimeout(load, spot.open ? 120 : 340);   // after the card has finished opening
+  };
 
   // The page behind the card is shown as a coarse dark print of itself, in the same ordered dither as the stamps.
   // There is no way to ask the browser for a picture of the page, so the part in view is painted from the page's
@@ -758,6 +785,7 @@ if (spot && typeof spot.showModal === "function") {
       thumbs.appendChild(b);
     });
     show(0);
+    embed(s, first.alt);
     $(".spot-meta").textContent = q(".stamp-meta").textContent;
     $("#spot-title").textContent = q(".stamp-title").textContent;
     $(".spot-year").textContent = s.dataset.year || "";   // the year shows in the spotlight only, not on the stamp
@@ -785,6 +813,7 @@ if (spot && typeof spot.showModal === "function") {
     card.classList.add("is-closing");
     spot.classList.remove("is-open");
     backdrop.close();
+    clearEmbed();
     closing = setTimeout(() => {
       card.classList.remove("is-closing");
       $(".spot-art video").pause();

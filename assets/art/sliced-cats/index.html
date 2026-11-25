@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sliced Cats</title>
+<!-- three.js r170 (MIT) is loaded from the same CDN address as the portfolio page, so it is fetched once for both. -->
+<style>
+  html, body { margin: 0; height: 100%; background: #0d1626; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
+  canvas:active { cursor: grabbing; }
+  #ref {
+    position: fixed; pointer-events: none;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+  }
+  #ref.half { opacity: .5; }
+  #err { position: fixed; inset: 0; display: none; place-items: center; color: #dfe6f5;
+    font: 14px/1.5 ui-sans-serif, system-ui, sans-serif; padding: 24px; text-align: center; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="err"></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
