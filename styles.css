@@ -166,9 +166,10 @@ h1 em { font: italic 400 1.1em/0.9 var(--serif); letter-spacing: -0.01em; color:
 .stat dt { font: 600 clamp(44px, 15vw, 230px)/.9 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stat dd { margin-top: 18px; font: 500 clamp(18px, 2vw, 26px)/1.25 var(--display); color: var(--muted); max-width: 30ch; margin-inline: auto; text-wrap: balance; }
 .step.creds { display: grid; gap: 18px; }
-.step.creds ul { display: grid; gap: clamp(14px, 2vw, 22px); }
-.step.creds li { font: 500 clamp(20px, 2.6vw, 36px)/1.15 var(--display); letter-spacing: -0.02em; }
-.step.creds li span { display: block; font: 400 clamp(15px, 1.5vw, 19px)/1.4 var(--text); letter-spacing: 0; color: var(--muted); margin-top: 4px; }
+/* Six entries have to fit the pinned card, so the sizes also follow the screen's height. */
+.step.creds ul { display: grid; gap: clamp(10px, min(2vw, 2.3vh), 22px); }
+.step.creds li { font: 500 clamp(19px, min(2.6vw, 4.1vh), 36px)/1.15 var(--display); letter-spacing: -0.02em; }
+.step.creds li span { display: block; font: 400 clamp(14px, min(1.5vw, 2.3vh), 19px)/1.4 var(--text); letter-spacing: 0; color: var(--muted); margin-top: 3px; }
 .scene-foot { position: relative; z-index: 3; margin-top: clamp(32px, 5vw, 64px); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; }
 .scene-rail, .scene-cue { display: none; }
 /* Blueprint of the M behind the steps */
