@@ -610,15 +610,29 @@ if (spot && typeof spot.showModal === "function") {
       f.addEventListener("load", () => {
         let w = null;
         try { w = f.contentWindow; w.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); }); } catch (e) { /* not our page */ }
-        // Asking the piece to redraw keeps it in its wireframe; letting go starts the fill-in. So the build-up
-        // always begins in view, however long the piece took to load.
-        const t0 = performance.now();
-        const hold = () => {
-          if (!f.isConnected || performance.now() - t0 > 650) return;
-          try { if (w && w.__cats) w.__cats.redraw(); } catch (e) { return; }
-          requestAnimationFrame(hold);
+        // The piece opens turned to the right and swings round to its front with a bounce, which shows it can be
+        // turned. While it moves it is in its wireframe; as it comes to rest the materials fill in. A touch or a
+        // press on the piece takes over at once.
+        const cats = w && w.__cats;
+        if (!cats || !cats.camera || !cats.controls) return;
+        const tgt = cats.controls.target, home = cats.camera.position.clone().sub(tgt);
+        const TURN = 0.62, LAST = 2.1, t0 = performance.now();
+        let taken = false;
+        w.addEventListener("pointerdown", () => { taken = true; }, { capture: true, once: true });
+        w.addEventListener("wheel", () => { taken = true; }, { capture: true, once: true, passive: true });
+        const swing = () => {
+          if (!f.isConnected || taken) return;
+          const t = (performance.now() - t0) / 1000, done = reduced || t >= LAST;
+          const a = done ? 0 : TURN * Math.exp(-3.2 * t) * Math.cos(8 * t);   // a spring: past the front, back, and still
+          const c = Math.cos(a), n = Math.sin(a);
+          try {
+            cats.camera.position.set(tgt.x + home.x * c + home.z * n, tgt.y + home.y, tgt.z - home.x * n + home.z * c);
+            cats.controls.update();
+            cats.redraw();
+          } catch (e) { return; }
+          if (!done) requestAnimationFrame(swing);
         };
-        hold();
+        swing();
       });
       stage.appendChild(f);
     };
