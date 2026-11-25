@@ -546,13 +546,15 @@ function dither(canvas, img, cells, ink) {
     ctx.fillRect(Math.round(x * size), Math.round(y * size), Math.ceil(size), Math.ceil(size));
   }
 }
-document.querySelectorAll(".stamp").forEach((stamp) => {
+// A stamp is clear (the full render) while it is hovered, focused, or the one at the front of the wheel.
+function initStamp(stamp) {
   const img = stamp.querySelector("img"), canvas = stamp.querySelector("canvas");
   const ink = getComputedStyle(stamp).getPropertyValue("--ink").trim();
   const STEPS = [48, 72, 144];
-  let timer = 0;
+  let timer = 0, shown = false;
+  const why = { hover: false, focus: false, front: false };
   const draw = (cells) => { try { dither(canvas, img, cells, ink); } catch (e) { stamp.classList.add("clear"); } };
-  const ready = () => draw(STEPS[0]);
+  const ready = () => { if (!shown) draw(STEPS[0]); };
   if (img.complete && img.naturalWidth) ready(); else img.addEventListener("load", ready, { once: true });
   const set = (on) => {
     clearTimeout(timer);
@@ -567,11 +569,18 @@ document.querySelectorAll(".stamp").forEach((stamp) => {
       timer = setTimeout(() => draw(STEPS[0]), 120);
     }
   };
-  stamp.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") set(true); });
-  stamp.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") set(false); });
-  stamp.addEventListener("focus", () => set(true));
-  stamp.addEventListener("blur", () => set(false));
-});
+  const mark = (key, on) => {
+    why[key] = on;
+    const now = why.hover || why.focus || why.front;
+    if (now !== shown) { shown = now; set(now); }
+  };
+  stamp.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") mark("hover", true); });
+  stamp.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") mark("hover", false); });
+  stamp.addEventListener("focus", () => mark("focus", true));
+  stamp.addEventListener("blur", () => mark("focus", false));
+  stamp.markFront = (on) => mark("front", on);
+}
+document.querySelectorAll(".stamp").forEach(initStamp);
 
 // Art spotlight: a stamp opens a dialog with the piece and its story. It opens and closes with the
 // transitions.dev modal transition (scale up from centre, a softer and quicker scale down).
@@ -796,3 +805,118 @@ if (spot && typeof spot.showModal === "function") {
     s.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(i, s); } });
   });
 }
+
+// Art wheel: the stamps sit on the rim of a big wheel whose centre is far below the section, so the one at the
+// front is upright and its neighbours lean away and drop, as cards do on hugeinc.com. Drag it, use the arrows, or
+// press a neighbour to bring it round; press the front one to open its story. The four stamps are repeated once
+// so the wheel has no end. The front stamp is shown as the full render, the others as dithered prints.
+{
+  const wheel = document.querySelector(".wheel");
+  const list = wheel && wheel.querySelector(".stamps");
+  if (wheel && list) {
+    const real = [...list.children], N = real.length, STEP = 24, M = N * 2;
+    const cards = real.slice();
+    real.forEach((o, i) => {
+      const c = o.cloneNode(true);
+      c.removeAttribute("tabindex"); c.removeAttribute("role"); c.removeAttribute("aria-haspopup"); c.removeAttribute("aria-label");
+      c.setAttribute("aria-hidden", "true");
+      c.classList.remove("clear");
+      c.dataset.of = String(i);
+      list.appendChild(c);
+      initStamp(c);
+      cards.push(c);
+    });
+    wheel.classList.add("live");
+    let turn = 0, goal = 0, vel = 0, raf = 0, last = 0, drag = null, moved = false, letThrough = false;
+    const off = (j) => { let d = j - turn; return d - M * Math.round(d / M); };
+    const place = () => {
+      cards.forEach((el, j) => {
+        const d = off(j), far = Math.abs(d) > 3.2;
+        el.style.transform = `rotate(${(d * STEP).toFixed(3)}deg)`;
+        el.style.opacity = far ? "0" : "";
+        el.style.pointerEvents = far ? "none" : "";
+        el.style.zIndex = String(10 - Math.round(Math.abs(d)));
+        const front = Math.abs(d) < 0.5;
+        if (front !== el.isFront) { el.isFront = front; el.markFront(front); }
+      });
+    };
+    const frame = (now) => {
+      raf = 0;
+      const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+      if (!drag) {
+        turn += (goal - turn) * (reduced ? 1 : 1 - Math.exp(-dt * 7));
+        if (Math.abs(goal - turn) < 0.0015) turn = goal;
+      }
+      place();
+      if (drag || turn !== goal) raf = requestAnimationFrame(frame);
+    };
+    const run = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
+    const to = (g) => { goal = Math.round(g); run(); };
+    // How many pixels of drag move the wheel on by one stamp: the distance between two stamps on the rim.
+    const pitch = () => { const cs = getComputedStyle(wheel); return (parseFloat(cs.getPropertyValue("--s")) || real[0].offsetWidth) * 1.12; };
+
+    wheel.addEventListener("pointerdown", (e) => {
+      if (e.button || e.target.closest("button")) return;
+      drag = { x: e.clientX, turn, id: e.pointerId, lastX: e.clientX, lastT: performance.now(), v: 0 };
+      moved = false;
+    });
+    wheel.addEventListener("pointermove", (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.x;
+      if (!moved && Math.abs(dx) > 6) { moved = true; wheel.setPointerCapture(e.pointerId); wheel.classList.add("grabbing"); }
+      if (!moved) return;
+      const now = performance.now(), p = pitch();
+      drag.v = (-(e.clientX - drag.lastX) / p) / Math.max(0.008, (now - drag.lastT) / 1000);
+      drag.lastX = e.clientX; drag.lastT = now;
+      turn = drag.turn - dx / p;
+      run();
+    });
+    const drop = (e) => {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      const v = performance.now() - drag.lastT > 120 ? 0 : drag.v;
+      drag = null;
+      wheel.classList.remove("grabbing");
+      if (moved) to(turn + Math.max(-2, Math.min(2, v * 0.22)));   // a flick carries it on a stamp or two
+    };
+    wheel.addEventListener("pointerup", drop);
+    wheel.addEventListener("pointercancel", drop);
+    // A press on a stamp that is not at the front brings it round; only the front one opens.
+    wheel.addEventListener("click", (e) => {
+      if (letThrough) return;
+      const card = e.target.closest(".stamp");
+      if (!card) { moved = false; return; }
+      if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; return; }   // the click that ends a drag
+      const d = off(cards.indexOf(card));
+      if (Math.abs(d) >= 0.5) { e.stopPropagation(); to(turn + d); return; }
+      if (card.dataset.of) {            // a repeat: open the real stamp it stands for
+        e.stopPropagation();
+        letThrough = true; real[+card.dataset.of].click(); letThrough = false;
+      }
+    }, true);
+    // Keyboard: tabbing to a stamp brings it to the front; the arrow keys turn the wheel.
+    real.forEach((o, i) => o.addEventListener("focus", () => { if (!drag) to(turn + off(i)); }));
+    wheel.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") { e.stopPropagation(); to(goal - 1); } else if (e.key === "ArrowRight") { e.stopPropagation(); to(goal + 1); }
+    });
+    const prev = wheel.parentNode.querySelector(".wheel-prev"), next = wheel.parentNode.querySelector(".wheel-next");
+    if (prev) prev.addEventListener("click", () => to(goal - 1));
+    if (next) next.addEventListener("click", () => to(goal + 1));
+    // A sideways swipe on a trackpad turns it too; up and down still scrolls the page.
+    let wheelAcc = 0, wheelT = 0;
+    wheel.addEventListener("wheel", (e) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 1.2) return;
+      e.preventDefault();
+      const now = performance.now();
+      if (now - wheelT > 250) wheelAcc = 0;
+      wheelT = now; wheelAcc += e.deltaX;
+      if (Math.abs(wheelAcc) > 70) { to(goal + Math.sign(wheelAcc)); wheelAcc = 0; wheelT = now + 350; }
+    }, { passive: false });
+    // The first time it comes into view it turns in from one stamp away, which shows that it turns.
+    if (!reduced && "IntersectionObserver" in window) {
+      turn = -1.4; place();
+      const io = new IntersectionObserver((en) => { if (en.some((x) => x.isIntersecting)) { io.disconnect(); to(0); } }, { threshold: 0.35 });
+      io.observe(wheel);
+    } else place();
+  }
+}
+

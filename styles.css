@@ -473,6 +473,20 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .stamp-title { margin-top: 4px; font: 600 clamp(18px, 1.9vw, 26px)/1.02 var(--display); letter-spacing: -0.03em; color: var(--ink); }
 @media (max-width: 980px) { .stamps { grid-template-columns: 1fr 1fr; row-gap: 28px; } }
 .stamp { cursor: pointer; }
+/* Art wheel (app.js). The stamps stand on the rim of a wheel whose centre is far below: the front one is upright, its
+   neighbours lean away and drop. Without scripts the stamps stay in the plain grid above. */
+.wheel-nav { display: none; }
+.wheel.live { --s: clamp(228px, 27vw, 400px); --R: calc(var(--s) * 2.75); position: relative; height: calc(var(--s) * 1.6); margin: clamp(12px, 2vw, 28px) calc(-1 * var(--pad)) 0; overflow: hidden; overflow: clip; touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent); }
+.wheel.live.grabbing { cursor: grabbing; }
+.wheel.live .stamps { display: block; position: absolute; left: 50%; top: calc(var(--s) * .06); width: 0; height: 0; margin: 0; }
+.wheel.live .stamp { position: absolute; left: calc(var(--s) * -.5); top: 0; width: var(--s); transform-origin: 50% calc(var(--s) * .62 + var(--R)); transition: opacity .3s ease; will-change: transform; }
+.wheel.live .stamp img { -webkit-user-drag: none; pointer-events: none; }
+.wheel.live .stamp-title { font-size: clamp(18px, 1.7vw, 24px); }
+.wheel.live ~ .wheel-nav { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
+.wheel-prev, .wheel-next { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card); color: var(--ink); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+@media (hover: hover) { .wheel-prev:hover, .wheel-next:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); } }
+@media (max-width: 700px) { .wheel.live { --s: min(66vw, 300px); } }
 
 /* Modal open / close, from transitions.dev (06-modal): the art spotlight's card */
 :root {
