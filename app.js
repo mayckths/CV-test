@@ -960,12 +960,12 @@ if (spot && typeof spot.showModal === "function") {
     const prev = wheel.parentNode.querySelector(".wheel-prev"), next = wheel.parentNode.querySelector(".wheel-next");
     if (prev) prev.addEventListener("click", () => nudge(-1));
     if (next) next.addEventListener("click", () => nudge(1));
-    // With a mouse the cursor over the wheel is a round arrow: left on the left half, right on the right half, and
-    // up-right over the front stamp, which is the one that opens. It says what a press there will do.
+    // With a mouse the cursor over the wheel is a round badge that says what a press there will do: an arrow to the
+    // left on the left half, to the right on the right half, and the word "View" over the front stamp, which opens.
     if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
       const tip = document.createElement("div");
       tip.className = "wheel-cursor"; tip.setAttribute("aria-hidden", "true");
-      tip.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      tip.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>View</span>';
       document.body.appendChild(tip);
       let tx = 0, ty = 0, tq = 0;
       const put = () => { tq = 0; tip.style.transform = `translate(${tx}px, ${ty}px)`; };

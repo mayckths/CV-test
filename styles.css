@@ -484,10 +484,13 @@ main > .art { margin-top: clamp(64px, 9vw, 128px); }
 .wheel.live.pointed, .wheel.live.pointed .stamp { cursor: none; }
 .wheel-cursor { position: fixed; left: 0; top: 0; z-index: 25; width: 64px; height: 64px; margin: -32px 0 0 -32px; pointer-events: none; opacity: 0; transition: opacity .18s ease; will-change: transform; }
 .wheel-cursor.on { opacity: 1; }
-.wheel-cursor svg { box-sizing: border-box; display: block; width: 64px; height: 64px; padding: 20px; border-radius: 50%; background: var(--ink); color: var(--bg); box-shadow: 0 10px 26px -10px rgba(31, 28, 28, .6); transform: scale(.6); transition: transform .3s cubic-bezier(.2, .7, .2, 1); }
+.wheel-cursor svg { box-sizing: border-box; display: block; width: 64px; height: 64px; padding: 20px; border-radius: 50%; background: var(--ink); color: var(--bg); box-shadow: 0 0 0 1.5px rgba(255, 250, 245, .6), 0 10px 26px -10px rgba(31, 28, 28, .6); transform: scale(.6); transition: transform .3s cubic-bezier(.2, .7, .2, 1), opacity .18s ease; }
 .wheel-cursor.on svg { transform: scale(1); }
 .wheel-cursor[data-way="prev"].on svg { transform: scale(1) rotate(180deg); }
-.wheel-cursor[data-way="open"].on svg { transform: scale(1) rotate(-45deg); }
+/* Over the front stamp it is not an arrow: the badge reads "View", because a press there opens the piece. */
+.wheel-cursor span { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--bg); font: 600 14px/1 var(--text); letter-spacing: 0; box-shadow: 0 0 0 1.5px rgba(255, 250, 245, .6), 0 10px 26px -10px rgba(31, 28, 28, .6); opacity: 0; transform: scale(.6); transition: opacity .18s ease, transform .3s cubic-bezier(.2, .7, .2, 1); }
+.wheel-cursor[data-way="open"].on svg { opacity: 0; transform: scale(.6); }
+.wheel-cursor[data-way="open"].on span { opacity: 1; transform: scale(1); }
 .wheel.live .stamps { display: block; position: absolute; left: 50%; top: calc(var(--s) * .06); width: 0; height: 0; margin: 0; }
 .wheel.live .stamp { position: absolute; left: calc(var(--s) * -.5); top: 0; width: var(--s); transform-origin: 50% calc(var(--s) * .62 + var(--R)); transition: opacity .3s ease; will-change: transform; }
 .wheel.live .stamp img { -webkit-user-drag: none; pointer-events: none; }
