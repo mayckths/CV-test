@@ -1,8 +1,9 @@
 // The hero. It exists twice, one on top of the other: a grey one and a hot pink one. The pink one is only shown
 // inside a lens that follows the cursor (or a finger), and the lens has no hard edge: it breaks up into square pixels,
 // some of them in the palette's colours. One system of grains drifts in slow bands, gathers into the two pyramids and
-// parts around the lens. Inside the lens the grains are the same ones, in white on the pink. Nothing here moves the
-// lens or turns the pyramids on its own.
+// parts around the lens. Inside the lens the grains are the same ones, in white on the pink. The lens is small while
+// the pointer moves; when it rests the lens grows until it has taken the whole panel, and then the two heroes change
+// places. Nothing moves the lens's position or turns the pyramids on its own.
 (() => {
   const panel = document.querySelector(".hero.lens");
   if (!panel) return;
@@ -18,8 +19,8 @@
   const hash = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
   let W = 0, H = 0, dpr = 1, cell = 26, cols = 0, rows = 0, heat = new Float32Array(0), phone = false;
-  let R0 = 200, R1 = 320, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0, win: 1 };
-  const lens = { x: 0, y: 0, tx: 0, ty: 0, seen: 0, on: false, travel: 0 };
+  let RS = 90, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0, win: 1 };
+  const lens = { x: 0, y: 0, tx: 0, ty: 0, seen: 0, on: false, travel: 0, r: 0, inv: false, wait: 0 };
 
   function build() {
     const r = panel.getBoundingClientRect();
@@ -28,7 +29,7 @@
     for (const c of [fxA, fxB, pxC]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
     cell = phone ? 17 : Math.max(20, Math.round(W / 54));
     cols = Math.ceil(W / cell); rows = Math.ceil(H / cell); heat = new Float32Array(cols * rows);
-    R0 = phone ? W * 0.3 : Math.min(W, H) * 0.25; R1 = R0 * 1.6;
+    RS = phone ? W * 0.2 : Math.min(W, H) * 0.115;   // the lens's size while the pointer is moving: small
     // One system of grains. Every grain rides one of four slow wavy bands across the panel, and every grain looks the
     // same. Some also own a place on the two pyramids (an M): a core that always holds it, and many more that settle
     // on it only while their band carries them past, then peel off and drift on. So the pyramids are where the dust
@@ -57,16 +58,29 @@
   }
 
   // The lens follows the pointer (or a finger) and stays where it was left. It never moves by itself.
-  const point = (e) => { const r = panel.getBoundingClientRect(); lens.tx = e.clientX - r.left; lens.ty = e.clientY - r.top; lens.seen = performance.now(); lens.on = true; };
+  const point = (e) => {
+    const r = panel.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    if (Math.abs(x - lens.tx) + Math.abs(y - lens.ty) > 1.5 || !lens.on) lens.seen = performance.now();   // a real move, not a jitter
+    lens.tx = x; lens.ty = y; lens.on = true;
+  };
   panel.addEventListener("pointermove", point); panel.addEventListener("pointerdown", point);
 
-  let last = performance.now(), t = 0, clip = "", raf = 0, grow = reduced ? 1 : 0.02, seen = true;
+  let last = performance.now(), t = 0, clip = "", raf = 0, seen = true;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!reduced) t += dt;
     const ease = 1 - Math.exp(-dt * 9);
-    grow += (1 - grow) * (1 - Math.exp(-dt * 3.4)); if (grow > 0.999) grow = 1;   // on load the lens opens from a point
-    const r0 = R0 * grow, r1 = R1 * grow;
+    // The lens is small while the pointer moves. When the pointer rests, the lens starts to grow, slowly at first,
+    // until it has taken the whole panel. At that moment the two heroes change places: what was inside the lens is
+    // now the page, and a new small lens opens at the pointer showing the other one. So a still pointer turns the
+    // page pink, then light again, and so on; a moving one always carries a small window onto the other side.
+    const farthest = Math.max(Math.hypot(lens.x, lens.y), Math.hypot(W - lens.x, lens.y), Math.hypot(lens.x, H - lens.y), Math.hypot(W - lens.x, H - lens.y)) + cell * 2;
+    if (reduced) lens.r = RS;
+    else if (now - lens.seen > 500 && now > lens.wait) {
+      lens.r += dt * (14 + lens.r * 0.4);   // slowly at first, then gathering pace: about six seconds to take the panel
+      if (lens.r >= farthest) { lens.inv = !lens.inv; lens.r = 0; heat.fill(0); lens.wait = now + 1800; panel.dataset.ground = lens.inv ? "pink" : "light"; }
+    } else lens.r += (RS - lens.r) * (1 - Math.exp(-dt * 6));
+    const r0 = lens.r, r1 = r0 + Math.max(1, Math.min(r0 * 0.6, cell * 5));
     const mx = (lens.tx - lens.x) * ease, my = (lens.ty - lens.y) * ease;
     lens.x += mx; lens.y += my; lens.travel += Math.hypot(mx, my);
 
@@ -83,11 +97,12 @@
           const dist = Math.hypot(cxp - lens.x, cyp - lens.y), k = (dist - r0) / (r1 - r0), bay = (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
           const inside = k <= 0 || (k < 1 && bay > k);
           heat[i] = inside ? 1 : Math.max(0, heat[i] - dt * 1.7);
-          show = inside || heat[i] > 0.3 + 0.65 * bay;
+          const inLens = inside || heat[i] > 0.3 + 0.65 * bay;
+          show = inLens !== lens.inv;   // the pink hero is drawn inside the lens, or everywhere but the lens
           // Coloured pixels: thick in the edge, thinning outwards, a few just inside it, and in the trail.
           const h1 = hash(x * 31 + tick * ((i % 7) + 1), y * 17 + ((i * 13) % 5)), h2 = hash(x + 91, y + 57 + tick);
           let p = 0;
-          if (!show) p = k < 1 ? 0.5 * (1 - k) + 0.07 : k < 1.75 ? 0.1 * (1.75 - k) / 0.75 : 0, p = Math.max(p, heat[i] * 0.45);
+          if (!inLens) p = k < 1 ? 0.5 * (1 - k) + 0.07 : k < 1.75 ? 0.1 * (1.75 - k) / 0.75 : 0, p = Math.max(p, heat[i] * 0.45);
           else if (k > -0.22) p = 0.09;
           if (p && h1 < p) { px.fillStyle = COLOURS[(h2 * COLOURS.length) | 0]; px.fillRect(x * cell, y * cell, cell, cell); }
         }
@@ -100,7 +115,7 @@
     // 2. The grains, pyramids and dust alike, drawn once in blue for the light hero and copied in white for the pink
     //    one. So the lens changes their colour and nothing else: same grains, same places.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H);
-    const push = r0 * 0.55, reach = Math.max(1, r1 * 0.95), k2 = 1 - Math.exp(-dt * 5);
+    const push = Math.min(r0, RS * 1.5) * 0.9, reach = Math.max(1, Math.min(r1, RS * 2.6) * 0.95), k2 = 1 - Math.exp(-dt * 5);
     // The pyramids are seen from slightly above, in perspective. With the lens in the middle they face straight
     // ahead, centred and symmetrical; moving the lens left or right turns them a little that way. Nothing else
     // moves them: not the lens going up or down, and never on their own.
