@@ -217,3 +217,6 @@ Pills for buttons, chips and the floating header; 28px panels; 18px media.
 - **Don't** let particles or gradients run behind body text.
 - **Don't** use the accent red for small text on cream; use the darker accent-text.
 - **Don't** add ruler frames or tick marks.
+
+## Deploying
+- GitHub Pages lets browsers keep styles.css and the scripts for ten minutes, and a normal reload does not re-check them. So index.html loads them with a version stamp (?v=...). Change the stamp in index.html in every commit that changes styles.css, app.js, askmark.js, hero-lens.js or scene3d.js; otherwise a reload within ten minutes shows the old behaviour with the new page.
