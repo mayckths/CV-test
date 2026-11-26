@@ -4,14 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Hero prototype · Hot pink lens</title>
+<title>Hero prototype · Hot pink blueprint lens</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 <style>
 /* A prototype of the hero, not part of the portfolio yet. The hero exists twice, one on top of the other: a grey one
    and a hot pink one. The pink one is only shown inside a lens that follows the cursor, and the lens has no hard
    edge: it breaks up into square pixels, some of them in the palette's colours. One system of grains drifts in slow
-   bands, gathers into the two pyramids and parts around the lens. */
+   bands, gathers into the two pyramids and parts around the lens. Inside the lens the pyramids are shown as their
+   blueprint: wireframes, anchors, guides, measurements, and the M as one bezier curve with its handles. */
 :root { --page:#f5ebe3; --gap:16px; --r:28px; --grey:#eceae6; --ink:#232125; --pink:#ff2e7e; --navy:#1a1466; --cyan:#2de2e6;
   --display:"Bricolage Grotesque", sans-serif; --text:"Geist", sans-serif; --mono:"Geist Mono", monospace; --serif:"Instrument Serif", serif; }
 * { box-sizing:border-box; margin:0; padding:0; }
@@ -23,7 +24,7 @@ html, body { height:100%; background:var(--page); font-family:var(--text); -webk
 .panel { position:absolute; inset:var(--gap); border-radius:var(--r); overflow:hidden; touch-action:pan-y; background:var(--grey); }
 .sc { position:absolute; inset:0; overflow:hidden; }
 .sc.grey { background:var(--grey); color:var(--ink); --two:var(--ink); --num:var(--ink); }
-.sc.pink { background:var(--pink); color:#fff; --two:var(--navy); --num:var(--navy); }
+.sc.pink { background:var(--pink); color:#fff; --two:var(--navy); --num:var(--navy); background-image:linear-gradient(rgba(255,255,255,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.13) 1px, transparent 1px); background-size:40px 40px; background-position:center; }
 canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .run { position:absolute; left:56px; right:56px; top:100px; display:flex; align-items:center; gap:18px; font:500 12px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; }
 .rule { flex:1; height:1px; background:currentColor; opacity:.32; position:relative; } .rule::after { content:""; position:absolute; left:62%; top:-9px; width:1px; height:19px; background:currentColor; } 
@@ -100,6 +101,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     grains = [];
     count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
     grains.sort((p, q) => p.alpha - q.alpha);
+    hold = new Float32Array(grains.length * 4);
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
   }
 
@@ -108,6 +110,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
   panel.addEventListener("pointermove", point); panel.addEventListener("pointerdown", point);
 
   let last = performance.now(), t = 0, clip = "", raf = 0;
+  let hold = new Float32Array(0);   // grains that are on a pyramid this frame: x, y, radius, alpha
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!reduced) t += dt;
@@ -141,33 +144,93 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     }
     if (d !== clip) { clip = d; pink.style.clipPath = d ? `path("${d}")` : "inset(100%)"; pink.style.webkitClipPath = pink.style.clipPath; }
 
-    // 2. The grains, drawn once in ink for the grey hero and copied in white for the pink one.
+    // 2. The grains. In the grey hero they are all drawn, in ink. In the pink hero only the loose dust is (in white):
+    //    where the pyramids stand, the lens shows how they are built instead.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H); a.fillStyle = "#232125";
     const push = R0 * 0.55, reach = R1 * 0.95, k2 = 1 - Math.exp(-dt * 5);
     // The pyramids turn a little with the lens, so they read as solids.
     const ang = ((lens.x - W / 2) / W) * 0.6, ca = Math.cos(ang), sa = Math.sin(ang), f = pyr.a * 9;
-    let alpha = -1;
+    const proj = (x, y, z) => { const xr = x * ca + z * sa, zr = -x * sa + z * ca, sc = f / (f + zr); return [pyr.cx + xr * sc, pyr.base - y * sc + zr * 0.16, zr]; };
+    let alpha = -1, held = 0;
     a.beginPath();
     for (const g of grains) {
       const bd = g.band, u = (g.u + t * g.speed) % 1;
       let x = u * (W + 40) - 20, y = H * (bd[0] + bd[1] * Math.sin(bd[2] * 6.283 * u + bd[3] + t * 0.12) + 0.02 * Math.sin(5.1 * 6.283 * u + bd[3] * 2) + g.off * bd[4] * 0.95), m = 0;
       if (g.slot) {
-        const xr = g.slot.x * ca + g.slot.z * sa, zr = -g.slot.x * sa + g.slot.z * ca, sc = f / (f + zr);
-        const sx = pyr.cx + xr * sc + Math.sin(t * 0.55 + g.seed) * 1.6, sy = pyr.base - g.slot.y * sc + zr * 0.16 + Math.cos(t * 0.47 + g.seed) * 1.6;
+        const q0 = proj(g.slot.x, g.slot.y, g.slot.z), sx = q0[0] + Math.sin(t * 0.55 + g.seed) * 1.6, sy = q0[1] + Math.cos(t * 0.47 + g.seed) * 1.6;
         if (g.kind === 0) m = 1;
         else { const q = Math.min(1, Math.max(0, (pyr.win - Math.abs(x - sx)) / (pyr.win * 0.3))); m = q * q * (3 - 2 * q); }   // settles while its band passes the pyramids
         x += (sx - x) * m; y += (sy - y) * m;
       }
       const dx = x - lens.x, dy = y - lens.y, dist = Math.hypot(dx, dy) + 0.001, fo = push * Math.exp(-(dist / reach) * (dist / reach)) * (1 - 0.88 * m);
       g.ox += (dx / dist * fo - g.ox) * k2; g.oy += (dy / dist * fo - g.oy) * k2;
-      if (g.alpha !== alpha) { a.fill(); a.beginPath(); alpha = g.alpha; a.globalAlpha = alpha; }
       const X = x + g.ox, Y = y + g.oy, r = g.size;
+      if (m > 0.5) { hold[held++] = X; hold[held++] = Y; hold[held++] = r; hold[held++] = g.alpha; continue; }   // on a pyramid: grey hero only
+      if (g.alpha !== alpha) { a.fill(); a.beginPath(); alpha = g.alpha; a.globalAlpha = alpha; }
       if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
     }
     a.fill();
-    a.globalAlpha = 1;
-    b.setTransform(1, 0, 0, 1, 0, 0); b.globalCompositeOperation = "copy"; b.drawImage(fxA, 0, 0);
+    b.setTransform(1, 0, 0, 1, 0, 0); b.globalAlpha = 1; b.globalCompositeOperation = "copy"; b.drawImage(fxA, 0, 0);
     b.globalCompositeOperation = "source-in"; b.fillStyle = "#fff"; b.fillRect(0, 0, fxB.width, fxB.height);
+    b.globalCompositeOperation = "source-over";
+    alpha = -1; a.beginPath();
+    for (let i = 0; i < held; i += 4) {
+      if (hold[i + 3] !== alpha) { a.fill(); a.beginPath(); alpha = hold[i + 3]; a.globalAlpha = alpha; }
+      const X = hold[i], Y = hold[i + 1], r = hold[i + 2];
+      if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
+    }
+    a.fill(); a.globalAlpha = 1;
+
+    // 3. The blueprint of the M, drawn in the pink hero: the two pyramids as wireframes with their anchors, the
+    //    guides they sit on, their measurements, and the M as one bezier curve with its handles.
+    b.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const A = pyr.a, Hh = pyr.h, line = (p0, p1) => { b.moveTo(p0[0], p0[1]); b.lineTo(p1[0], p1[1]); };
+    const sq = (p0, r = 3.5) => { b.fillRect(p0[0] - r, p0[1] - r, r * 2, r * 2); };
+    b.lineWidth = 1; b.strokeStyle = "rgba(255,255,255,.55)"; b.setLineDash([3, 5]); b.beginPath();
+    const gl = pyr.cx - A * 3.1, gr = pyr.cx + A * 3.1, apexY = pyr.base - Hh;
+    line([gl, pyr.base], [gr, pyr.base]); line([gl, apexY], [gr, apexY]);
+    const apex = [-1, 1].map((sd) => proj(sd * A, Hh, 0));
+    apex.forEach((p0) => line([p0[0], apexY - 26], [p0[0], pyr.base + 26]));
+    b.stroke();
+    const feet = [];
+    for (const sd of [-1, 1]) {
+      const base = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map((c) => proj(sd * A + c[0] * A, 0, c[1] * A)), top = proj(sd * A, Hh, 0);
+      feet.push(...base);
+      const edges = base.map((p0, i) => [p0, base[(i + 1) % 4]]).concat(base.map((p0) => [p0, top]));
+      for (const back of [true, false]) {   // far edges dashed and faint, near edges solid
+        b.beginPath(); b.setLineDash(back ? [4, 4] : []); b.strokeStyle = back ? "rgba(255,255,255,.5)" : "#fff"; b.lineWidth = back ? 1 : 1.6;
+        edges.forEach((e) => { if (((e[0][2] + e[1][2]) / 2 > A * 0.2) === back) line(e[0], e[1]); });
+        b.stroke();
+      }
+      b.fillStyle = "#fff"; base.forEach((p0) => sq(p0)); sq(top, 4.5);
+    }
+    b.setLineDash([]);
+    // The M as a single curve through the two peaks, with the handles that shape it.
+    const left = feet.reduce((m0, p0) => (p0[0] < m0[0] ? p0 : m0)), right = feet.reduce((m0, p0) => (p0[0] > m0[0] ? p0 : m0));
+    const P0 = [left[0], pyr.base], P4 = [right[0], pyr.base], V = [(apex[0][0] + apex[1][0]) / 2, pyr.base - Hh * 0.08], hx = A * 0.62, hv = A * 0.42;
+    b.strokeStyle = "#1a1466"; b.lineWidth = 2; b.beginPath();
+    b.moveTo(P0[0], P0[1]);
+    b.bezierCurveTo(P0[0] + A * 0.1, P0[1] - Hh * 0.62, apex[0][0] - hx, apex[0][1], apex[0][0], apex[0][1]);
+    b.bezierCurveTo(apex[0][0] + hx, apex[0][1], V[0] - hv, V[1], V[0], V[1]);
+    b.bezierCurveTo(V[0] + hv, V[1], apex[1][0] - hx, apex[1][1], apex[1][0], apex[1][1]);
+    b.bezierCurveTo(apex[1][0] + hx, apex[1][1], P4[0] - A * 0.1, P4[1] - Hh * 0.62, P4[0], P4[1]);
+    b.stroke();
+    b.lineWidth = 1; b.beginPath();
+    const handles = [[apex[0], hx], [V, hv], [apex[1], hx]];
+    handles.forEach(([p0, w]) => line([p0[0] - w, p0[1]], [p0[0] + w, p0[1]]));
+    line(P0, [P0[0] + A * 0.1, P0[1] - Hh * 0.62]); line(P4, [P4[0] - A * 0.1, P4[1] - Hh * 0.62]);
+    b.stroke();
+    const knob = (x0, y0) => { b.beginPath(); b.arc(x0, y0, 4.5, 0, 6.283); b.fillStyle = "#fff"; b.fill(); b.stroke(); };
+    handles.forEach(([p0, w]) => { knob(p0[0] - w, p0[1]); knob(p0[0] + w, p0[1]); });
+    knob(P0[0] + A * 0.1, P0[1] - Hh * 0.62); knob(P4[0] - A * 0.1, P4[1] - Hh * 0.62);
+    b.fillStyle = "#1a1466"; sq(V, 4); sq(P0, 4); sq(P4, 4);
+    // Measurements
+    b.fillStyle = "#fff"; b.strokeStyle = "#fff"; b.font = `500 ${phone ? 10 : 11}px "Geist Mono", monospace`; b.textBaseline = "middle";
+    const dimY = pyr.base + (phone ? 24 : 34); b.beginPath(); line([P0[0], dimY], [P4[0], dimY]); line([P0[0], dimY - 5], [P0[0], dimY + 5]); line([P4[0], dimY - 5], [P4[0], dimY + 5]);
+    const dimX = P0[0] - (phone ? 16 : 30); line([dimX, apexY], [dimX, pyr.base]); line([dimX - 5, apexY], [dimX + 5, apexY]); line([dimX - 5, pyr.base], [dimX + 5, pyr.base]); b.stroke();
+    b.textAlign = "center"; b.fillText(`${Math.round(P4[0] - P0[0])} PX`, (P0[0] + P4[0]) / 2, dimY + 13);
+    b.textAlign = "right"; b.fillText(`${Math.round(Hh)}`, dimX - 9, (apexY + pyr.base) / 2);
+    b.textAlign = "left"; b.fillText("BASELINE", gr + 8, pyr.base); b.fillText("APEX", gr + 8, apexY);
   }
   const start = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
   document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else start(); });
