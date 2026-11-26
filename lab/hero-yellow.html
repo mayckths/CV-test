@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hero test · Acid yellow lens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+<style>
+/* A test page, not part of the portfolio: the live hero with an acid yellow lens and two other ways of drawing the
+   lens. Everything else (type, grains, the growing and the change of places) is the live hero's. */
+html, body { height: 100%; overflow: hidden; }
+.hero.panel { --lens-pink: #e8ff3c; --lens-navy: #5b2cff; }
+.lens-pink { color: #17141a; }
+/* Colour aberration: the rings blend into what is under them, and the type in the lens splits the same way. */
+.hero.panel[data-fx="chroma"] > .lens-px { mix-blend-mode: multiply; }
+.hero.panel[data-fx="chroma"] .lens-pink .lens-copy { text-shadow: calc(var(--split, .02em) * -1) 0 rgba(0, 216, 255, .85), var(--split, .02em) 0 rgba(255, 43, 214, .85); }
+.fx-switch { position: fixed; right: 28px; bottom: 28px; z-index: 40; display: flex; gap: 2px; padding: 5px; border-radius: 999px; background: rgba(31, 28, 28, .86); backdrop-filter: blur(14px); }
+.fx-switch button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: rgba(241, 238, 253, .66); font: 500 13px/1 var(--text); cursor: pointer; }
+.fx-switch button[aria-pressed="true"] { background: #f1eefd; color: #1f1c1c; }
+@media (max-width: 700px) { .fx-switch { right: 50%; transform: translateX(50%); bottom: 84px; } .lens-blurb { bottom: 142px !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="island">
+    <a class="mark" href="../" aria-label="Mayck Cuellar, home"><svg class="logo" viewBox="0 0 44 20" aria-hidden="true" focusable="false"><path d="M0 20L11 0L22 20ZM22 20L33 0L44 20Z"/></svg></a>
+    <nav aria-label="Primary"><a href="../#about">About</a><a href="../#work">Work</a><a href="../#experience">Experience</a><a href="../#art">Art</a><a href="../#ask">Ask</a></nav>
+  </div>
+  <a class="pill hi" href="https://www.linkedin.com/in/mayck69/" target="_blank" rel="noopener">Say hi</a>
+</header>
+<main>
+  <section class="hero panel lens">
+    <div class="lens-sc lens-grey">
+      <canvas class="lens-fx" aria-hidden="true"></canvas>
+      <div class="lens-copy">
+        <div class="lens-run"><span>Mayck Cuellar</span><i class="lens-rule"></i><i class="lens-navgap"></i><i class="lens-rule"></i><span>Portfolio</span></div>
+        <div class="lens-head"><p class="lens-hl"><span class="i">Lead</span> <span class="b">Product Designer</span></p><p class="lens-sub">working worldwide</p></div>
+        <p class="lens-blurb"><strong>10+ years</strong> across fintech and consumer products for <strong>Novo</strong>, <strong>Google</strong>, <strong>Logitech G</strong> and <strong>AccuWeather</strong>, from discovery to launch.</p>
+      </div>
+    </div>
+    <div class="lens-sc lens-pink" aria-hidden="true"><canvas class="lens-fx"></canvas></div>
+    <canvas class="lens-px" aria-hidden="true"></canvas>
+    <span class="cue hero-cue" aria-hidden="true"><span>Scroll</span><svg viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>
+  </section>
+</main>
+<div class="fx-switch" role="group" aria-label="Lens effect">
+  <button type="button" data-fx-set="glitch">Glitch slices</button>
+  <button type="button" data-fx-set="chroma">Colour aberration</button>
+  <button type="button" data-fx-set="pixels">Pixels</button>
+</div>
+<script src="hero-fx.js"></script>
+</body>
+</html>
