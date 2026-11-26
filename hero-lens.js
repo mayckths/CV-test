@@ -23,7 +23,7 @@
   const hash = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
   let W = 0, H = 0, dpr = 1, cell = 26, cols = 0, rows = 0, heat = new Float32Array(0), phone = false;
-  let RS = 90, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0, win: 1 };
+  let unit = 3, RS = 90, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0, win: 1 };
   const lens = { x: 0, y: 0, tx: 0, ty: 0, seen: -1e9, on: false, travel: 0, r: 0, vx: 0, vy: 0 };
 
   function build() {
@@ -31,11 +31,12 @@
     panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px");
     W = r.width; H = r.height; phone = W < 700; dpr = Math.min(window.devicePixelRatio || 1, 1.5);   // the dust is soft enough not to need more
     for (const c of [fxA, fxB, pxC, tmp]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    unit = Math.max(2, Math.round(2.5 * dpr)) / dpr;   // a whole number of screen pixels, so the squares stay crisp
     cell = phone ? 17 : Math.max(20, Math.round(W / 54));
     cols = Math.ceil(W / cell); rows = Math.ceil(H / cell); heat = new Float32Array(cols * rows);
     RS = phone ? W * 0.22 : Math.min(W, H) * 0.15;   // the lens's size while the pointer is moving
     // One system of grains. Every grain rides one of four slow wavy bands across the panel, and every grain looks the
-    // same. Some also own a place on the two pyramids (an M): a core that always holds it, and many more that settle
+    // same: a small square pixel. Some also own a place on the two pyramids (an M): a core that always holds it, and many more that settle
     // on it only while their band carries them past, then peel off and drift on. So the pyramids are where the dust
     // gathers, not a separate thing on top of it.
     const wp = phone ? W * 0.78 : Math.min(W * 0.31, H * 0.56), pa = wp / 4, ph = wp * 0.6;
@@ -56,7 +57,7 @@
     };
     const count = phone ? [1100, 1500, 1200] : [2100, 2900, 2400];   // core, passing through, never settling
     grains = [];
-    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, tint: (Math.random() * BLUES.length) | 0, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
+    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, tint: (Math.random() * BLUES.length) | 0, size: 1 + Math.min(2, Math.floor(2.6 * Math.pow(Math.random(), 3.2))), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
     grains.sort((p, q) => p.tint - q.tint || p.alpha - q.alpha);   // drawn in runs of one colour and strength
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
   }
@@ -154,8 +155,9 @@
       const dx = x - lens.x, dy = y - lens.y, dist = Math.hypot(dx, dy) + 0.001, fo = push * Math.exp(-(dist / reach) * (dist / reach)) * (1 - 0.88 * m);
       g.ox += (dx / dist * fo - g.ox) * k2; g.oy += (dy / dist * fo - g.oy) * k2;
       if (g.alpha !== alpha || g.tint !== tint) { a.fill(); a.beginPath(); alpha = g.alpha; tint = g.tint; a.globalAlpha = alpha; a.fillStyle = BLUES[tint]; }
-      const X = x + g.ox, Y = y + g.oy, r = g.size;
-      if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
+      // Every grain is a square pixel, one, two or three units across, and sits on the unit grid: it moves by hopping
+      // from one place on the grid to the next, as the lens's cells do at their larger size.
+      a.rect(Math.round((x + g.ox) / unit) * unit, Math.round((y + g.oy) / unit) * unit, g.size * unit, g.size * unit);
     }
     a.fill(); a.globalAlpha = 1;
     // In the lens the grains are white, with the same cyan and yellow ghosts. Not drawn at all while the lens is shut.
