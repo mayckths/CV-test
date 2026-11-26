@@ -1,28 +1,24 @@
-// The hero. It exists twice, one on top of the other: a light one and a hot pink one. The pink one is only shown
-// inside a lens that follows the pointer while it moves, and everything here is made of particles. One system of
-// round grains drifts in slow bands, gathers into the two pyramids and parts around the lens. The lens has no hard
-// edge: it breaks up into dots of its own, which trail behind it and fade when the pointer stops. The lens, its dots,
-// the type and the grains inside it carry a colour aberration: a cyan and a yellow ghost, pulled apart along the way
-// the pointer is moving. Nothing moves the lens or turns the pyramids on its own.
+// The hero: a light panel, and everything on it made of particles. One system of round grains drifts in slow bands,
+// gathers into the two pyramids and parts around the pointer. While the pointer moves it carries a glare: a cloud of
+// coloured dots (mostly hot pink) that trails behind it and fades when it stops, each dot with a cyan and a yellow
+// ghost pulled apart along the way the pointer is moving. Nothing moves or turns on its own except the slow drift.
 (() => {
   const panel = document.querySelector(".hero.lens");
   if (!panel) return;
-  const grey = panel.querySelector(".lens-grey"), pink = panel.querySelector(".lens-pink");
-  pink.appendChild(grey.querySelector(".lens-copy").cloneNode(true));   // the pink hero says the same as the grey one
-  const fxA = grey.querySelector(".lens-fx"), fxB = pink.querySelector(".lens-fx"), pxC = panel.querySelector(".lens-px");
-  const a = fxA.getContext("2d"), b = fxB.getContext("2d"), px = pxC.getContext("2d");
+  const grey = panel.querySelector(".lens-grey");
+  const fxA = grey.querySelector(".lens-fx"), pxC = panel.querySelector(".lens-px");
+  const a = fxA.getContext("2d"), px = pxC.getContext("2d");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // The grains are the blues of the footer's pyramids: from the deep indigo to the bright violet-blue.
   const BLUES = ["#22126d", "#33209a", "#4630c8", "#5a3cf2"];
   // Colour aberration: the lens and its loose pixels split into a cyan and a yellow copy, pulled apart along the way
   // the pointer is moving, and further the faster it goes.
   const CYAN = "#19e3ff", YELLOW = "#ffd400";
-  const tmp = document.createElement("canvas"), tx = tmp.getContext("2d");
   const hash = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
   let W = 0, H = 0, dpr = 1, cell = 26, cols = 0, rows = 0, heat = new Float32Array(0), phone = false;
-  let dotX, dotY, dotR, dotT, dotC, ground = "#fffaf5";
-  const DOTS = ["#ff2e7e", "#1a1466", "#2de2e6", "#ffffff"], lists = [[], [], [], [], []];   // four colours, and the holes
+  let dotX, dotY, dotR, dotT, dotC;
+  const DOTS = ["#ff2e7e", "#1a1466", "#2de2e6", "#ffffff"], lists = [[], [], [], []];   // one list of dots per colour
   let RS = 90, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0, win: 1 };
   const lens = { x: 0, y: 0, tx: 0, ty: 0, seen: -1e9, on: false, travel: 0, r: 0, vx: 0, vy: 0 };
 
@@ -30,7 +26,7 @@
     const r = panel.getBoundingClientRect();
     panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px");
     W = r.width; H = r.height; phone = W < 700; dpr = Math.min(window.devicePixelRatio || 1, 1.5);   // the dust is soft enough not to need more
-    for (const c of [fxA, fxB, pxC, tmp]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    for (const c of [fxA, pxC]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
     // The lens's own particles: a field of dots fixed to the panel, one to a small square, each at its own place in
     // the square, with its own size, colour and the moment at which the lens's edge switches it on.
     cell = phone ? 10 : 13;
@@ -41,7 +37,7 @@
       dotR[i] = 2 + 7 * Math.pow(hash(x + 31, y + 17), 2); dotT[i] = hash(x * 7 + 3, y * 13 + 1);
       const c = hash(x + 5, y + 401); dotC[i] = c < 0.7 ? 0 : c < 0.82 ? 1 : c < 0.92 ? 2 : 3;   // mostly pink; some navy, cyan and white
     }
-    ground = getComputedStyle(grey).backgroundColor;
+
     RS = phone ? W * 0.22 : Math.min(W, H) * 0.15;   // the lens's size while the pointer is moving
     // One system of grains. Every grain rides one of four slow wavy bands across the panel, and every grain looks the
     // same. Some also own a place on the two pyramids (an M): a core that always holds it, and many more that settle
@@ -78,7 +74,7 @@
   };
   panel.addEventListener("pointermove", point); panel.addEventListener("pointerdown", point);
 
-  let last = performance.now(), t = 0, clip = "", raf = 0, seen = true, splitWas = "";
+  let last = performance.now(), t = 0, raf = 0, seen = true;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!reduced) t += dt;
@@ -92,43 +88,30 @@
     const want = moving ? RS * (0.8 + Math.min(0.5, speed / 2400)) : 0;
     lens.r += (want - lens.r) * (reduced ? 1 : 1 - Math.exp(-dt * (moving ? 10 : 4)));
     if (!moving && lens.r < 0.5) lens.r = 0;
-    const r0 = lens.r, r1 = r0 + Math.max(1, Math.min(r0 * 0.8, 120)), live = r0 >= 1;
+    const r0 = lens.r, r1 = r0 * 1.7, live = r0 >= 1;
 
-    // 1. The lens, made of particles. Its core is a clean disc of the pink hero. It has no outline: across its edge
-    //    the disc breaks up into dots that thin out and shrink outwards, a few holes open just inside it, and the
-    //    dots the lens has just passed over stay for a moment and shrink away, so it trails particles behind it.
+    // 1. The glare: a cloud of particles around the pointer and nothing else. There is no disc and no second hero
+    //    under it. The dots are thick at the pointer and thin out and shrink towards the cloud's edge, with a few
+    //    strays beyond it; dots the pointer has just passed stay for a moment and shrink away, so it trails them.
     px.setTransform(dpr, 0, 0, dpr, 0, 0); px.clearRect(0, 0, W, H);
     const ux = speed > 4 ? lens.vx / speed : 0.92, uy = speed > 4 ? lens.vy / speed : 0.38, o = 3 + Math.min(16, speed * 0.011);
-    const core = live ? `circle(${r0.toFixed(1)}px at ${lens.x.toFixed(1)}px ${lens.y.toFixed(1)}px)` : "";
-    if (core !== clip) { clip = core; pink.style.clipPath = core || "inset(100%)"; pink.style.webkitClipPath = pink.style.clipPath; }
-    // The split: the disc twice, pushed apart, with the disc itself cut out of them. That leaves a cyan crescent on
-    // one side and a yellow one on the other.
-    const disc = (ox, oy) => { px.beginPath(); px.arc(lens.x + ox, lens.y + oy, r0, 0, 6.283); px.fill(); };
-    if (live) {
-      px.fillStyle = CYAN; disc(-ux * o, -uy * o); px.fillStyle = YELLOW; disc(ux * o, uy * o);
-      px.globalCompositeOperation = "destination-out"; disc(0, 0); px.globalCompositeOperation = "source-over";
-    }
     for (const l of lists) l.length = 0;
-    const band = r1 - r0, n = cols * rows, hk = dt * 1.9;
+    const reachG = r0 * 1.7, n = cols * rows, hk = dt * 1.9;
     for (let i = 0; i < n; i++) {
-      const dist = Math.hypot(dotX[i] - lens.x, dotY[i] - lens.y), k = live ? (dist - r0) / band : 9, th = dotT[i];
-      if (k <= 0) { heat[i] = 1; if (k > -0.45 && th < 0.5 * (1 + k / 0.45)) lists[4].push(dotX[i], dotY[i], dotR[i] * (1 + k)); continue; }   // inside: a hole near the edge
-      const on = k < 1 && th > k, far = k >= 1 && k < 1.9 && th > 0.9 + 0.1 * (k - 1) / 0.9;
+      const k = live ? Math.hypot(dotX[i] - lens.x, dotY[i] - lens.y) / reachG : 9, th = dotT[i];
+      const on = k < 1 && th > k * k, far = k >= 1 && k < 1.5 && th > 0.9 + 0.1 * (k - 1) / 0.5;
       heat[i] = on ? 1 : Math.max(0, heat[i] - hk);
-      const size = on ? 1 - 0.5 * k : far ? 0.55 : th > 0.3 ? heat[i] * 0.9 : 0;
+      const size = on ? 1 - 0.55 * k : far ? 0.5 : th > 0.3 ? heat[i] * 0.9 : 0;
       if (size > 0.04) lists[dotC[i]].push(dotX[i], dotY[i], dotR[i] * size);
     }
-    // Every dot has the same two ghosts as the disc, then its own colour on top; the holes are the light ground.
+    // The colour aberration: every dot has a cyan and a yellow ghost, pulled apart along the way the pointer is
+    // moving and further the faster it goes, and its own colour on top.
     const og = o * 0.6, dots = (l, ox, oy) => { px.beginPath(); for (let i = 0; i < l.length; i += 3) { px.moveTo(l[i] + ox + l[i + 2], l[i + 1] + oy); px.arc(l[i] + ox, l[i + 1] + oy, l[i + 2], 0, 6.283); } px.fill(); };
     px.fillStyle = CYAN; for (let c = 0; c < 4; c++) dots(lists[c], -ux * og, -uy * og);
     px.fillStyle = YELLOW; for (let c = 0; c < 4; c++) dots(lists[c], ux * og, uy * og);
     for (let c = 0; c < 4; c++) { px.fillStyle = DOTS[c]; dots(lists[c], 0, 0); }
-    px.fillStyle = ground; dots(lists[4], 0, 0);
-    const split = (Math.round(o * 0.3 * 2) / 2).toFixed(1);
-    if (split !== splitWas) { splitWas = split; panel.style.setProperty("--split", split + "px"); }
 
-    // 2. The grains, pyramids and dust alike, drawn once in blue for the light hero and copied in white for the pink
-    //    one. So the lens changes their colour and nothing else: same grains, same places.
+    // 2. The grains, pyramids and dust alike.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H);
     const push = Math.min(r0, RS * 1.5) * 0.9, reach = Math.max(1, Math.min(r1, RS * 2.6) * 0.95), k2 = 1 - Math.exp(-dt * 5);
     // The pyramids are seen from slightly above, in perspective. With the lens in the middle they face straight
@@ -155,13 +138,6 @@
       if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
     }
     a.fill(); a.globalAlpha = 1;
-    // In the lens the grains are white, with the same cyan and yellow ghosts. Not drawn at all while the lens is shut.
-    if (clip) {
-      const tinted = (col) => { tx.setTransform(1, 0, 0, 1, 0, 0); tx.globalCompositeOperation = "copy"; tx.drawImage(fxA, 0, 0); tx.globalCompositeOperation = "source-in"; tx.fillStyle = col; tx.fillRect(0, 0, tmp.width, tmp.height); return tmp; };
-      const gx = Math.round(ux * o * 0.4 * dpr), gy = Math.round(uy * o * 0.4 * dpr);
-      b.setTransform(1, 0, 0, 1, 0, 0); b.globalCompositeOperation = "source-over"; b.clearRect(0, 0, fxB.width, fxB.height);
-      b.drawImage(tinted(CYAN), -gx, -gy); b.drawImage(tinted(YELLOW), gx, gy); b.drawImage(tinted("#fff"), 0, 0);
-    }
   }
   // It only runs while the hero is on screen and the tab is in front.
   const start = () => { if (!raf && seen && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };

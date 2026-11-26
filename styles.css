@@ -118,8 +118,6 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .hero.panel::after { content: ""; position: absolute; inset: 0; z-index: 5; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
 .hero.lens > .lens-sc { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
 .lens-grey { background: var(--lens-grey); color: var(--lens-ink); --two: var(--lens-ink); }
-.lens-pink { background: var(--lens-pink); color: #fff; --two: var(--lens-navy); clip-path: inset(100%); }   /* hidden until the script draws the lens */
-.lens-pink .lens-copy { text-shadow: calc(var(--split, 0px) * -1) 0 #19e3ff, var(--split, 0px) 0 #ffd400; }   /* the type in the lens splits with the lens */
 .lens-fx, .hero.lens > .lens-px { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
 .lens-copy { position: absolute; inset: 0; z-index: 1; }
 /* The top line runs at the height of the floating navigation, which sits in the middle of it: name, rule, the
