@@ -99,9 +99,9 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     };
     const count = phone ? [1100, 1500, 1200] : [2100, 2900, 2400];   // core, passing through, never settling
     grains = [];
-    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
+    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, node: Math.random() < 0.3, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
     grains.sort((p, q) => p.alpha - q.alpha);
-    hold = new Float32Array(grains.length * 4);
+    hold = new Float32Array(grains.length * 4); nodes = new Float32Array(grains.length * 2);
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
   }
 
@@ -111,6 +111,8 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
 
   let last = performance.now(), t = 0, clip = "", raf = 0;
   let hold = new Float32Array(0);   // grains that are on a pyramid this frame: x, y, radius, alpha
+  let nodes = new Float32Array(0);  // loose grains under the lens this frame: x, y
+  const taken = new Int32Array(512 * 512); let stamp = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!reduced) t += dt;
@@ -145,8 +147,8 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     }
     if (d !== clip) { clip = d; pink.style.clipPath = d ? `path("${d}")` : "inset(100%)"; pink.style.webkitClipPath = pink.style.clipPath; }
 
-    // 2. The grains. In the grey hero they are all drawn, in ink. In the pink hero only the loose dust is (in white):
-    //    where the pyramids stand, the lens shows how they are built instead.
+    // 2. The grains. In the grey hero they are all drawn, in ink. In the pink hero the loose dust is redrawn as dots
+    //    joined by lines, and where the pyramids stand the lens shows how they are built instead.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H); a.fillStyle = "#232125";
     const push = R0 * 0.55, reach = R1 * 0.95, k2 = 1 - Math.exp(-dt * 5);
     // The pyramids are seen from slightly above, in perspective. With the lens in the middle they face straight
@@ -155,7 +157,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     const yaw = ((lens.x - W / 2) / W) * 0.6, pitch = 0.3;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
     const proj = (x, y, z) => { const xr = x * ca + z * sa, zr = -x * sa + z * ca, dep = zr * cp - y * sp, sc = f / (f + dep); return [pyr.cx + xr * sc, pyr.base - (y * cp + zr * sp) * sc, dep]; };
-    let alpha = -1, held = 0;
+    let alpha = -1, held = 0, nn = 0; const near = R1 * 1.1, spread = phone ? 22 : 30; stamp++;
     a.beginPath();
     for (const g of grains) {
       const bd = g.band, u = (g.u + t * g.speed) % 1;
@@ -170,13 +172,32 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
       g.ox += (dx / dist * fo - g.ox) * k2; g.oy += (dy / dist * fo - g.oy) * k2;
       const X = x + g.ox, Y = y + g.oy, r = g.size;
       if (m > 0.5) { hold[held++] = X; hold[held++] = Y; hold[held++] = r; hold[held++] = g.alpha; continue; }   // on a pyramid: grey hero only
+      if (g.node && Math.abs(X - lens.x) < near && Math.abs(Y - lens.y) < near) {
+        // one dot per small square of the panel at most, so the dots stay evenly spread where the dust bunches up
+        const key = ((Y / spread) | 0) * 512 + ((X / spread) | 0);
+        if (taken[key] !== stamp) { taken[key] = stamp; nodes[nn++] = X; nodes[nn++] = Y; }
+      }
       if (g.alpha !== alpha) { a.fill(); a.beginPath(); alpha = g.alpha; a.globalAlpha = alpha; }
       if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
     }
     a.fill();
-    b.setTransform(1, 0, 0, 1, 0, 0); b.globalAlpha = 1; b.globalCompositeOperation = "copy"; b.drawImage(fxA, 0, 0);
-    b.globalCompositeOperation = "source-in"; b.fillStyle = "#fff"; b.fillRect(0, 0, fxB.width, fxB.height);
-    b.globalCompositeOperation = "source-over";
+    // In focus the dust is plainer: some of the grains under the lens become even dots, and dots that are close
+    // to each other are joined by a line, fainter the further apart they are.
+    b.setTransform(dpr, 0, 0, dpr, 0, 0); b.clearRect(0, 0, W, H); b.setLineDash([]); b.lineWidth = 1;
+    const reachN = phone ? 58 : 78, r2 = reachN * reachN, tiers = [[], [], []], links = new Uint8Array(nn);
+    for (let i = 0; i < nn; i += 2) for (let j = i + 2; j < nn; j += 2) {
+      if (links[i] > 2) break; if (links[j] > 2) continue;   // three lines to a dot at most
+      const dx = nodes[i] - nodes[j], dy = nodes[i + 1] - nodes[j + 1], d2 = dx * dx + dy * dy;
+      if (d2 < r2) { tiers[d2 < r2 * 0.3 ? 0 : d2 < r2 * 0.62 ? 1 : 2].push(i, j); links[i]++; links[j]++; }
+    }
+    tiers.forEach((tier, k) => {
+      b.strokeStyle = `rgba(255,255,255,${[0.8, 0.55, 0.3][k]})`; b.beginPath();
+      for (let q = 0; q < tier.length; q += 2) { b.moveTo(nodes[tier[q]], nodes[tier[q] + 1]); b.lineTo(nodes[tier[q + 1]], nodes[tier[q + 1] + 1]); }
+      b.stroke();
+    });
+    b.fillStyle = "#fff"; b.beginPath();
+    for (let i = 0; i < nn; i += 2) { b.moveTo(nodes[i] + 2.6, nodes[i + 1]); b.arc(nodes[i], nodes[i + 1], 2.6, 0, 6.283); }
+    b.fill();
     alpha = -1; a.beginPath();
     for (let i = 0; i < held; i += 4) {
       if (hold[i + 3] !== alpha) { a.fill(); a.beginPath(); alpha = hold[i + 3]; a.globalAlpha = alpha; }
