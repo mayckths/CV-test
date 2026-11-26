@@ -1,45 +1,35 @@
-// The hero: a light panel, and everything on it made of particles. Two pyramids are drawn in round motes, with a
-// cloud of loose molecules floating around them, as in the footer. While the pointer moves it carries a glare: a
-// cloud of coloured dots (mostly hot pink) that trails behind it and fades when it stops, each dot with a cyan and a
-// yellow ghost pulled apart along the way the pointer is moving. The motes the glare passes over take its colours
-// and keep them for a moment. Nothing moves or turns on its own except the slow drift.
+// The hero: a light panel with two pyramids drawn in round motes and a cloud of loose molecules floating around
+// them, as in the footer. Some motes are out of focus, which gives the cloud depth. While the pointer moves, the motes
+// near it take the glare's colours (mostly hot pink), each with a cyan and a yellow ghost pulled apart along the way
+// the pointer is moving, and keep them for a moment after it has gone. The glare adds no particles of its own.
+// Nothing moves or turns on its own except the slow drift.
 (() => {
   const panel = document.querySelector(".hero.lens");
   if (!panel) return;
   const grey = panel.querySelector(".lens-grey");
-  const fxA = grey.querySelector(".lens-fx"), pxC = panel.querySelector(".lens-px");
-  const a = fxA.getContext("2d"), px = pxC.getContext("2d");
+  const fxA = grey.querySelector(".lens-fx"), a = fxA.getContext("2d");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // The grains are the blues of the footer's pyramids: from the deep indigo to the bright violet-blue.
   const BLUES = ["#22126d", "#33209a", "#4630c8", "#5a3cf2"];
   // Colour aberration: the lens and its loose pixels split into a cyan and a yellow copy, pulled apart along the way
   // the pointer is moving, and further the faster it goes.
   const CYAN = "#19e3ff", YELLOW = "#ffd400";
-  const hash = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
-  let W = 0, H = 0, dpr = 1, cell = 26, cols = 0, rows = 0, heat = new Float32Array(0), phone = false;
-  let dotX, dotY, dotR, dotT, dotC;
-  const DOTS = ["#ff2e7e", "#1a1466", "#2de2e6", "#ffffff"], lists = [[], [], [], []];   // one list of dots per colour
+  let W = 0, H = 0, dpr = 1, phone = false;
+  const DOTS = ["#ff2e7e", "#1a1466", "#2de2e6", "#ffffff"];   // the glare's colours: mostly the pink
   let RS = 90, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0 };
   const hot = [[], [], [], []];   // motes the glare has coloured this frame, one list per colour
+  const soft = [];                // the out-of-focus motes of this frame: x, y, radius, alpha, blue, glare colour, heat
+  // A soft-edged dot of each colour, for the out-of-focus motes.
+  const sprite = (col) => { const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, col); g.addColorStop(0.28, col + "e0"); g.addColorStop(0.62, col + "59"); g.addColorStop(1, col + "00"); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return c; };
+  const SOFT_BLUE = BLUES.map(sprite), SOFT_DOT = DOTS.map(sprite);
   const lens = { x: 0, y: 0, tx: 0, ty: 0, seen: -1e9, on: false, travel: 0, r: 0, vx: 0, vy: 0 };
 
   function build() {
     const r = panel.getBoundingClientRect();
     panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px");
     W = r.width; H = r.height; phone = W < 700; dpr = Math.min(window.devicePixelRatio || 1, 1.5);   // the dust is soft enough not to need more
-    for (const c of [fxA, pxC]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
-    // The lens's own particles: a field of dots fixed to the panel, one to a small square, each at its own place in
-    // the square, with its own size, colour and the moment at which the lens's edge switches it on.
-    cell = phone ? 10 : 13;
-    cols = Math.ceil(W / cell); rows = Math.ceil(H / cell); heat = new Float32Array(cols * rows);
-    dotX = new Float32Array(cols * rows); dotY = new Float32Array(cols * rows); dotR = new Float32Array(cols * rows); dotT = new Float32Array(cols * rows); dotC = new Uint8Array(cols * rows);
-    for (let y = 0, i = 0; y < rows; y++) for (let x = 0; x < cols; x++, i++) {
-      dotX[i] = (x + 0.12 + 0.76 * hash(x, y)) * cell; dotY[i] = (y + 0.12 + 0.76 * hash(x + 191, y + 77)) * cell;
-      dotR[i] = 2 + 7 * Math.pow(hash(x + 31, y + 17), 2); dotT[i] = hash(x * 7 + 3, y * 13 + 1);
-      const c = hash(x + 5, y + 401); dotC[i] = c < 0.7 ? 0 : c < 0.82 ? 1 : c < 0.92 ? 2 : 3;   // mostly pink; some navy, cyan and white
-    }
-
+    fxA.width = Math.round(W * dpr); fxA.height = Math.round(H * dpr);
     RS = phone ? W * 0.22 : Math.min(W, H) * 0.15;   // the lens's size while the pointer is moving
     // The particles, as in the footer: two pyramids (an M) drawn in round motes. Two motes in five lie on an edge,
     // the rest on the faces, and the later ones stop a little short of their places, so the shape stays soft. About
@@ -67,7 +57,10 @@
       const c = Math.random();
       grains.push({ free, seed, slot: place(i), lx: W / 2 + sx * W * 0.48, ly: H / 2 + sy * H * 0.48, m: free ? 1 : smooth(1.26 - seed * 0.5), hx: sx * out, hy: sy * out,
         size: 0.7 + 3.3 * Math.pow(Math.random(), 3.2), alpha: Math.round((0.7 + 0.3 * seed) * 8) / 8, tint: (Math.random() * BLUES.length) | 0,
-        col: c < 0.7 ? 0 : c < 0.82 ? 1 : c < 0.92 ? 2 : 3, heat: 0, ox: 0, oy: 0 });
+        col: c < 0.7 ? 0 : c < 0.82 ? 1 : c < 0.92 ? 2 : 3, heat: 0, ox: 0, oy: 0,
+        // Depth: about one mote in eight on the pyramids, and nearly half of the molecules, are out of focus, as if nearer or further
+        // than the rest. They are drawn larger, soft-edged and fainter.
+        blur: Math.random() < (free ? 0.45 : 0.13) ? 0.35 + Math.random() : 0 });
     }
     grains.sort((p, q) => p.tint - q.tint || p.alpha - q.alpha);   // drawn in runs of one colour and strength
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
@@ -97,26 +90,11 @@
     if (!moving && lens.r < 0.5) lens.r = 0;
     const r0 = lens.r, r1 = r0 * 1.7, live = r0 >= 1;
 
-    // 1. The glare: a cloud of particles around the pointer and nothing else. There is no disc and no second hero
-    //    under it. The dots are thick at the pointer and thin out and shrink towards the cloud's edge, with a few
-    //    strays beyond it; dots the pointer has just passed stay for a moment and shrink away, so it trails them.
-    px.setTransform(dpr, 0, 0, dpr, 0, 0); px.clearRect(0, 0, W, H);
+    // 1. The glare. It makes no particles of its own: it is only a reach around the pointer inside which the
+    //    particles that are already there change colour. Its split pulls apart along the way the pointer is moving.
     const ux = speed > 4 ? lens.vx / speed : 0.92, uy = speed > 4 ? lens.vy / speed : 0.38, o = 3 + Math.min(16, speed * 0.011);
-    for (const l of lists) l.length = 0;
-    const reachG = r0 * 1.7, n = cols * rows, hk = dt * 1.9;
-    for (let i = 0; i < n; i++) {
-      const k = live ? Math.hypot(dotX[i] - lens.x, dotY[i] - lens.y) / reachG : 9, th = dotT[i];
-      const on = k < 1 && th > k * k, far = k >= 1 && k < 1.5 && th > 0.9 + 0.1 * (k - 1) / 0.5;
-      heat[i] = on ? 1 : Math.max(0, heat[i] - hk);
-      const size = on ? 1 - 0.55 * k : far ? 0.5 : th > 0.3 ? heat[i] * 0.9 : 0;
-      if (size > 0.04) lists[dotC[i]].push(dotX[i], dotY[i], dotR[i] * size);
-    }
-    // The colour aberration: every dot has a cyan and a yellow ghost, pulled apart along the way the pointer is
-    // moving and further the faster it goes, and its own colour on top.
-    const og = o * 0.6, paint = (cx) => (l, ox, oy) => { cx.beginPath(); for (let i = 0; i < l.length; i += 3) { cx.moveTo(l[i] + ox + l[i + 2], l[i + 1] + oy); cx.arc(l[i] + ox, l[i + 1] + oy, l[i + 2], 0, 6.283); } cx.fill(); }, dots = paint(px);
-    px.fillStyle = CYAN; for (let c = 0; c < 4; c++) dots(lists[c], -ux * og, -uy * og);
-    px.fillStyle = YELLOW; for (let c = 0; c < 4; c++) dots(lists[c], ux * og, uy * og);
-    for (let c = 0; c < 4; c++) { px.fillStyle = DOTS[c]; dots(lists[c], 0, 0); }
+    const reachG = r0 * 1.9, og = o * 0.6;
+    const paint = (cx) => (l, ox, oy) => { cx.beginPath(); for (let i = 0; i < l.length; i += 3) { cx.moveTo(l[i] + ox + l[i + 2], l[i + 1] + oy); cx.arc(l[i] + ox, l[i + 1] + oy, l[i + 2], 0, 6.283); } cx.fill(); };
 
     // 2. The particles. Where the glare passes they take its colours, each with the same two ghosts, and keep
     //    them for a moment after it has gone, so the pyramids and the cloud mix with what the pointer leaves behind.
@@ -126,7 +104,7 @@
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
     const midY = pyr.base - pyr.h / 2, ft = t * 0.16, fieldX = Math.min(pyr.a * 3.5, W * 0.47), fieldY = Math.min(pyr.h, H * 0.44), flow = pyr.a * 0.22;
     const reach = Math.max(1, reachG * 0.8), k2 = 1 - Math.exp(-dt * 4), cool = dt * 1.1;
-    for (const l of hot) l.length = 0;
+    for (const l of hot) l.length = 0; soft.length = 0;
     let alpha = -1, tint = -1;
     a.beginPath();
     for (const g of grains) {
@@ -146,6 +124,7 @@
       g.ox += (dx / dist * pull - g.ox) * k2; g.oy += (dy / dist * pull - g.oy) * k2;
       g.heat = Math.max(g.heat - cool, k < 1 ? Math.min(1, (1 - k) * 1.8) : 0);
       const X = x + g.ox, Y = y + g.oy, r = g.size;
+      if (g.blur) { soft.push(X, Y, r * (2.2 + 2.6 * g.blur), g.alpha * (0.62 - 0.2 * g.blur), g.tint, g.col, g.heat); continue; }
       if (g.heat > 0.03) hot[g.col].push(X, Y, r * (1 + 0.6 * g.heat) * Math.min(1, g.heat * 1.6));
       if (g.heat > 0.6) continue;   // fully coloured: the blue mote under it is not drawn
       if (g.alpha !== alpha || g.tint !== tint) { a.fill(); a.beginPath(); alpha = g.alpha; tint = g.tint; a.globalAlpha = alpha; a.fillStyle = BLUES[tint]; }
@@ -156,6 +135,13 @@
     a.fillStyle = CYAN; for (const l of hot) motes(l, -ux * og, -uy * og);
     a.fillStyle = YELLOW; for (const l of hot) motes(l, ux * og, uy * og);
     for (let c = 0; c < 4; c++) { a.fillStyle = DOTS[c]; motes(hot[c], 0, 0); }
+    // The out-of-focus motes go on top: blue, and cross-fading to the glare's colour where it has passed.
+    for (let i = 0; i < soft.length; i += 7) {
+      const X = soft[i], Y = soft[i + 1], R = soft[i + 2], al = soft[i + 3], h = Math.min(1, soft[i + 6] * 1.4);
+      if (h < 0.98) { a.globalAlpha = al * (1 - h); a.drawImage(SOFT_BLUE[soft[i + 4]], X - R, Y - R, R * 2, R * 2); }
+      if (h > 0.02) { a.globalAlpha = Math.min(1, al * 1.25) * h; a.drawImage(SOFT_DOT[soft[i + 5]], X - R, Y - R, R * 2, R * 2); }
+    }
+    a.globalAlpha = 1;
   }
   // It only runs while the hero is on screen and the tab is in front.
   const start = () => { if (!raf && seen && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };

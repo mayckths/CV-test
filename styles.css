@@ -118,7 +118,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .hero.panel::after { content: ""; position: absolute; inset: 0; z-index: 5; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
 .hero.lens > .lens-sc { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
 .lens-grey { background: var(--lens-grey); color: var(--lens-ink); --two: var(--lens-ink); }
-.lens-fx, .hero.lens > .lens-px { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
+.lens-fx { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
 .lens-copy { position: absolute; inset: 0; z-index: 1; }
 /* The top line runs at the height of the floating navigation, which sits in the middle of it: name, rule, the
    navigation's own width left open, rule, "Portfolio". */
@@ -130,7 +130,8 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .lens-head { position: absolute; left: 0; right: 0; top: 17%; text-align: center; }
 .lens-hl { white-space: nowrap; font: 800 min(7.7vw, 15.5vh)/.86 var(--display); letter-spacing: -0.06em; }
 .lens-hl .i { font: 400 italic 1.035em/.86 var(--serif); letter-spacing: -0.03em; color: var(--two); }
-.lens-sub { margin-top: .5em; font: 400 italic min(2.7vw, 5.4vh)/1 var(--serif); letter-spacing: -0.01em; opacity: .66; }
+/* "working worldwide" is the headline's second line: the same italic serif as "Lead", large, set tight under it. */
+.lens-hl .w { display: block; margin-top: .04em; font: 400 italic .74em/.9 var(--serif); letter-spacing: -0.025em; color: var(--two); }
 .lens-blurb { position: absolute; left: clamp(22px, 4vw, 56px); bottom: 38px; max-width: 31ch; font-size: 17px; line-height: 1.45; text-wrap: pretty; }
 .lens-blurb strong { font-weight: 600; }
 /* Second part of the pinned hero: two roles either side of the pyramids */
@@ -152,7 +153,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
   .hero-role:nth-child(1) { right: auto; left: 8%; top: 70%; text-align: left; } .hero-role:nth-child(2) { left: auto; right: 8%; bottom: 70%; text-align: right; }
 }
 @media (max-width: 700px) {
-  .lens-head { top: 15.5%; left: 20px; right: 20px; text-align: left; } .lens-hl { white-space: normal; font-size: 14.6vw; line-height: .9; } .lens-sub { font-size: 6.4vw; margin-top: .45em; }
+  .lens-head { top: 15.5%; left: 20px; right: 20px; text-align: left; } .lens-hl { white-space: normal; font-size: 14.6vw; line-height: .9; } .lens-hl .w { font-size: .8em; margin-top: .06em; white-space: nowrap; }
   .lens-blurb { right: 22px; max-width: none; font-size: 16.5px; }
   .hero.lens > .hero-cue { bottom: 20px; }
 }
