@@ -195,7 +195,7 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px"));
   panel.classList.add("live");
   // The buttons on the test page
-  const setMode = (m) => { mode = m; panel.dataset.fx = m; heat.fill(0); clip = ""; lens.inv = false; lens.r = 0; lens.seen = performance.now(); panel.dataset.ground = "light";   // each effect starts from the light page document.querySelectorAll("[data-fx-set]").forEach((b0) => b0.setAttribute("aria-pressed", String(b0.dataset.fxSet === m))); };
+  const setMode = (m) => { mode = m; panel.dataset.fx = m; heat.fill(0); clip = ""; lens.inv = false; lens.r = 0; lens.seen = performance.now(); panel.dataset.ground = "light"; /* each effect starts from the light page */ document.querySelectorAll("[data-fx-set]").forEach((b0) => b0.setAttribute("aria-pressed", String(b0.dataset.fxSet === m))); };
   document.querySelectorAll("[data-fx-set]").forEach((b0) => b0.addEventListener("click", () => setMode(b0.dataset.fxSet)));
   setMode(mode);
 })();
