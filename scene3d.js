@@ -37,7 +37,9 @@ function init() {
   //     the cursor and a soft light follows it. It has its own canvas inside the hero panel, so it scrolls with the
   //     panel exactly (a layer fixed to the screen trails the page by a frame while scrolling) and it is drawn at a
   //     lower resolution than the particles, which keeps scrolling light. ---
-  const hero = document.querySelector(".hero.panel"), heroWrap = document.querySelector(".hero-wrap");
+  // The hero is no longer drawn here: it has its own script (hero-lens.js). With no hero panel given, everything
+  // below that belongs to the hero stays idle and this file only draws the footer's pyramids.
+  const hero = null, heroWrap = null;
   const srgb = (hex) => { const c = new THREE.Color(hex); return new THREE.Vector3(...c.convertLinearToSRGB().toArray()); };   // keep CSS values as written
   const haze = (() => {
     const host = hero && hero.querySelector(".panel-bg");
@@ -276,7 +278,7 @@ function init() {
   // The pyramids are simply there on load (form and intro start complete); only the hero's text has an entrance.
   // The pyramids open turned a little (TURN0) and come round to face front as the hero appears.
   const TURN0 = -0.35;   // about 20 degrees, the right pyramid nearer
-  const st = { form: 1, burst: 0, burstT: -1, spin: reduced ? 0 : TURN0, vel: 0, dragging: false, intro: 1, mode: null, home: "hero", hp: 0, q: 0, tick: 0,
+  const st = { form: 1, burst: 0, burstT: -1, spin: 0, vel: 0, dragging: false, intro: 1, mode: null, home: "hero", hp: 0, q: 0, tick: 0,
     dir: 1,   // which way the pyramids were last turned: they finish the turn that way
     pointer: new THREE.Vector2(99, 99), pointerSlow: new THREE.Vector2(99, 99), pull: 0, pointerGoal: new THREE.Vector2(99, 99), client: { x: 0, y: 0, on: false },
     bgPointer: new THREE.Vector2(0.7, 0.3), bgGoal: new THREE.Vector2(0.7, 0.3) };
@@ -432,7 +434,9 @@ function init() {
   }
 
   renderer.autoClear = false;
-  resize();
+  // The canvas lives inside the footer panel from the start. It is never laid over the page any more: that was only
+  // needed while this file also drew the hero.
+  if (footPanel) { st.home = "foot"; place("foot"); } else resize();
   sampleLead();
   wake();
   canvas.classList.add("ready");

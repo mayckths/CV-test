@@ -1,68 +1,14 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Hero prototype · Hot pink blueprint lens</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
-<style>
-/* A prototype of the hero, not part of the portfolio yet. The hero exists twice, one on top of the other: a grey one
-   and a hot pink one. The pink one is only shown inside a lens that follows the cursor, and the lens has no hard
-   edge: it breaks up into square pixels, some of them in the palette's colours. One system of grains drifts in slow
-   bands, gathers into the two pyramids and parts around the lens. Inside the lens the pyramids are shown as their
-   blueprint, drawn in three dimensions: a floor grid, wireframes with hidden edges, heights, measurements and axes. */
-:root { --page:#f5ebe3; --gap:16px; --r:28px; --grey:#eceae6; --ink:#232125; --pink:#ff2e7e; --navy:#1a1466; --cyan:#2de2e6;
-  --display:"Bricolage Grotesque", sans-serif; --text:"Geist", sans-serif; --mono:"Geist Mono", monospace; --serif:"Instrument Serif", serif; }
-* { box-sizing:border-box; margin:0; padding:0; }
-html, body { height:100%; background:var(--page); font-family:var(--text); -webkit-font-smoothing:antialiased; overflow:hidden; }
-.top { position:fixed; top:calc(var(--gap) + 12px); left:50%; transform:translateX(-50%); z-index:9; display:flex; gap:8px; align-items:center; white-space:nowrap; pointer-events:none; }
-.island { display:flex; align-items:center; gap:6px; padding:6px 6px 6px 16px; border-radius:999px; background:rgba(31,28,28,.82); color:rgba(241,238,253,.62); font-size:14px; }
-.island svg { height:15px; fill:#fff; margin-right:10px; } .island span { padding:9px 13px; }
-.hi { display:inline-flex; align-items:center; height:48px; padding:0 20px; border-radius:999px; background:#fff; color:#1f1c1c; font-weight:600; font-size:14px; box-shadow:0 8px 22px -12px rgba(31,28,28,.55); }
-.panel { position:absolute; inset:var(--gap); border-radius:var(--r); overflow:hidden; touch-action:pan-y; background:var(--grey); }
-.sc { position:absolute; inset:0; overflow:hidden; }
-.sc.grey { background:var(--grey); color:var(--ink); --two:var(--ink); --num:var(--ink); }
-.sc.pink { background:var(--pink); color:#fff; --two:var(--navy); --num:var(--navy); }
-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-/* The top line runs at the height of the floating navigation, which sits in the middle of it: name, rule, the
-   navigation's own width left open, rule, "Portfolio". */
-.run { position:absolute; left:56px; right:56px; top:12px; height:48px; display:flex; align-items:center; gap:18px; font:500 12px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; }
-.rule { flex:1; height:1px; background:currentColor; opacity:.32; } .navgap { flex:none; width:calc(var(--navw, 480px) + 4px); }
-.hl { position:absolute; left:0; right:0; top:17%; text-align:center; white-space:nowrap; font:800 min(7.7vw, 15.5vh)/.86 var(--display); letter-spacing:-.06em; }
-.hl .b { font:400 italic 1.035em/.86 var(--serif); letter-spacing:-.03em; color:var(--two); }
-.blurb { position:absolute; left:56px; bottom:38px; font-size:17px; line-height:1.45; max-width:31ch; } .blurb b { font-weight:600; }
-.cue { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); z-index:3; display:inline-flex; align-items:center; gap:10px; height:46px; padding:0 7px 0 18px; border-radius:999px; background:#fff; color:#1f1c1c; box-shadow:0 10px 26px -12px rgba(31,28,28,.55); font:500 12px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; pointer-events:none; }
-.cue i { width:32px; height:32px; border-radius:50%; background:#1f1c1c; display:grid; place-items:center; } .cue i::after { content:"↓"; font:600 15px/1 var(--text); color:#fff; }
-/* Where the navigation leaves no room beside it, the line goes just under it instead. */
-@media (max-width:900px) { .run { left:22px; right:22px; top:66px; height:auto; gap:10px; } .navgap, .navgap + .rule { display:none; } .blurb { left:22px; bottom:86px; } }
-@media (max-width:700px) {
-  :root { --gap:10px; --r:22px; }
-  .island { font-size:12.5px; padding:5px 5px 5px 10px; gap:0; } .island span { padding:8px 6px; } .island svg { height:13px; margin-right:4px; } .hi { height:44px; padding:0 13px; font-size:13px; }
-  .hl { top:15.5%; left:20px; right:20px; text-align:left; white-space:normal; font-size:14.6vw; line-height:.9; } .hl .b { display:block; font-size:1.62em; line-height:.84; }
-  .blurb { left:22px; right:22px; bottom:84px; max-width:none; font-size:16.5px; }
-}
-</style>
-</head>
-<body>
-<div class="top" aria-hidden="true"><div class="island"><svg viewBox="0 0 44 20"><path d="M0 20L11 0L22 20ZM22 20L33 0L44 20Z"/></svg><span>About</span><span>Work</span><span>Experience</span><span>Art</span><span>Ask</span></div><div class="hi">Say hi</div></div>
-<main class="panel" id="panel">
-  <div class="sc grey"><canvas class="fx"></canvas><div class="copy"></div></div>
-  <div class="sc pink" aria-hidden="true"><canvas class="fx"></canvas><div class="copy"></div></div>
-  <canvas class="px"></canvas>
-  <div class="cue" aria-hidden="true">Scroll<i></i></div>
-</main>
-<template id="copy">
-  <div class="run"><span>Mayck Cuellar</span><i class="rule"></i><i class="navgap"></i><i class="rule"></i><span>Portfolio</span></div>
-  <h1 class="hl"><span class="a">Lead Product</span> <span class="b">Designer</span></h1>
-  <p class="blurb"><b>10+ years</b> across fintech and consumer products for <b>Novo</b>, <b>Google</b>, <b>Logitech G</b> and <b>AccuWeather</b>, from discovery to launch.</p>
-</template>
-<script>
+// The hero. It exists twice, one on top of the other: a grey one and a hot pink one. The pink one is only shown
+// inside a lens that follows the cursor (or a finger), and the lens has no hard edge: it breaks up into square pixels,
+// some of them in the palette's colours. One system of grains drifts in slow bands, gathers into the two pyramids and
+// parts around the lens. Inside the lens the dust is shown as dots joined by lines and the pyramids as their
+// blueprint, drawn in three dimensions. Nothing here moves the lens or turns the pyramids on its own.
 (() => {
-  const panel = document.getElementById("panel"), pink = panel.querySelector(".sc.pink");
-  panel.querySelectorAll(".copy").forEach((c) => c.replaceWith(document.getElementById("copy").content.cloneNode(true)));
-  const fxA = panel.querySelector(".grey .fx"), fxB = panel.querySelector(".pink .fx"), pxC = panel.querySelector(".px");
+  const panel = document.querySelector(".hero.lens");
+  if (!panel) return;
+  const grey = panel.querySelector(".lens-grey"), pink = panel.querySelector(".lens-pink");
+  pink.appendChild(grey.querySelector(".lens-copy").cloneNode(true));   // the pink hero says the same as the grey one
+  const fxA = grey.querySelector(".lens-fx"), fxB = pink.querySelector(".lens-fx"), pxC = panel.querySelector(".lens-px");
   const a = fxA.getContext("2d"), b = fxB.getContext("2d"), px = pxC.getContext("2d");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -113,7 +59,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
   const point = (e) => { const r = panel.getBoundingClientRect(); lens.tx = e.clientX - r.left; lens.ty = e.clientY - r.top; lens.seen = performance.now(); lens.on = true; };
   panel.addEventListener("pointermove", point); panel.addEventListener("pointerdown", point);
 
-  let last = performance.now(), t = 0, clip = "", raf = 0;
+  let last = performance.now(), t = 0, clip = "", raf = 0, grow = reduced ? 1 : 0.02, seen = true;
   let hold = new Float32Array(0);   // grains that are on a pyramid this frame: x, y, radius, alpha
   let nodes = new Float32Array(0);  // loose grains under the lens this frame: x, y
   const taken = new Int32Array(512 * 512); let stamp = 0;
@@ -121,6 +67,8 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!reduced) t += dt;
     const ease = 1 - Math.exp(-dt * 9);
+    grow += (1 - grow) * (1 - Math.exp(-dt * 3.4)); if (grow > 0.999) grow = 1;   // on load the lens opens from a point
+    const r0 = R0 * grow, r1 = R1 * grow;
     const mx = (lens.tx - lens.x) * ease, my = (lens.ty - lens.y) * ease;
     lens.x += mx; lens.y += my; lens.travel += Math.hypot(mx, my);
 
@@ -134,7 +82,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
         let show = false;
         if (x < cols) {
           const i = y * cols + x, cxp = (x + 0.5) * cell, cyp = (y + 0.5) * cell;
-          const dist = Math.hypot(cxp - lens.x, cyp - lens.y), k = (dist - R0) / (R1 - R0), bay = (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
+          const dist = Math.hypot(cxp - lens.x, cyp - lens.y), k = (dist - r0) / (r1 - r0), bay = (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
           const inside = k <= 0 || (k < 1 && bay > k);
           heat[i] = inside ? 1 : Math.max(0, heat[i] - dt * 1.7);
           show = inside || heat[i] > 0.3 + 0.65 * bay;
@@ -154,14 +102,14 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     // 2. The grains. In the grey hero they are all drawn, in ink. In the pink hero the loose dust is redrawn as dots
     //    joined by lines, and where the pyramids stand the lens shows how they are built instead.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H); a.fillStyle = "#232125";
-    const push = R0 * 0.55, reach = R1 * 0.95, k2 = 1 - Math.exp(-dt * 5);
+    const push = r0 * 0.55, reach = Math.max(1, r1 * 0.95), k2 = 1 - Math.exp(-dt * 5);
     // The pyramids are seen from slightly above, in perspective. With the lens in the middle they face straight
     // ahead, centred and symmetrical; moving the lens left or right turns them a little that way. Nothing else
     // moves them: not the lens going up or down, and never on their own.
     const yaw = ((lens.x - W / 2) / W) * 0.6, pitch = 0.3;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
     const proj = (x, y, z) => { const xr = x * ca + z * sa, zr = -x * sa + z * ca, dep = zr * cp - y * sp, sc = f / (f + dep); return [pyr.cx + xr * sc, pyr.base - (y * cp + zr * sp) * sc, dep]; };
-    let alpha = -1, held = 0, nn = 0; const near = R1 * 1.1, spread = phone ? 22 : 30; stamp++;
+    let alpha = -1, held = 0, nn = 0; const near = r1 * 1.1, spread = phone ? 22 : 30; stamp++;
     a.beginPath();
     for (const g of grains) {
       const bd = g.band, u = (g.u + t * g.speed) % 1;
@@ -261,13 +209,13 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     }
     b.fillStyle = "#fff"; sq(proj(...o3), 3);
   }
-  const start = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
-  document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else start(); });
+  // It only runs while the hero is on screen and the tab is in front.
+  const start = () => { if (!raf && seen && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };
+  const stop = () => { cancelAnimationFrame(raf); raf = 0; };
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else start(); });
+  if ("IntersectionObserver" in window) new IntersectionObserver((en) => { seen = en[en.length - 1].isIntersecting; if (seen) start(); else stop(); }).observe(panel);
   let rt = 0; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(build, 120); });
   build(); start();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px"));
-  window.__lens = { lens, get cells() { return cols * rows; }, get clipLen() { return clip.length; } };
+  panel.classList.add("live");
 })();
-</script>
-</body>
-</html>

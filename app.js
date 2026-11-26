@@ -709,7 +709,7 @@ if (spot && typeof spot.showModal === "function") {
         try {
           if (tag === "img" && el.complete && el.naturalWidth) fit(el, el.naturalWidth, el.naturalHeight, r, cs.objectFit);
           else if (tag === "video" && el.readyState >= 2) fit(el, el.videoWidth, el.videoHeight, r, cs.objectFit);
-          else if (tag === "canvas" && el.width && !el.matches("#stage, .hero-haze, .hero-pix")) x.drawImage(el, r.left, r.top, r.width, r.height);
+          else if (tag === "canvas" && el.width && !el.matches("#stage")) x.drawImage(el, r.left, r.top, r.width, r.height);
         } catch (e) { /* a picture that cannot be drawn is left out */ }
       }
       if (tag === "svg" || tag === "canvas" || tag === "img" || tag === "video") return;
