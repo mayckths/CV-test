@@ -12,7 +12,7 @@
    and a hot pink one. The pink one is only shown inside a lens that follows the cursor, and the lens has no hard
    edge: it breaks up into square pixels, some of them in the palette's colours. One system of grains drifts in slow
    bands, gathers into the two pyramids and parts around the lens. Inside the lens the pyramids are shown as their
-   blueprint: wireframes, anchors, guides, measurements, and the M as one bezier curve with its handles. */
+   blueprint, drawn in three dimensions: a floor grid, wireframes with hidden edges, heights, measurements and axes. */
 :root { --page:#f5ebe3; --gap:16px; --r:28px; --grey:#eceae6; --ink:#232125; --pink:#ff2e7e; --navy:#1a1466; --cyan:#2de2e6;
   --display:"Bricolage Grotesque", sans-serif; --text:"Geist", sans-serif; --mono:"Geist Mono", monospace; --serif:"Instrument Serif", serif; }
 * { box-sizing:border-box; margin:0; padding:0; }
@@ -24,7 +24,7 @@ html, body { height:100%; background:var(--page); font-family:var(--text); -webk
 .panel { position:absolute; inset:var(--gap); border-radius:var(--r); overflow:hidden; touch-action:pan-y; background:var(--grey); }
 .sc { position:absolute; inset:0; overflow:hidden; }
 .sc.grey { background:var(--grey); color:var(--ink); --two:var(--ink); --num:var(--ink); }
-.sc.pink { background:var(--pink); color:#fff; --two:var(--navy); --num:var(--navy); background-image:linear-gradient(rgba(255,255,255,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.13) 1px, transparent 1px); background-size:40px 40px; background-position:center; }
+.sc.pink { background:var(--pink); color:#fff; --two:var(--navy); --num:var(--navy); }
 canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .run { position:absolute; left:56px; right:56px; top:100px; display:flex; align-items:center; gap:18px; font:500 12px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; }
 .rule { flex:1; height:1px; background:currentColor; opacity:.32; position:relative; } .rule::after { content:""; position:absolute; left:62%; top:-9px; width:1px; height:19px; background:currentColor; } 
@@ -148,9 +148,11 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     //    where the pyramids stand, the lens shows how they are built instead.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H); a.fillStyle = "#232125";
     const push = R0 * 0.55, reach = R1 * 0.95, k2 = 1 - Math.exp(-dt * 5);
-    // The pyramids turn a little with the lens, so they read as solids.
-    const ang = ((lens.x - W / 2) / W) * 0.6, ca = Math.cos(ang), sa = Math.sin(ang), f = pyr.a * 9;
-    const proj = (x, y, z) => { const xr = x * ca + z * sa, zr = -x * sa + z * ca, sc = f / (f + zr); return [pyr.cx + xr * sc, pyr.base - y * sc + zr * 0.16, zr]; };
+    // The pyramids are seen in three dimensions: turned a little and from slightly above, in perspective. The view
+    // shifts with the lens (left and right turns them, up and down tips them), never on its own.
+    const yaw = 0.42 + ((lens.x - W / 2) / W) * 0.7, pitch = 0.36 + ((lens.y - H / 2) / H) * 0.22;
+    const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
+    const proj = (x, y, z) => { const xr = x * ca + z * sa, zr = -x * sa + z * ca, dep = zr * cp - y * sp, sc = f / (f + dep); return [pyr.cx + xr * sc, pyr.base - (y * cp + zr * sp) * sc, dep]; };
     let alpha = -1, held = 0;
     a.beginPath();
     for (const g of grains) {
@@ -181,56 +183,56 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     }
     a.fill(); a.globalAlpha = 1;
 
-    // 3. The blueprint of the M, drawn in the pink hero: the two pyramids as wireframes with their anchors, the
-    //    guides they sit on, their measurements, and the M as one bezier curve with its handles.
+    // 3. The blueprint of the M, drawn in the pink hero as a drawing in space: a floor grid in perspective, the two
+    //    pyramids as wireframes (hidden edges dashed, faces lightly tinted), their heights and base diagonals, the
+    //    three measurements laid along the three axes, and the axes themselves.
     b.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const A = pyr.a, Hh = pyr.h, line = (p0, p1) => { b.moveTo(p0[0], p0[1]); b.lineTo(p1[0], p1[1]); };
+    const A = pyr.a, Hh = pyr.h, gap = A * 0.42, fs = phone ? 10 : 11;
+    const seg = (p0, p1) => { b.moveTo(p0[0], p0[1]); b.lineTo(p1[0], p1[1]); }, L = (x0, y0, z0, x1, y1, z1) => seg(proj(x0, y0, z0), proj(x1, y1, z1));
     const sq = (p0, r = 3.5) => { b.fillRect(p0[0] - r, p0[1] - r, r * 2, r * 2); };
-    b.lineWidth = 1; b.strokeStyle = "rgba(255,255,255,.55)"; b.setLineDash([3, 5]); b.beginPath();
-    const gl = pyr.cx - A * 3.1, gr = pyr.cx + A * 3.1, apexY = pyr.base - Hh;
-    line([gl, pyr.base], [gr, pyr.base]); line([gl, apexY], [gr, apexY]);
-    const apex = [-1, 1].map((sd) => proj(sd * A, Hh, 0));
-    apex.forEach((p0) => line([p0[0], apexY - 26], [p0[0], pyr.base + 26]));
+    b.setLineDash([]); b.lineWidth = 1; b.strokeStyle = "rgba(255,255,255,.2)"; b.beginPath();
+    const gx = A * 3.5, gz = A * 2.5, st = A / 2;
+    for (let x0 = -gx; x0 <= gx + 0.01; x0 += st) L(x0, 0, -gz, x0, 0, gz);
+    for (let z0 = -gz; z0 <= gz + 0.01; z0 += st) L(-gx, 0, z0, gx, 0, z0);
     b.stroke();
-    const feet = [];
     for (const sd of [-1, 1]) {
-      const base = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map((c) => proj(sd * A + c[0] * A, 0, c[1] * A)), top = proj(sd * A, Hh, 0);
-      feet.push(...base);
-      const edges = base.map((p0, i) => [p0, base[(i + 1) % 4]]).concat(base.map((p0) => [p0, top]));
-      for (const back of [true, false]) {   // far edges dashed and faint, near edges solid
-        b.beginPath(); b.setLineDash(back ? [4, 4] : []); b.strokeStyle = back ? "rgba(255,255,255,.5)" : "#fff"; b.lineWidth = back ? 1 : 1.6;
-        edges.forEach((e) => { if (((e[0][2] + e[1][2]) / 2 > A * 0.2) === back) line(e[0], e[1]); });
+      const cs = [[-1, -1], [1, -1], [1, 1], [-1, 1]], base = cs.map((c) => proj(sd * A + c[0] * A, 0, c[1] * A)), top = proj(sd * A, Hh, 0), foot = proj(sd * A, 0, 0);
+      b.fillStyle = "rgba(255,255,255,.07)";
+      base.forEach((p0, i) => { const p1 = base[(i + 1) % 4]; b.beginPath(); b.moveTo(p0[0], p0[1]); b.lineTo(p1[0], p1[1]); b.lineTo(top[0], top[1]); b.closePath(); b.fill(); });
+      // construction lines: the height and the base's diagonals
+      b.beginPath(); b.setLineDash([2, 4]); b.strokeStyle = "rgba(255,255,255,.6)"; b.lineWidth = 1; seg(top, foot); seg(base[0], base[2]); seg(base[1], base[3]); b.stroke();
+      const far = Math.max(...base.map((p0) => p0[2])), edges = base.map((p0, i) => [p0, base[(i + 1) % 4], p0[2] === far || base[(i + 1) % 4][2] === far]).concat(base.map((p0) => [p0, top, p0[2] === far]));
+      for (const hidden of [true, false]) {   // edges that meet the far corner are behind the solid: dashed and faint
+        b.beginPath(); b.setLineDash(hidden ? [4, 4] : []); b.strokeStyle = hidden ? "rgba(255,255,255,.5)" : "#fff"; b.lineWidth = hidden ? 1 : 1.7;
+        edges.forEach((e) => { if (e[2] === hidden) seg(e[0], e[1]); });
         b.stroke();
       }
-      b.fillStyle = "#fff"; base.forEach((p0) => sq(p0)); sq(top, 4.5);
+      b.setLineDash([]); b.fillStyle = "#fff"; base.forEach((p0) => sq(p0)); sq(top, 4.5); sq(foot, 2.5);
+      // a right-angle mark where the height meets the floor
+      const m = A * 0.16; b.beginPath(); b.strokeStyle = "rgba(255,255,255,.8)"; b.lineWidth = 1; L(sd * A + m, 0, 0, sd * A + m, m, 0); L(sd * A + m, m, 0, sd * A, m, 0); b.stroke();
     }
-    b.setLineDash([]);
-    // The M as a single curve through the two peaks, with the handles that shape it.
-    const left = feet.reduce((m0, p0) => (p0[0] < m0[0] ? p0 : m0)), right = feet.reduce((m0, p0) => (p0[0] > m0[0] ? p0 : m0));
-    const P0 = [left[0], pyr.base], P4 = [right[0], pyr.base], V = [(apex[0][0] + apex[1][0]) / 2, pyr.base - Hh * 0.08], hx = A * 0.62, hv = A * 0.42;
-    b.strokeStyle = "#1a1466"; b.lineWidth = 2; b.beginPath();
-    b.moveTo(P0[0], P0[1]);
-    b.bezierCurveTo(P0[0] + A * 0.1, P0[1] - Hh * 0.62, apex[0][0] - hx, apex[0][1], apex[0][0], apex[0][1]);
-    b.bezierCurveTo(apex[0][0] + hx, apex[0][1], V[0] - hv, V[1], V[0], V[1]);
-    b.bezierCurveTo(V[0] + hv, V[1], apex[1][0] - hx, apex[1][1], apex[1][0], apex[1][1]);
-    b.bezierCurveTo(apex[1][0] + hx, apex[1][1], P4[0] - A * 0.1, P4[1] - Hh * 0.62, P4[0], P4[1]);
+    // Measurements, each along its own axis, with end ticks
+    b.strokeStyle = "#fff"; b.fillStyle = "#fff"; b.lineWidth = 1; b.setLineDash([]); b.font = `500 ${fs}px "Geist Mono", monospace`; b.textBaseline = "middle"; b.textAlign = "center";
+    const tk = A * 0.09, zf = -A - gap, xr0 = 2 * A + gap, xl = -2 * A - gap;
+    b.beginPath();
+    L(-2 * A, 0, zf, 2 * A, 0, zf); L(-2 * A, 0, zf - tk, -2 * A, 0, zf + tk); L(2 * A, 0, zf - tk, 2 * A, 0, zf + tk);   // width
+    L(xr0, 0, -A, xr0, 0, A); L(xr0 - tk, 0, -A, xr0 + tk, 0, -A); L(xr0 - tk, 0, A, xr0 + tk, 0, A);                   // depth
+    L(xl, 0, -A, xl, Hh, -A); L(xl - tk, 0, -A, xl + tk, 0, -A); L(xl - tk, Hh, -A, xl + tk, Hh, -A);                   // height
     b.stroke();
-    b.lineWidth = 1; b.beginPath();
-    const handles = [[apex[0], hx], [V, hv], [apex[1], hx]];
-    handles.forEach(([p0, w]) => line([p0[0] - w, p0[1]], [p0[0] + w, p0[1]]));
-    line(P0, [P0[0] + A * 0.1, P0[1] - Hh * 0.62]); line(P4, [P4[0] - A * 0.1, P4[1] - Hh * 0.62]);
-    b.stroke();
-    const knob = (x0, y0) => { b.beginPath(); b.arc(x0, y0, 4.5, 0, 6.283); b.fillStyle = "#fff"; b.fill(); b.stroke(); };
-    handles.forEach(([p0, w]) => { knob(p0[0] - w, p0[1]); knob(p0[0] + w, p0[1]); });
-    knob(P0[0] + A * 0.1, P0[1] - Hh * 0.62); knob(P4[0] - A * 0.1, P4[1] - Hh * 0.62);
-    b.fillStyle = "#1a1466"; sq(V, 4); sq(P0, 4); sq(P4, 4);
-    // Measurements
-    b.fillStyle = "#fff"; b.strokeStyle = "#fff"; b.font = `500 ${phone ? 10 : 11}px "Geist Mono", monospace`; b.textBaseline = "middle";
-    const dimY = pyr.base + (phone ? 24 : 34); b.beginPath(); line([P0[0], dimY], [P4[0], dimY]); line([P0[0], dimY - 5], [P0[0], dimY + 5]); line([P4[0], dimY - 5], [P4[0], dimY + 5]);
-    const dimX = P0[0] - (phone ? 16 : 30); line([dimX, apexY], [dimX, pyr.base]); line([dimX - 5, apexY], [dimX + 5, apexY]); line([dimX - 5, pyr.base], [dimX + 5, pyr.base]); b.stroke();
-    b.textAlign = "center"; b.fillText(`${Math.round(P4[0] - P0[0])} PX`, (P0[0] + P4[0]) / 2, dimY + 13);
-    b.textAlign = "right"; b.fillText(`${Math.round(Hh)}`, dimX - 9, (apexY + pyr.base) / 2);
-    b.textAlign = "left"; b.fillText("BASELINE", gr + 8, pyr.base); b.fillText("APEX", gr + 8, apexY);
+    b.setLineDash([2, 4]); b.strokeStyle = "rgba(255,255,255,.55)"; b.beginPath();
+    L(-2 * A, 0, -A, -2 * A, 0, zf); L(2 * A, 0, -A, 2 * A, 0, zf); L(2 * A, 0, -A, xr0, 0, -A); L(2 * A, 0, A, xr0, 0, A); L(-2 * A, 0, -A, xl, 0, -A); L(-A, Hh, 0, xl, Hh, -A);
+    b.stroke(); b.setLineDash([]);
+    const tag = (p0, txt, dx = 0, dy = 0) => { const w = b.measureText(txt).width + 10; b.fillStyle = "#ff2e7e"; b.fillRect(p0[0] + dx - w / 2, p0[1] + dy - fs * 0.8, w, fs * 1.6); b.fillStyle = "#fff"; b.fillText(txt, p0[0] + dx, p0[1] + dy + 0.5); };
+    tag(proj(0, 0, zf), `W ${Math.round(4 * A)}`); tag(proj(xr0, 0, 0), `D ${Math.round(2 * A)}`); tag(proj(xl, Hh / 2, -A), `H ${Math.round(Hh)}`);
+    // The axes, at the near left corner of the floor
+    const o3 = [-gx, 0, -gz], al = A * 0.75, axes = [["X", al, 0, 0, "#2de2e6"], ["Y", 0, al, 0, "#fff"], ["Z", 0, 0, al, "#1a1466"]];
+    for (const [nm, ax, ay, az, col] of axes) {
+      const p0 = proj(...o3), p1 = proj(o3[0] + ax, o3[1] + ay, o3[2] + az);
+      b.strokeStyle = col; b.fillStyle = col; b.lineWidth = 2; b.beginPath(); seg(p0, p1); b.stroke();
+      b.beginPath(); b.arc(p1[0], p1[1], 3, 0, 6.283); b.fill();
+      b.fillText(nm, p1[0] + (p1[0] - p0[0]) * 0.22, p1[1] + (p1[1] - p0[1]) * 0.22);
+    }
+    b.fillStyle = "#fff"; sq(proj(...o3), 3);
   }
   const start = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
   document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else start(); });
