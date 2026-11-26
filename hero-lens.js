@@ -2,6 +2,7 @@
 // them, as in the footer. Some motes are out of focus, which gives the cloud depth. While the pointer moves, the motes
 // near it take the glare's colours (mostly hot pink), each with a cyan and a yellow ghost pulled apart along the way
 // the pointer is moving, and keep them for a moment after it has gone. The glare adds no particles of its own.
+// A click turns the pyramids into shaded solids for a few seconds, so the M can be read.
 // Nothing moves or turns on its own except the slow drift.
 (() => {
   const panel = document.querySelector(".hero.lens");
@@ -62,7 +63,7 @@
         // than the rest. They are drawn larger, soft-edged and fainter.
         blur: free && Math.random() < 0.4 ? 0.3 + 0.8 * Math.random() : 0 });
     }
-    grains.sort((p, q) => p.tint - q.tint || p.alpha - q.alpha);   // drawn in runs of one colour and strength
+    grains.sort((p, q) => p.free - q.free || p.tint - q.tint || p.alpha - q.alpha);   // drawn in runs of one kind, colour and strength
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
   }
 
@@ -73,6 +74,9 @@
     lens.tx = x; lens.ty = y; lens.on = true;
   };
   panel.addEventListener("pointermove", point); panel.addEventListener("pointerdown", point);
+  // A click (or a tap) turns the pyramids solid for a few seconds, so the M can be read; a second click lets go.
+  let solid = 0, solidUntil = 0;
+  panel.addEventListener("click", (e) => { if (e.target.closest("button, a")) return; const now = performance.now(); solidUntil = now < solidUntil ? 0 : now + 2800; });
 
   let last = performance.now(), t = 0, raf = 0, seen = true;
   function frame(now) {
@@ -99,12 +103,37 @@
     // 2. The particles. Where the glare passes they take its colours, each with the same two ghosts, and keep
     //    them for a moment after it has gone, so the pyramids and the cloud mix with what the pointer leaves behind.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H);
+    solid += ((now < solidUntil ? 1 : 0) - solid) * (reduced ? 1 : 1 - Math.exp(-dt * 5)); if (solid < 0.002) solid = 0;
     // The pyramids face straight ahead with the pointer in the middle and turn their front face towards it as it
     // goes to either side (a negative turn brings the near face round to the right).
     const yaw = -((lens.x - W / 2) / W) * 0.6, pitch = 0.05;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
     const midY = pyr.base - pyr.h / 2, ft = t * 0.16, fieldX = Math.min(pyr.a * 3.5, W * 0.47), fieldY = Math.min(pyr.h, H * 0.44), flow = pyr.a * 0.22;
     const reach = Math.max(1, reachG * 0.8), k2 = 1 - Math.exp(-dt * 4), cool = dt * 1.1;
+    // Solid: the two pyramids as shaded solids, drawn under the particles. Each visible face takes a blue between
+    // the deepest and the brightest of the motes, by how much it faces a light from the upper left.
+    if (solid) {
+      const P3 = (x0, y0, z0) => { const xr = x0 * ca + z0 * sa, zr = -x0 * sa + z0 * ca, sc = f / (f + zr * cp - y0 * sp); return [pyr.cx + xr * sc, pyr.base - (y0 * cp + zr * sp) * sc, zr]; };
+      const A = pyr.a, Hh = pyr.h, cs = [[-1, -1], [1, -1], [1, 1], [-1, 1]], faces = [];
+      for (const sd of [-1, 1]) {
+        const top = P3(sd * A, Hh, 0), base = cs.map((c) => P3(sd * A + c[0] * A, 0, c[1] * A));
+        cs.forEach((c, i) => {
+          const d = cs[(i + 1) % 4], nx = (c[0] + d[0]) / 2, nz = (c[1] + d[1]) / 2, tilt = A / Math.hypot(A, Hh), lift = Hh / Math.hypot(A, Hh);
+          const nxr = (nx * ca + nz * sa) * lift, nzr = (-nx * sa + nz * ca) * lift;        // the face's normal after the turn
+          if (nzr > 0.02) return;                                                          // faces away from us
+          const lit = Math.max(0, nxr * -0.42 + tilt * 0.5 + nzr * -0.76);
+          faces.push([(base[i][2] + base[(i + 1) % 4][2]) / 2, base[i], base[(i + 1) % 4], top, Math.min(1, 0.12 + lit * 1.05)]);
+        });
+      }
+      faces.sort((p, q) => q[0] - p[0]);
+      a.globalAlpha = solid; a.lineJoin = "round"; a.lineWidth = 1;
+      for (const [, p0, p1, p2, k] of faces) {
+        a.fillStyle = a.strokeStyle = `rgb(${Math.round(34 + 56 * k)},${Math.round(18 + 42 * k)},${Math.round(109 + 133 * k)})`;   // #22126d to #5a3cf2
+        a.beginPath(); a.moveTo(p0[0], p0[1]); a.lineTo(p1[0], p1[1]); a.lineTo(p2[0], p2[1]); a.closePath(); a.fill(); a.stroke();
+      }
+      a.globalAlpha = 1;
+    }
+    const thin = 1 - 0.82 * solid;   // while solid, the pyramids' own motes settle exactly into place and fade back
     for (const l of hot) l.length = 0; soft.length = 0; behind.length = 0;
     let alpha = -1, tint = -1;
     a.beginPath();
@@ -115,25 +144,26 @@
         y = midY + g.hy * fieldY + (Math.cos(ft * 0.9 + g.seed * 31) + 0.6 * Math.cos(ft * 1.6 + g.hx * 5 + g.seed * 23)) * flow;
       } else {
         const xr = g.slot.x * ca + g.slot.z * sa, zr = -g.slot.x * sa + g.slot.z * ca, sc = f / (f + zr * cp - g.slot.y * sp);
-        x = g.lx + (pyr.cx + xr * sc - g.lx) * g.m; y = g.ly + (pyr.base - (g.slot.y * cp + zr * sp) * sc - g.ly) * g.m;
+        const m = g.m + (1 - g.m) * solid;
+        x = g.lx + (pyr.cx + xr * sc - g.lx) * m; y = g.ly + (pyr.base - (g.slot.y * cp + zr * sp) * sc - g.ly) * m;
         // How far behind the middle of the pyramids this mote is, after the turn: 0 at the front and middle, 1 at the back.
         const d = Math.min(1, Math.max(0, (zr / pyr.a - 0.08) / 0.85)); back = d * d * (3 - 2 * d); near = sc;
       }
-      const amp = pyr.a * (0.02 + 0.2 * (g.free ? 1 : 1 - g.m)) * (0.5 + g.seed);   // each on its own small, slow loop
+      const amp = pyr.a * (g.free ? 0.22 : (0.02 + 0.2 * (1 - g.m)) * (1 - solid)) * (0.5 + g.seed);   // each on its own small, slow loop
       x += Math.sin(t * 0.55 + g.seed * 41) * amp; y += Math.cos(t * 0.47 + g.seed * 27) * amp;
       // The pointer draws them in a little as it passes, the molecules more than the pyramids, and they ease back.
       const dx = lens.x - x, dy = lens.y - y, dist = Math.hypot(dx, dy) + 0.001, k = live ? dist / reachG : 9;
       const pull = live ? (g.free ? 18 : 6) * Math.exp(-(dist / reach) * (dist / reach)) : 0;
       g.ox += (dx / dist * pull - g.ox) * k2; g.oy += (dy / dist * pull - g.oy) * k2;
       g.heat = Math.max(g.heat - cool, k < 1 ? Math.min(1, (1 - k) * 1.8) : 0);
-      const X = x + g.ox, Y = y + g.oy, r = g.size * near;   // nearer motes are a touch larger
+      const X = x + g.ox, Y = y + g.oy, r = g.size * near, al = g.free ? g.alpha : g.alpha * thin;   // nearer motes are a touch larger
       if (g.blur) { soft.push(X, Y, r * (1.7 + 1.5 * g.blur), g.alpha * (0.72 - 0.2 * g.blur), g.tint, g.col, g.heat); continue; }
       // The back of the pyramids is a little out of focus and fainter, more so the further back, which tells the
       // front from the back as they turn.
-      if (back > 0.1) { behind.push(X, Y, r * (1.3 + 1.3 * back), g.alpha * (1 - 0.42 * back), g.tint, g.col, g.heat); continue; }
+      if (back > 0.1) { behind.push(X, Y, r * (1.3 + 1.3 * back), al * (1 - 0.42 * back), g.tint, g.col, g.heat); continue; }
       if (g.heat > 0.03) hot[g.col].push(X, Y, r * (1 + 0.6 * g.heat) * Math.min(1, g.heat * 1.6));
       if (g.heat > 0.6) continue;   // fully coloured: the blue mote under it is not drawn
-      if (g.alpha !== alpha || g.tint !== tint) { a.fill(); a.beginPath(); alpha = g.alpha; tint = g.tint; a.globalAlpha = alpha; a.fillStyle = BLUES[tint]; }
+      if (al !== alpha || g.tint !== tint) { a.fill(); a.beginPath(); alpha = al; tint = g.tint; a.globalAlpha = alpha; a.fillStyle = BLUES[tint]; }
       if (r < 0.9) a.rect(X - r, Y - r, r * 2, r * 2); else { a.moveTo(X + r, Y); a.arc(X, Y, r, 0, 6.283); }
     }
     a.fill(); a.globalAlpha = 1;
