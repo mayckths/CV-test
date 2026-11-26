@@ -1,8 +1,8 @@
 // The hero. It exists twice, one on top of the other: a grey one and a hot pink one. The pink one is only shown
 // inside a lens that follows the cursor (or a finger), and the lens has no hard edge: it breaks up into square pixels,
 // some of them in the palette's colours. One system of grains drifts in slow bands, gathers into the two pyramids and
-// parts around the lens. Inside the lens the dust is shown as dots joined by lines and the pyramids as their
-// blueprint, drawn in three dimensions. Nothing here moves the lens or turns the pyramids on its own.
+// parts around the lens. Inside the lens the grains are the same ones, in white on the pink. Nothing here moves the
+// lens or turns the pyramids on its own.
 (() => {
   const panel = document.querySelector(".hero.lens");
   if (!panel) return;
@@ -49,9 +49,8 @@
     };
     const count = phone ? [1100, 1500, 1200] : [2100, 2900, 2400];   // core, passing through, never settling
     grains = [];
-    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, node: Math.random() < 0.3, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
+    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
     grains.sort((p, q) => p.alpha - q.alpha);
-    hold = new Float32Array(grains.length * 4); nodes = new Float32Array(grains.length * 2);
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
   }
 
@@ -60,9 +59,6 @@
   panel.addEventListener("pointermove", point); panel.addEventListener("pointerdown", point);
 
   let last = performance.now(), t = 0, clip = "", raf = 0, grow = reduced ? 1 : 0.02, seen = true;
-  let hold = new Float32Array(0);   // grains that are on a pyramid this frame: x, y, radius, alpha
-  let nodes = new Float32Array(0);  // loose grains under the lens this frame: x, y
-  const taken = new Int32Array(512 * 512); let stamp = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!reduced) t += dt;
@@ -99,8 +95,8 @@
     }
     if (d !== clip) { clip = d; pink.style.clipPath = d ? `path("${d}")` : "inset(100%)"; pink.style.webkitClipPath = pink.style.clipPath; }
 
-    // 2. The grains. In the grey hero they are all drawn, in ink. In the pink hero the loose dust is redrawn as dots
-    //    joined by lines, and where the pyramids stand the lens shows how they are built instead.
+    // 2. The grains, pyramids and dust alike, drawn once in ink for the grey hero and copied in white for the pink
+    //    one. So the lens changes their colour and nothing else: same grains, same places.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H); a.fillStyle = "#232125";
     const push = r0 * 0.55, reach = Math.max(1, r1 * 0.95), k2 = 1 - Math.exp(-dt * 5);
     // The pyramids are seen from slightly above, in perspective. With the lens in the middle they face straight
@@ -108,106 +104,27 @@
     // moves them: not the lens going up or down, and never on their own.
     const yaw = ((lens.x - W / 2) / W) * 0.6, pitch = 0.3;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
-    const proj = (x, y, z) => { const xr = x * ca + z * sa, zr = -x * sa + z * ca, dep = zr * cp - y * sp, sc = f / (f + dep); return [pyr.cx + xr * sc, pyr.base - (y * cp + zr * sp) * sc, dep]; };
-    let alpha = -1, held = 0, nn = 0; const near = r1 * 1.1, spread = phone ? 22 : 30; stamp++;
+    let alpha = -1;
     a.beginPath();
     for (const g of grains) {
       const bd = g.band, u = (g.u + t * g.speed) % 1;
       let x = u * (W + 40) - 20, y = H * (bd[0] + bd[1] * Math.sin(bd[2] * 6.283 * u + bd[3] + t * 0.12) + 0.02 * Math.sin(5.1 * 6.283 * u + bd[3] * 2) + g.off * bd[4] * 0.95), m = 0;
       if (g.slot) {
-        const q0 = proj(g.slot.x, g.slot.y, g.slot.z), sx = q0[0] + Math.sin(t * 0.55 + g.seed) * 1.6, sy = q0[1] + Math.cos(t * 0.47 + g.seed) * 1.6;
+        const xr = g.slot.x * ca + g.slot.z * sa, zr = -g.slot.x * sa + g.slot.z * ca, sc = f / (f + zr * cp - g.slot.y * sp);
+        const sx = pyr.cx + xr * sc + Math.sin(t * 0.55 + g.seed) * 1.6, sy = pyr.base - (g.slot.y * cp + zr * sp) * sc + Math.cos(t * 0.47 + g.seed) * 1.6;
         if (g.kind === 0) m = 1;
         else { const q = Math.min(1, Math.max(0, (pyr.win - Math.abs(x - sx)) / (pyr.win * 0.3))); m = q * q * (3 - 2 * q); }   // settles while its band passes the pyramids
         x += (sx - x) * m; y += (sy - y) * m;
       }
       const dx = x - lens.x, dy = y - lens.y, dist = Math.hypot(dx, dy) + 0.001, fo = push * Math.exp(-(dist / reach) * (dist / reach)) * (1 - 0.88 * m);
       g.ox += (dx / dist * fo - g.ox) * k2; g.oy += (dy / dist * fo - g.oy) * k2;
-      const X = x + g.ox, Y = y + g.oy, r = g.size;
-      if (m > 0.5) { hold[held++] = X; hold[held++] = Y; hold[held++] = r; hold[held++] = g.alpha; continue; }   // on a pyramid: grey hero only
-      if (g.node && Math.abs(X - lens.x) < near && Math.abs(Y - lens.y) < near) {
-        // one dot per small square of the panel at most, so the dots stay evenly spread where the dust bunches up
-        const key = ((Y / spread) | 0) * 512 + ((X / spread) | 0);
-        if (taken[key] !== stamp) { taken[key] = stamp; nodes[nn++] = X; nodes[nn++] = Y; }
-      }
       if (g.alpha !== alpha) { a.fill(); a.beginPath(); alpha = g.alpha; a.globalAlpha = alpha; }
-      if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
-    }
-    a.fill();
-    // In focus the dust is plainer: some of the grains under the lens become even dots, and dots that are close
-    // to each other are joined by a line, fainter the further apart they are.
-    b.setTransform(dpr, 0, 0, dpr, 0, 0); b.clearRect(0, 0, W, H); b.setLineDash([]); b.lineWidth = 1;
-    const reachN = phone ? 58 : 78, r2 = reachN * reachN, tiers = [[], [], []], links = new Uint8Array(nn);
-    for (let i = 0; i < nn; i += 2) for (let j = i + 2; j < nn; j += 2) {
-      if (links[i] > 2) break; if (links[j] > 2) continue;   // three lines to a dot at most
-      const dx = nodes[i] - nodes[j], dy = nodes[i + 1] - nodes[j + 1], d2 = dx * dx + dy * dy;
-      if (d2 < r2) { tiers[d2 < r2 * 0.3 ? 0 : d2 < r2 * 0.62 ? 1 : 2].push(i, j); links[i]++; links[j]++; }
-    }
-    tiers.forEach((tier, k) => {
-      b.strokeStyle = `rgba(255,255,255,${[0.8, 0.55, 0.3][k]})`; b.beginPath();
-      for (let q = 0; q < tier.length; q += 2) { b.moveTo(nodes[tier[q]], nodes[tier[q] + 1]); b.lineTo(nodes[tier[q + 1]], nodes[tier[q + 1] + 1]); }
-      b.stroke();
-    });
-    b.fillStyle = "#fff"; b.beginPath();
-    for (let i = 0; i < nn; i += 2) { b.moveTo(nodes[i] + 2.6, nodes[i + 1]); b.arc(nodes[i], nodes[i + 1], 2.6, 0, 6.283); }
-    b.fill();
-    alpha = -1; a.beginPath();
-    for (let i = 0; i < held; i += 4) {
-      if (hold[i + 3] !== alpha) { a.fill(); a.beginPath(); alpha = hold[i + 3]; a.globalAlpha = alpha; }
-      const X = hold[i], Y = hold[i + 1], r = hold[i + 2];
+      const X = x + g.ox, Y = y + g.oy, r = g.size;
       if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
     }
     a.fill(); a.globalAlpha = 1;
-
-    // 3. The blueprint of the M, drawn in the pink hero as a drawing in space: a floor grid in perspective, the two
-    //    pyramids as wireframes (hidden edges dashed, faces lightly tinted), their heights and base diagonals, the
-    //    three measurements laid along the three axes, and the axes themselves.
-    b.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const A = pyr.a, Hh = pyr.h, gap = A * 0.42, fs = phone ? 10 : 11;
-    const seg = (p0, p1) => { b.moveTo(p0[0], p0[1]); b.lineTo(p1[0], p1[1]); }, L = (x0, y0, z0, x1, y1, z1) => seg(proj(x0, y0, z0), proj(x1, y1, z1));
-    const sq = (p0, r = 3.5) => { b.fillRect(p0[0] - r, p0[1] - r, r * 2, r * 2); };
-    b.setLineDash([]); b.lineWidth = 1; b.strokeStyle = "rgba(255,255,255,.2)"; b.beginPath();
-    const gx = A * 3.5, gz = A * 2.5, st = A / 2;
-    for (let x0 = -gx; x0 <= gx + 0.01; x0 += st) L(x0, 0, -gz, x0, 0, gz);
-    for (let z0 = -gz; z0 <= gz + 0.01; z0 += st) L(-gx, 0, z0, gx, 0, z0);
-    b.stroke();
-    for (const sd of [-1, 1]) {
-      const cs = [[-1, -1], [1, -1], [1, 1], [-1, 1]], base = cs.map((c) => proj(sd * A + c[0] * A, 0, c[1] * A)), top = proj(sd * A, Hh, 0), foot = proj(sd * A, 0, 0);
-      b.fillStyle = "rgba(255,255,255,.07)";
-      base.forEach((p0, i) => { const p1 = base[(i + 1) % 4]; b.beginPath(); b.moveTo(p0[0], p0[1]); b.lineTo(p1[0], p1[1]); b.lineTo(top[0], top[1]); b.closePath(); b.fill(); });
-      // construction lines: the height and the base's diagonals
-      b.beginPath(); b.setLineDash([2, 4]); b.strokeStyle = "rgba(255,255,255,.6)"; b.lineWidth = 1; seg(top, foot); seg(base[0], base[2]); seg(base[1], base[3]); b.stroke();
-      const far = Math.max(...base.map((p0) => p0[2])), edges = base.map((p0, i) => [p0, base[(i + 1) % 4], p0[2] === far || base[(i + 1) % 4][2] === far]).concat(base.map((p0) => [p0, top, p0[2] === far]));
-      for (const hidden of [true, false]) {   // edges that meet the far corner are behind the solid: dashed and faint
-        b.beginPath(); b.setLineDash(hidden ? [4, 4] : []); b.strokeStyle = hidden ? "rgba(255,255,255,.5)" : "#fff"; b.lineWidth = hidden ? 1 : 1.7;
-        edges.forEach((e) => { if (e[2] === hidden) seg(e[0], e[1]); });
-        b.stroke();
-      }
-      b.setLineDash([]); b.fillStyle = "#fff"; base.forEach((p0) => sq(p0)); sq(top, 4.5); sq(foot, 2.5);
-      // a right-angle mark where the height meets the floor
-      const m = A * 0.16; b.beginPath(); b.strokeStyle = "rgba(255,255,255,.8)"; b.lineWidth = 1; L(sd * A + m, 0, 0, sd * A + m, m, 0); L(sd * A + m, m, 0, sd * A, m, 0); b.stroke();
-    }
-    // Measurements, each along its own axis, with end ticks
-    b.strokeStyle = "#fff"; b.fillStyle = "#fff"; b.lineWidth = 1; b.setLineDash([]); b.font = `500 ${fs}px "Geist Mono", monospace`; b.textBaseline = "middle"; b.textAlign = "center";
-    const tk = A * 0.09, zf = -A - gap, xr0 = 2 * A + gap, xl = -2 * A - gap;
-    b.beginPath();
-    L(-2 * A, 0, zf, 2 * A, 0, zf); L(-2 * A, 0, zf - tk, -2 * A, 0, zf + tk); L(2 * A, 0, zf - tk, 2 * A, 0, zf + tk);   // width
-    L(xr0, 0, -A, xr0, 0, A); L(xr0 - tk, 0, -A, xr0 + tk, 0, -A); L(xr0 - tk, 0, A, xr0 + tk, 0, A);                   // depth
-    L(xl, 0, -A, xl, Hh, -A); L(xl - tk, 0, -A, xl + tk, 0, -A); L(xl - tk, Hh, -A, xl + tk, Hh, -A);                   // height
-    b.stroke();
-    b.setLineDash([2, 4]); b.strokeStyle = "rgba(255,255,255,.55)"; b.beginPath();
-    L(-2 * A, 0, -A, -2 * A, 0, zf); L(2 * A, 0, -A, 2 * A, 0, zf); L(2 * A, 0, -A, xr0, 0, -A); L(2 * A, 0, A, xr0, 0, A); L(-2 * A, 0, -A, xl, 0, -A); L(-A, Hh, 0, xl, Hh, -A);
-    b.stroke(); b.setLineDash([]);
-    const tag = (p0, txt, dx = 0, dy = 0) => { const w = b.measureText(txt).width + 10; b.fillStyle = "#ff2e7e"; b.fillRect(p0[0] + dx - w / 2, p0[1] + dy - fs * 0.8, w, fs * 1.6); b.fillStyle = "#fff"; b.fillText(txt, p0[0] + dx, p0[1] + dy + 0.5); };
-    tag(proj(0, 0, zf), `W ${Math.round(4 * A)}`); tag(proj(xr0, 0, 0), `D ${Math.round(2 * A)}`); tag(proj(xl, Hh / 2, -A), `H ${Math.round(Hh)}`);
-    // The axes, at the near left corner of the floor
-    const o3 = [-gx, 0, -gz], al = A * 0.75, axes = [["X", al, 0, 0, "#2de2e6"], ["Y", 0, al, 0, "#fff"], ["Z", 0, 0, al, "#1a1466"]];
-    for (const [nm, ax, ay, az, col] of axes) {
-      const p0 = proj(...o3), p1 = proj(o3[0] + ax, o3[1] + ay, o3[2] + az);
-      b.strokeStyle = col; b.fillStyle = col; b.lineWidth = 2; b.beginPath(); seg(p0, p1); b.stroke();
-      b.beginPath(); b.arc(p1[0], p1[1], 3, 0, 6.283); b.fill();
-      b.fillText(nm, p1[0] + (p1[0] - p0[0]) * 0.22, p1[1] + (p1[1] - p0[1]) * 0.22);
-    }
-    b.fillStyle = "#fff"; sq(proj(...o3), 3);
+    b.setTransform(1, 0, 0, 1, 0, 0); b.globalCompositeOperation = "copy"; b.drawImage(fxA, 0, 0);
+    b.globalCompositeOperation = "source-in"; b.fillStyle = "#fff"; b.fillRect(0, 0, fxB.width, fxB.height);
   }
   // It only runs while the hero is on screen and the tab is in front.
   const start = () => { if (!raf && seen && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };
