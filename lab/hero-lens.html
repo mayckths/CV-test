@@ -68,7 +68,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
 
   let W = 0, H = 0, dpr = 1, cell = 26, cols = 0, rows = 0, heat = new Float32Array(0), phone = false;
   let R0 = 200, R1 = 320, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0, win: 1 };
-  const lens = { x: 0, y: 0, tx: 0, ty: 0, seen: 0, on: false };
+  const lens = { x: 0, y: 0, tx: 0, ty: 0, seen: 0, on: false, travel: 0 };
 
   function build() {
     const r = panel.getBoundingClientRect();
@@ -115,12 +115,13 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!reduced) t += dt;
     const ease = 1 - Math.exp(-dt * 9);
-    lens.x += (lens.tx - lens.x) * ease; lens.y += (lens.ty - lens.y) * ease;
+    const mx = (lens.tx - lens.x) * ease, my = (lens.ty - lens.y) * ease;
+    lens.x += mx; lens.y += my; lens.travel += Math.hypot(mx, my);
 
     // 1. The lens as cells. Inside it every cell shows; across its edge fewer and fewer do, in the order of a Bayer
     //    matrix; and a cell the lens has just left stays for a moment, so the lens trails a few pixels behind it.
     px.setTransform(dpr, 0, 0, dpr, 0, 0); px.clearRect(0, 0, W, H);
-    const tick = Math.floor(t * 3); let d = "";
+    const tick = Math.floor(lens.travel / (cell * 1.4)); let d = "";   // the coloured pixels reshuffle as the lens travels, and hold still when it does
     for (let y = 0; y < rows; y++) {
       let start = -1;
       for (let x = 0; x <= cols; x++) {
