@@ -19,7 +19,7 @@
   const DOTS = ["#ff2e7e", "#1a1466", "#2de2e6", "#ffffff"];   // the glare's colours: mostly the pink
   let RS = 90, grains = [], pyr = { cx: 0, base: 0, a: 0, h: 0 };
   const hot = [[], [], [], []];   // motes the glare has coloured this frame, one list per colour
-  const soft = [];                // the out-of-focus motes of this frame: x, y, radius, alpha, blue, glare colour, heat
+  const soft = [], behind = [];   // this frame's out-of-focus motes, loose ones and the pyramids' back: x, y, radius, alpha, blue, glare colour, heat
   // A soft-edged dot of each colour, for the out-of-focus motes.
   const sprite = (col) => { const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, col); g.addColorStop(0.28, col + "e0"); g.addColorStop(0.62, col + "59"); g.addColorStop(1, col + "00"); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return c; };
   const SOFT_BLUE = BLUES.map(sprite), SOFT_DOT = DOTS.map(sprite);
@@ -58,9 +58,9 @@
       grains.push({ free, seed, slot: place(i), lx: W / 2 + sx * W * 0.48, ly: H / 2 + sy * H * 0.48, m: free ? 1 : smooth(1.26 - seed * 0.5), hx: sx * out, hy: sy * out,
         size: 0.7 + 3.3 * Math.pow(Math.random(), 3.2), alpha: Math.round((0.7 + 0.3 * seed) * 8) / 8, tint: (Math.random() * BLUES.length) | 0,
         col: c < 0.7 ? 0 : c < 0.82 ? 1 : c < 0.92 ? 2 : 3, heat: 0, ox: 0, oy: 0,
-        // Depth: about one mote in eight on the pyramids, and nearly half of the molecules, are out of focus, as if nearer or further
+        // Depth: nearly half of the molecules are out of focus (the pyramids' own motes blur by how far back they are), as if nearer or further
         // than the rest. They are drawn larger, soft-edged and fainter.
-        blur: Math.random() < (free ? 0.4 : 0.11) ? 0.3 + 0.8 * Math.random() : 0 });
+        blur: free && Math.random() < 0.4 ? 0.3 + 0.8 * Math.random() : 0 });
     }
     grains.sort((p, q) => p.tint - q.tint || p.alpha - q.alpha);   // drawn in runs of one colour and strength
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
@@ -105,17 +105,19 @@
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
     const midY = pyr.base - pyr.h / 2, ft = t * 0.16, fieldX = Math.min(pyr.a * 3.5, W * 0.47), fieldY = Math.min(pyr.h, H * 0.44), flow = pyr.a * 0.22;
     const reach = Math.max(1, reachG * 0.8), k2 = 1 - Math.exp(-dt * 4), cool = dt * 1.1;
-    for (const l of hot) l.length = 0; soft.length = 0;
+    for (const l of hot) l.length = 0; soft.length = 0; behind.length = 0;
     let alpha = -1, tint = -1;
     a.beginPath();
     for (const g of grains) {
-      let x, y;
+      let x, y, back = 0, near = 1;
       if (g.free) {
         x = pyr.cx + g.hx * fieldX + (Math.sin(ft + g.seed * 43) + 0.6 * Math.sin(ft * 1.7 + g.hy * 5 + g.seed * 17)) * flow;
         y = midY + g.hy * fieldY + (Math.cos(ft * 0.9 + g.seed * 31) + 0.6 * Math.cos(ft * 1.6 + g.hx * 5 + g.seed * 23)) * flow;
       } else {
         const xr = g.slot.x * ca + g.slot.z * sa, zr = -g.slot.x * sa + g.slot.z * ca, sc = f / (f + zr * cp - g.slot.y * sp);
         x = g.lx + (pyr.cx + xr * sc - g.lx) * g.m; y = g.ly + (pyr.base - (g.slot.y * cp + zr * sp) * sc - g.ly) * g.m;
+        // How far behind the middle of the pyramids this mote is, after the turn: 0 at the front and middle, 1 at the back.
+        const d = Math.min(1, Math.max(0, (zr / pyr.a - 0.08) / 0.85)); back = d * d * (3 - 2 * d); near = sc;
       }
       const amp = pyr.a * (0.02 + 0.2 * (g.free ? 1 : 1 - g.m)) * (0.5 + g.seed);   // each on its own small, slow loop
       x += Math.sin(t * 0.55 + g.seed * 41) * amp; y += Math.cos(t * 0.47 + g.seed * 27) * amp;
@@ -124,8 +126,11 @@
       const pull = live ? (g.free ? 18 : 6) * Math.exp(-(dist / reach) * (dist / reach)) : 0;
       g.ox += (dx / dist * pull - g.ox) * k2; g.oy += (dy / dist * pull - g.oy) * k2;
       g.heat = Math.max(g.heat - cool, k < 1 ? Math.min(1, (1 - k) * 1.8) : 0);
-      const X = x + g.ox, Y = y + g.oy, r = g.size;
+      const X = x + g.ox, Y = y + g.oy, r = g.size * near;   // nearer motes are a touch larger
       if (g.blur) { soft.push(X, Y, r * (1.7 + 1.5 * g.blur), g.alpha * (0.72 - 0.2 * g.blur), g.tint, g.col, g.heat); continue; }
+      // The back of the pyramids is a little out of focus and fainter, more so the further back, which tells the
+      // front from the back as they turn.
+      if (back > 0.1) { behind.push(X, Y, r * (1.3 + 1.3 * back), g.alpha * (1 - 0.42 * back), g.tint, g.col, g.heat); continue; }
       if (g.heat > 0.03) hot[g.col].push(X, Y, r * (1 + 0.6 * g.heat) * Math.min(1, g.heat * 1.6));
       if (g.heat > 0.6) continue;   // fully coloured: the blue mote under it is not drawn
       if (g.alpha !== alpha || g.tint !== tint) { a.fill(); a.beginPath(); alpha = g.alpha; tint = g.tint; a.globalAlpha = alpha; a.fillStyle = BLUES[tint]; }
@@ -136,13 +141,19 @@
     a.fillStyle = CYAN; for (const l of hot) motes(l, -ux * og, -uy * og);
     a.fillStyle = YELLOW; for (const l of hot) motes(l, ux * og, uy * og);
     for (let c = 0; c < 4; c++) { a.fillStyle = DOTS[c]; motes(hot[c], 0, 0); }
-    // The out-of-focus motes go on top: blue, and cross-fading to the glare's colour where it has passed.
-    for (let i = 0; i < soft.length; i += 7) {
-      const X = soft[i], Y = soft[i + 1], R = soft[i + 2], al = soft[i + 3], h = Math.min(1, soft[i + 6] * 1.4);
-      if (h < 0.98) { a.globalAlpha = al * (1 - h); a.drawImage(SOFT_BLUE[soft[i + 4]], X - R, Y - R, R * 2, R * 2); }
-      if (h > 0.02) { a.globalAlpha = Math.min(1, al * 1.25) * h; a.drawImage(SOFT_DOT[soft[i + 5]], X - R, Y - R, R * 2, R * 2); }
-    }
-    a.globalAlpha = 1;
+    // The out-of-focus motes: blue, cross-fading to the glare's colour where it has passed. The loose ones go on
+    // top of everything; the pyramids' back goes underneath what is already drawn.
+    const blurred = (l, under) => {
+      a.globalCompositeOperation = under ? "destination-over" : "source-over";
+      for (let i = 0; i < l.length; i += 7) {
+        const X = l[i], Y = l[i + 1], R = l[i + 2], al = l[i + 3], h = Math.min(1, l[i + 6] * 1.4);
+        const blue = () => { if (h < 0.98) { a.globalAlpha = al * (1 - h); a.drawImage(SOFT_BLUE[l[i + 4]], X - R, Y - R, R * 2, R * 2); } };
+        const lit = () => { if (h > 0.02) { a.globalAlpha = Math.min(1, al * 1.25) * h; a.drawImage(SOFT_DOT[l[i + 5]], X - R, Y - R, R * 2, R * 2); } };
+        if (under) { lit(); blue(); } else { blue(); lit(); }
+      }
+      a.globalCompositeOperation = "source-over"; a.globalAlpha = 1;
+    };
+    blurred(soft, false); blurred(behind, true);
   }
   // It only runs while the hero is on screen and the tab is in front.
   const start = () => { if (!raf && seen && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };
