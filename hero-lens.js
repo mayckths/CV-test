@@ -60,7 +60,7 @@
         col: c < 0.7 ? 0 : c < 0.82 ? 1 : c < 0.92 ? 2 : 3, heat: 0, ox: 0, oy: 0,
         // Depth: about one mote in eight on the pyramids, and nearly half of the molecules, are out of focus, as if nearer or further
         // than the rest. They are drawn larger, soft-edged and fainter.
-        blur: Math.random() < (free ? 0.45 : 0.13) ? 0.35 + Math.random() : 0 });
+        blur: Math.random() < (free ? 0.4 : 0.11) ? 0.3 + 0.8 * Math.random() : 0 });
     }
     grains.sort((p, q) => p.tint - q.tint || p.alpha - q.alpha);   // drawn in runs of one colour and strength
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
@@ -99,8 +99,9 @@
     // 2. The particles. Where the glare passes they take its colours, each with the same two ghosts, and keep
     //    them for a moment after it has gone, so the pyramids and the cloud mix with what the pointer leaves behind.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H);
-    // The pyramids face straight ahead with the pointer in the middle and turn a little with it to either side.
-    const yaw = ((lens.x - W / 2) / W) * 0.6, pitch = 0.05;
+    // The pyramids face straight ahead with the pointer in the middle and turn their front face towards it as it
+    // goes to either side (a negative turn brings the near face round to the right).
+    const yaw = -((lens.x - W / 2) / W) * 0.6, pitch = 0.05;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
     const midY = pyr.base - pyr.h / 2, ft = t * 0.16, fieldX = Math.min(pyr.a * 3.5, W * 0.47), fieldY = Math.min(pyr.h, H * 0.44), flow = pyr.a * 0.22;
     const reach = Math.max(1, reachG * 0.8), k2 = 1 - Math.exp(-dt * 4), cool = dt * 1.1;
@@ -124,7 +125,7 @@
       g.ox += (dx / dist * pull - g.ox) * k2; g.oy += (dy / dist * pull - g.oy) * k2;
       g.heat = Math.max(g.heat - cool, k < 1 ? Math.min(1, (1 - k) * 1.8) : 0);
       const X = x + g.ox, Y = y + g.oy, r = g.size;
-      if (g.blur) { soft.push(X, Y, r * (2.2 + 2.6 * g.blur), g.alpha * (0.62 - 0.2 * g.blur), g.tint, g.col, g.heat); continue; }
+      if (g.blur) { soft.push(X, Y, r * (1.7 + 1.5 * g.blur), g.alpha * (0.72 - 0.2 * g.blur), g.tint, g.col, g.heat); continue; }
       if (g.heat > 0.03) hot[g.col].push(X, Y, r * (1 + 0.6 * g.heat) * Math.min(1, g.heat * 1.6));
       if (g.heat > 0.6) continue;   // fully coloured: the blue mote under it is not drawn
       if (g.alpha !== alpha || g.tint !== tint) { a.fill(); a.beginPath(); alpha = g.alpha; tint = g.tint; a.globalAlpha = alpha; a.fillStyle = BLUES[tint]; }
