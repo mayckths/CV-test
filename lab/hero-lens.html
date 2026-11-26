@@ -148,9 +148,10 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
     //    where the pyramids stand, the lens shows how they are built instead.
     a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H); a.fillStyle = "#232125";
     const push = R0 * 0.55, reach = R1 * 0.95, k2 = 1 - Math.exp(-dt * 5);
-    // The pyramids are seen in three dimensions: turned a little and from slightly above, in perspective. The view
-    // shifts with the lens (left and right turns them, up and down tips them), never on its own.
-    const yaw = 0.42 + ((lens.x - W / 2) / W) * 0.7, pitch = 0.36 + ((lens.y - H / 2) / H) * 0.22;
+    // The pyramids are seen from slightly above, in perspective. With the lens in the middle they face straight
+    // ahead, centred and symmetrical; moving the lens left or right turns them a little that way. Nothing else
+    // moves them: not the lens going up or down, and never on their own.
+    const yaw = ((lens.x - W / 2) / W) * 0.6, pitch = 0.3;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
     const proj = (x, y, z) => { const xr = x * ca + z * sa, zr = -x * sa + z * ca, dep = zr * cp - y * sp, sc = f / (f + dep); return [pyr.cx + xr * sc, pyr.base - (y * cp + zr * sp) * sc, dep]; };
     let alpha = -1, held = 0;
