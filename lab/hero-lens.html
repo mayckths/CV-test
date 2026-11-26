@@ -26,18 +26,21 @@ html, body { height:100%; background:var(--page); font-family:var(--text); -webk
 .sc.grey { background:var(--grey); color:var(--ink); --two:var(--ink); --num:var(--ink); }
 .sc.pink { background:var(--pink); color:#fff; --two:var(--navy); --num:var(--navy); }
 canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-.run { position:absolute; left:56px; right:56px; top:100px; display:flex; align-items:center; gap:18px; font:500 12px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; }
-.rule { flex:1; height:1px; background:currentColor; opacity:.32; position:relative; } .rule::after { content:""; position:absolute; left:62%; top:-9px; width:1px; height:19px; background:currentColor; } 
-.hl { position:absolute; top:17%; font:800 min(11.2vw, 21vh)/.8 var(--display); letter-spacing:-.06em; white-space:nowrap; }
-.hl.a { right:calc(50% + .12em); } .hl.b { left:calc(50% + .12em); font:400 italic 1.035em/.8 var(--serif); font-size:min(11.6vw, 21.7vh); letter-spacing:-.03em; color:var(--two); }
+/* The top line runs at the height of the floating navigation, which sits in the middle of it: name, rule, the
+   navigation's own width left open, rule, "Portfolio". */
+.run { position:absolute; left:56px; right:56px; top:12px; height:48px; display:flex; align-items:center; gap:18px; font:500 12px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; }
+.rule { flex:1; height:1px; background:currentColor; opacity:.32; } .navgap { flex:none; width:calc(var(--navw, 480px) + 4px); }
+.hl { position:absolute; left:0; right:0; top:17%; text-align:center; white-space:nowrap; font:800 min(7.7vw, 15.5vh)/.86 var(--display); letter-spacing:-.06em; }
+.hl .b { font:400 italic 1.035em/.86 var(--serif); letter-spacing:-.03em; color:var(--two); }
 .blurb { position:absolute; left:56px; bottom:38px; font-size:17px; line-height:1.45; max-width:31ch; } .blurb b { font-weight:600; }
 .cue { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); z-index:3; display:inline-flex; align-items:center; gap:10px; height:46px; padding:0 7px 0 18px; border-radius:999px; background:#fff; color:#1f1c1c; box-shadow:0 10px 26px -12px rgba(31,28,28,.55); font:500 12px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; pointer-events:none; }
 .cue i { width:32px; height:32px; border-radius:50%; background:#1f1c1c; display:grid; place-items:center; } .cue i::after { content:"↓"; font:600 15px/1 var(--text); color:#fff; }
+/* Where the navigation leaves no room beside it, the line goes just under it instead. */
+@media (max-width:900px) { .run { left:22px; right:22px; top:66px; height:auto; gap:10px; } .navgap, .navgap + .rule { display:none; } .blurb { left:22px; bottom:86px; } }
 @media (max-width:700px) {
   :root { --gap:10px; --r:22px; }
   .island { font-size:12.5px; padding:5px 5px 5px 10px; gap:0; } .island span { padding:8px 6px; } .island svg { height:13px; margin-right:4px; } .hi { height:44px; padding:0 13px; font-size:13px; }
-  .run { left:22px; right:22px; top:84px; gap:10px; } 
-  .hl { top:15.5%; font-size:23.5vw; } .hl.a { right:auto; left:20px; } .hl.b { left:22px; top:calc(15.5% + 20vw); font-size:24.5vw; }
+  .hl { top:15.5%; left:20px; right:20px; text-align:left; white-space:normal; font-size:14.6vw; line-height:.9; } .hl .b { display:block; font-size:1.62em; line-height:.84; }
   .blurb { left:22px; right:22px; bottom:84px; max-width:none; font-size:16.5px; }
 }
 </style>
@@ -51,8 +54,8 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
   <div class="cue" aria-hidden="true">Scroll<i></i></div>
 </main>
 <template id="copy">
-  <div class="run"><span>Mayck Cuellar</span><i class="rule"></i><span>Portfolio</span></div>
-  <h1 class="hl a">Product</h1><h1 class="hl b">Designer</h1>
+  <div class="run"><span>Mayck Cuellar</span><i class="rule"></i><i class="navgap"></i><i class="rule"></i><span>Portfolio</span></div>
+  <h1 class="hl"><span class="a">Lead Product</span> <span class="b">Designer</span></h1>
   <p class="blurb"><b>10+ years</b> across fintech and consumer products for <b>Novo</b>, <b>Google</b>, <b>Logitech G</b> and <b>AccuWeather</b>, from discovery to launch.</p>
 </template>
 <script>
@@ -72,6 +75,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
 
   function build() {
     const r = panel.getBoundingClientRect();
+    panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px");
     W = r.width; H = r.height; phone = W < 700; dpr = Math.min(window.devicePixelRatio || 1, 1.5);   // the dust is soft enough not to need more
     for (const c of [fxA, fxB, pxC]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
     cell = phone ? 17 : Math.max(20, Math.round(W / 54));
@@ -261,6 +265,7 @@ canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:non
   document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else start(); });
   let rt = 0; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(build, 120); });
   build(); start();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px"));
   window.__lens = { lens, get cells() { return cols * rows; }, get clipLen() { return clip.length; } };
 })();
 </script>
