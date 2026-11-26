@@ -112,7 +112,10 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 
 /* Hero (hero-lens.js). It exists twice, one on top of the other: a grey one and a hot pink one. The pink one only
    shows inside a lens that follows the cursor, and the script clips it to the lens's pixels. */
-.hero.panel { --lens-grey: #eceae6; --lens-ink: #232125; --lens-pink: #ff2e7e; --lens-navy: #1a1466; height: calc(100svh - 2 * var(--gap)); min-height: 520px; overflow: hidden; touch-action: pan-y; background: var(--lens-grey); color: var(--lens-ink); }
+/* The light hero is the same card as the introduction under it (same ground, ink and hairline), so the page reads as
+   one surface from the first screen into the next. */
+.hero.panel { --lens-grey: var(--card); --lens-ink: var(--ink); --lens-pink: #ff2e7e; --lens-navy: #1a1466; height: calc(100svh - 2 * var(--gap)); min-height: 520px; overflow: hidden; touch-action: pan-y; background: var(--lens-grey); color: var(--lens-ink); }
+.hero.panel::after { content: ""; position: absolute; inset: 0; z-index: 5; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
 .hero.lens > .lens-sc { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
 .lens-grey { background: var(--lens-grey); color: var(--lens-ink); --two: var(--lens-ink); }
 .lens-pink { background: var(--lens-pink); color: #fff; --two: var(--lens-navy); clip-path: inset(100%); }   /* hidden until the script draws the lens */

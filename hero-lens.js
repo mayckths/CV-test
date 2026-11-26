@@ -12,6 +12,8 @@
   const a = fxA.getContext("2d"), b = fxB.getContext("2d"), px = pxC.getContext("2d");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  // The grains are the blues of the footer's pyramids: from the deep indigo to the bright violet-blue.
+  const BLUES = ["#22126d", "#33209a", "#4630c8", "#5a3cf2"];
   const COLOURS = ["#ff2e7e", "#1a1466", "#2de2e6", "#ffffff", "#ff2e7e", "#1a1466"];
   const hash = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
@@ -49,8 +51,8 @@
     };
     const count = phone ? [1100, 1500, 1200] : [2100, 2900, 2400];   // core, passing through, never settling
     grains = [];
-    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
-    grains.sort((p, q) => p.alpha - q.alpha);
+    count.forEach((n, kind) => { for (let i = 0; i < n; i++) grains.push({ kind, band: bands[(Math.random() * 4) | 0], u: Math.random(), off: gauss(), speed: 0.004 + 0.008 * Math.random(), ox: 0, oy: 0, seed: Math.random() * 6.283, slot: kind < 2 ? place(i) : null, tint: (Math.random() * BLUES.length) | 0, size: 1.2 + 3.4 * Math.pow(Math.random(), 3), alpha: Math.round((0.5 + 0.5 * Math.pow(Math.random(), 1.2)) * 8) / 8 }); });
+    grains.sort((p, q) => p.tint - q.tint || p.alpha - q.alpha);   // drawn in runs of one colour and strength
     if (!lens.on) { lens.x = lens.tx = W / 2; lens.y = lens.ty = H * 0.52; }
   }
 
@@ -95,16 +97,16 @@
     }
     if (d !== clip) { clip = d; pink.style.clipPath = d ? `path("${d}")` : "inset(100%)"; pink.style.webkitClipPath = pink.style.clipPath; }
 
-    // 2. The grains, pyramids and dust alike, drawn once in ink for the grey hero and copied in white for the pink
+    // 2. The grains, pyramids and dust alike, drawn once in blue for the light hero and copied in white for the pink
     //    one. So the lens changes their colour and nothing else: same grains, same places.
-    a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H); a.fillStyle = "#232125";
+    a.setTransform(dpr, 0, 0, dpr, 0, 0); a.clearRect(0, 0, W, H);
     const push = r0 * 0.55, reach = Math.max(1, r1 * 0.95), k2 = 1 - Math.exp(-dt * 5);
     // The pyramids are seen from slightly above, in perspective. With the lens in the middle they face straight
     // ahead, centred and symmetrical; moving the lens left or right turns them a little that way. Nothing else
     // moves them: not the lens going up or down, and never on their own.
     const yaw = ((lens.x - W / 2) / W) * 0.6, pitch = 0.3;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), f = pyr.a * 7;
-    let alpha = -1;
+    let alpha = -1, tint = -1;
     a.beginPath();
     for (const g of grains) {
       const bd = g.band, u = (g.u + t * g.speed) % 1;
@@ -118,7 +120,7 @@
       }
       const dx = x - lens.x, dy = y - lens.y, dist = Math.hypot(dx, dy) + 0.001, fo = push * Math.exp(-(dist / reach) * (dist / reach)) * (1 - 0.88 * m);
       g.ox += (dx / dist * fo - g.ox) * k2; g.oy += (dy / dist * fo - g.oy) * k2;
-      if (g.alpha !== alpha) { a.fill(); a.beginPath(); alpha = g.alpha; a.globalAlpha = alpha; }
+      if (g.alpha !== alpha || g.tint !== tint) { a.fill(); a.beginPath(); alpha = g.alpha; tint = g.tint; a.globalAlpha = alpha; a.fillStyle = BLUES[tint]; }
       const X = x + g.ox, Y = y + g.oy, r = g.size;
       if (r < 1.6) a.rect(X, Y, r, r); else { a.moveTo(X + r * 0.6, Y); a.arc(X, Y, r * 0.6, 0, 6.283); }
     }
