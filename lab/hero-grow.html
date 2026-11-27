@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hero test · Growing meadow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+<style>
+/* A test page, not part of the portfolio: two stone pyramids where a meadow grows under the pointer. */
+html, body { height: 100%; overflow: hidden; }
+/* Golden hour: a warm ground with a soft sun behind the pyramids. */
+.hero.panel.grow { background: radial-gradient(34% 42% at 50% 66%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%), linear-gradient(to bottom, #f6ddca 0%, #efcdb6 70%, #e2bda6 100%); cursor: crosshair; }
+.hero.grow .lens-grey { background: none; }
+.hero.grow .lens-fx { opacity: 0; transition: opacity .8s ease; } .hero.grow.live .lens-fx { opacity: 1; }
+@media (max-width: 700px) { .hero.panel.grow { background: radial-gradient(70% 34% at 50% 60%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%), linear-gradient(to bottom, #f6ddca 0%, #efcdb6 70%, #e2bda6 100%); } }
+</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+</head>
+<body>
+<header class="top">
+  <div class="island">
+    <a class="mark" href="../" aria-label="Mayck Cuellar, home"><svg class="logo" viewBox="0 0 44 20" aria-hidden="true" focusable="false"><path d="M0 20L11 0L22 20ZM22 20L33 0L44 20Z"/></svg></a>
+    <nav aria-label="Primary"><a href="../#about">About</a><a href="../#work">Work</a><a href="../#experience">Experience</a><a href="../#art">Art</a><a href="../#ask">Ask</a></nav>
+  </div>
+  <a class="pill hi" href="https://www.linkedin.com/in/mayck69/" target="_blank" rel="noopener">Say hi</a>
+</header>
+<main>
+  <section class="hero panel lens grow">
+    <div class="lens-sc lens-grey">
+      <canvas class="lens-fx" aria-hidden="true"></canvas>
+      <div class="lens-copy">
+        <div class="lens-run"><span>Mayck Cuellar</span><i class="lens-rule"></i><i class="lens-navgap"></i><i class="lens-rule"></i><span>Portfolio</span></div>
+        <div class="lens-head"><p class="lens-hl"><span class="i">Lead</span> <span class="b">Product Designer</span> <span class="w">working worldwide</span></p></div>
+        <p class="lens-blurb"><strong>10+ years</strong> across fintech and consumer products for <strong>Novo</strong>, <strong>Google</strong>, <strong>Logitech G</strong> and <strong>AccuWeather</strong>, from discovery to launch.</p>
+      </div>
+    </div>
+    <span class="cue hero-cue" aria-hidden="true"><span>Scroll</span><svg viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>
+  </section>
+</main>
+<script type="module" src="hero-grow.js"></script>
+</body>
+</html>
