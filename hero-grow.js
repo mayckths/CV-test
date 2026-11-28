@@ -404,17 +404,51 @@ async function init() {
   }
 
   // --- the way out (being tried on lab/hero-morph.html): the meadow and the stone give way to a line drawing of the
-  //     two pyramids (hidden edges dashed, square anchors at the corners), which turns to face front, flattens into the
-  //     M of the logo and bends into a bezier path with pen-tool handles. morph runs 0 to 1. The lines are SVG, drawn
-  //     from the pyramids' real corners every frame, so the hand-over from the 3D scene has no seam.
+  //     two pyramids (hidden edges dashed, square anchors at the corners), which turns to face front; the outline of the
+  //     two fronts draws on and then flows, point by point, into the serif M of the introduction (the blueprint in
+  //     index.html), landing exactly where the introduction's first shot shows it, with its guides, fill and handles.
+  //     morph runs 0 to 1. The lines are SVG, drawn from the pyramids' real corners every frame, so the hand-over from
+  //     the 3D scene has no seam.
   let morph = 0, morphDirty = false, svg = null, svgOn = false, stoneOp = 1, floorY = -1, floorA = -1;
   const seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
   const PYR = [-0.975, 0.975].map((cx) => [[cx, HGT / 2, 0], [cx - 1, -HGT / 2, 1], [cx + 1, -HGT / 2, 1], [cx + 1, -HGT / 2, -1], [cx - 1, -HGT / 2, -1]]);   // apex, then the base: front left, front right, back right, back left
   const FACES = [[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [1, 2, 3]];       // front, right, back, left, base
   const EDGES = [[0, 1, 0, 3], [0, 2, 0, 1], [0, 3, 1, 2], [0, 4, 2, 3], [1, 2, 0, 4], [2, 3, 1, 4], [3, 4, 2, 4], [4, 1, 3, 4]];   // two corners, then the faces either side
+  const BP = "M3 100 L31 100 L31 96.5 C24 96 20 94 20 88 L20 6 L53 100 L58 100 L84 13.3 L84 88 C84 94 80 96 73 96.5 L73 100 L113 100 L113 96.5 C106 96 102 94 102 88 L102 12 C102 6 106 4 113 3.5 L113 0 L83 0 L63 66.7 L41 0 L3 0 L3 3.5 C10 4 14 6 14 12 L14 88 C14 94 10 96 3 96.5 Z";
+  const BP_GUIDES = "M-900 0H1000M-900 100H1000M-900 96.5H1000M-900 3.5H1000M14 -900V1000M20 -900V1000M84 -900V1000M102 -900V1000";
+  // The introduction's first shot frames the M with its middle (58, 50) at 27% across and 72% down the card, 177 units tall.
+  const SHOT = { f: [58, 50], a: [0.27, 0.72], h: 177 };
+  const bpCmds = [...BP.matchAll(/([MLC])([^MLCZ]*)/g)].map((m) => [m[1], m[2].trim().split(/[\s,]+/).map(Number)]);
+  const bpAnchors = bpCmds.map(([, n]) => [n[n.length - 2], n[n.length - 1]]);
+  const bpHandles = []; bpCmds.forEach(([c, n], i) => { if (c === "C") { const a = bpAnchors[i - 1], b = bpAnchors[i]; bpHandles.push([a, [n[0], n[1]]], [b, [n[2], n[3]]]); } });
+  // The outline as points, walked from the bottom left corner up the left side, so it lines up with the pyramids'
+  // outline (left foot, up to the apex, down to the valley, up the second apex, down, and back along the base).
+  const morphPts = (() => {
+    const raw = []; let cur = null;
+    for (const [c, n] of bpCmds) {
+      if (c !== "C") { cur = [n[0], n[1]]; raw.push(cur); continue; }
+      const p0 = cur; for (let i = 1; i <= 16; i++) { const t = i / 16, u = 1 - t; raw.push([u * u * u * p0[0] + 3 * u * u * t * n[0] + 3 * u * t * t * n[2] + t * t * t * n[4], u * u * u * p0[1] + 3 * u * u * t * n[1] + 3 * u * t * t * n[3] + t * t * t * n[5]]); }
+      cur = [n[4], n[5]];
+    }
+    const walk = [raw[0], ...raw.slice(1).reverse(), raw[0]];
+    const dense = []; for (let i = 0; i < walk.length - 1; i++) { const a = walk[i], b = walk[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.5)); for (let j = 0; j < n; j++) dense.push([a[0] + (b[0] - a[0]) * j / n, a[1] + (b[1] - a[1]) * j / n]); }
+    const near = (q, from) => { let best = from, bd = Infinity; for (let i = from; i < dense.length; i++) { const d = Math.hypot(dense[i][0] - q[0], dense[i][1] - q[1]); if (d < bd) { bd = d; best = i; } } return best; };
+    const k1 = near([22, 0], 0), k2 = near([63, 66.7], k1), k3 = near([98, 0], k2), k4 = near([113, 100], k3), cuts = [0, k1, k2, k3, k4, dense.length];
+    const TOTAL = 280, pieces = [];
+    for (let i = 0; i < 5; i++) {
+      const sub = dense.slice(cuts[i], cuts[i + 1] + 1); if (i === 4) sub.push(dense[0]);
+      const n = Math.max(6, Math.round(TOTAL * (cuts[i + 1] - cuts[i]) / dense.length)), out = [];
+      for (let j = 0; j < n; j++) out.push(sub[Math.min(sub.length - 1, Math.round(j / n * (sub.length - 1)))]);
+      pieces.push(out);
+    }
+    return pieces;                                                               // five runs: the left side, the left diagonal, the right diagonal, the right side, the bottom
+  })();
+  // Each anchor of the M rides the point of the flowing outline that ends up on it.
+  const anchorAt = bpAnchors.map((a) => { let best = [0, 0], bd = Infinity; morphPts.forEach((piece, r) => piece.forEach((q, j) => { const d = Math.hypot(q[0] - a[0], q[1] - a[1]); if (d < bd) { bd = d; best = [r, j]; } })); return best; });
   function setMorph(t) {
     morph = Math.max(0, Math.min(1, t)); uScale.value = 1 - smooth(seg(morph, 0, 0.3));
-    const op = stoneOp = 1 - smooth(seg(morph, 0.05, 0.35));
+    const op = stoneOp = 1 - smooth(seg(morph, 0.05, 0.35)), flat = smooth(seg(morph, 0.6, 0.95));
+    panel.style.setProperty("--flat", flat.toFixed(3)); for (const c of dustEls) c.style.opacity = (1 - flat).toFixed(3);   // the ground settles to the introduction's flat card
     for (const r of rocks) { const m = r.mesh.material, tr = op < 1; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } m.opacity = op; r.mesh.visible = op > 0.002; r.mesh.castShadow = op > 0.5; }
     renderer.shadowMap.needsUpdate = true; dirty = morphDirty = true; kick();
   }
@@ -423,7 +457,7 @@ async function init() {
     svgOn = morph > 0; if (!svgOn) { svg.innerHTML = ""; return; }
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     const t = morph, ink = getComputedStyle(panel).getPropertyValue("--lens-ink").trim() || "#1f1c1c", acc = "#5a3cf2", paper = "#fffaf5";
-    const wire = smooth(seg(t, 0.04, 0.24)) * (1 - smooth(seg(t, 0.5, 0.64))), flat = smooth(seg(t, 0.44, 0.6)), bend = smooth(seg(t, 0.6, 0.86)), tidy = smooth(seg(t, 0.88, 1));
+    const wire = smooth(seg(t, 0.04, 0.24)) * (1 - smooth(seg(t, 0.5, 0.62)));
     const px = (v) => { const n = v.clone().project(camera); return [((n.x + 1) / 2) * W, ((1 - n.y) / 2) * H]; }, f1 = (n) => n.toFixed(1);
     const square = (p, size, stroke, o) => `<rect x="${f1(p[0] - size / 2)}" y="${f1(p[1] - size / 2)}" width="${size}" height="${size}" fill="${paper}" stroke="${stroke}" stroke-width="1.2" opacity="${o.toFixed(3)}"/>`;
     let out = ""; const shots = [];
@@ -436,20 +470,31 @@ async function init() {
       }
       shots.push(s2);
     }
-    if (flat > 0.001) {
-      // The M: the outline of the two fronts, from the outer front corners over both apexes and down to where they meet.
+    const outl = smooth(seg(t, 0.44, 0.58)), k = smooth(seg(t, 0.58, 0.86)), pts = smooth(seg(t, 0.62, 0.72)) * (1 - smooth(seg(t, 0.9, 1))), fin = smooth(seg(t, 0.82, 1));
+    if (outl > 0.001) {
+      // Where the introduction's M sits on this panel (the panel and the introduction's card are the same size and place).
+      const sc = H / SHOT.h, x0 = SHOT.f[0] - SHOT.a[0] * (SHOT.h * W / H), y0 = SHOT.f[1] - SHOT.a[1] * SHOT.h, toPx = (q) => [(q[0] - x0) * sc, (q[1] - y0) * sc];
+      // The outline of the two fronts: left foot, apex, valley, apex, right foot, and back along the base.
       const L0 = shots[0][1], A1 = shots[0][0], V = [(shots[0][2][0] + shots[1][1][0]) / 2, (shots[0][2][1] + shots[1][1][1]) / 2], A2 = shots[1][0], R0 = shots[1][2];
-      const w = R0[0] - L0[0], h = L0[1] - A1[1], lerp2 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
-      const curve = (a, b, c1, c2) => [lerp2(lerp2(a, b, 1 / 3), c1, bend), lerp2(lerp2(a, b, 2 / 3), c2, bend)];
-      // Each stroke leaves the base straight up and meets the apex at a slant, so the M reads as two pointed arches.
-      const segs = [[L0, A1, [L0[0] + 0.015 * w, L0[1] - 0.55 * h], [A1[0] - 0.09 * w, A1[1] + 0.28 * h]], [A1, V, [A1[0] + 0.09 * w, A1[1] + 0.28 * h], [V[0] - 0.015 * w, V[1] - 0.55 * h]],
-        [V, A2, [V[0] + 0.015 * w, V[1] - 0.55 * h], [A2[0] - 0.09 * w, A2[1] + 0.28 * h]], [A2, R0, [A2[0] + 0.09 * w, A2[1] + 0.28 * h], [R0[0] - 0.015 * w, R0[1] - 0.55 * h]]].map(([a, b, c1, c2]) => [a, b, ...curve(a, b, c1, c2)]);
-      const d = `M${f1(L0[0])} ${f1(L0[1])}` + segs.map(([, b, c1, c2]) => ` C${f1(c1[0])} ${f1(c1[1])} ${f1(c2[0])} ${f1(c2[1])} ${f1(b[0])} ${f1(b[1])}`).join("");
-      const sw = 1.6 + (Math.max(3, w * 0.011) - 1.6) * tidy;
-      out += `<path d="${d}" fill="none" stroke="${ink}" stroke-width="${f1(sw)}" stroke-linejoin="round" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="${(1 - flat).toFixed(4)}"/>`;
-      const hand = bend * (1 - tidy);
-      if (hand > 0.001) for (const [a, b, c1, c2] of segs) out += `<g opacity="${hand.toFixed(3)}" stroke="${acc}" stroke-width="1"><line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(c1[0])}" y2="${f1(c1[1])}"/><line x1="${f1(b[0])}" y1="${f1(b[1])}" x2="${f1(c2[0])}" y2="${f1(c2[1])}"/><circle cx="${f1(c1[0])}" cy="${f1(c1[1])}" r="3.5" fill="${paper}"/><circle cx="${f1(c2[0])}" cy="${f1(c2[1])}" r="3.5" fill="${paper}"/></g>`;
-      const pts = flat * (1 - tidy); if (pts > 0.001) for (const p of [L0, A1, V, A2, R0]) out += square(p, 8, bend > 0.05 ? acc : ink, pts);
+      const runs = [[L0, A1], [A1, V], [V, A2], [A2, R0], [R0, L0]];
+      let d = ""; const now = morphPts.map(() => []);
+      morphPts.forEach((piece, r) => { const [a, b] = runs[r]; piece.forEach((q, j) => { const u = j / piece.length, src = [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u], dst = toPx(q), x = src[0] + (dst[0] - src[0]) * k, y = src[1] + (dst[1] - src[1]) * k; now[r].push([x, y]); d += (d ? " L" : "M") + f1(x) + " " + f1(y); }); });
+      d += " Z";
+      const hx = ink.match(/[0-9a-f]{2}/gi), rgb = hx && hx.length >= 3 ? hx.slice(0, 3).map((h) => parseInt(h, 16)).join(",") : "31,28,28", alpha = 1 - 0.68 * fin, sw = 1.5 - 0.5 * fin;
+      const exact = smooth(seg(t, 0.93, 1)), g = `<g transform="matrix(${sc.toFixed(4)} 0 0 ${sc.toFixed(4)} ${f1(-x0 * sc)} ${f1(-y0 * sc)})">`;
+      // the guides and the faint fill of the introduction's blueprint
+      if (fin > 0.001) out += `${g}<path d="${BP_GUIDES}" fill="none" stroke="rgb(${rgb})" stroke-opacity="${(0.32 * 0.4 * fin).toFixed(3)}" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="${BP}" fill="rgb(${rgb})" fill-opacity="${(0.04 * fin).toFixed(3)}" stroke="none"/></g>`;
+      out += `<path d="${d}" fill="none" stroke="rgb(${rgb})" stroke-opacity="${(alpha * (1 - exact)).toFixed(3)}" stroke-width="${sw.toFixed(2)}" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="${(1 - outl).toFixed(4)}"/>`;
+      if (exact > 0.001) out += `${g}<path d="${BP}" fill="none" stroke="rgb(${rgb})" stroke-opacity="${(alpha * exact).toFixed(3)}" stroke-width="1" vector-effect="non-scaling-stroke"/></g>`;
+      // the M's own bezier handles and anchors come in as the curves form, then settle away as the introduction starts
+      if (pts > 0.001) {
+        // anchors ride the outline as it flows; the handles grow out of them as the curves take shape
+        const at = (i) => { const [r, j] = anchorAt[i], q = now[r][j], end = toPx(morphPts[r][j]), dst = toPx(bpAnchors[i]); return [q[0] + (dst[0] - end[0]) * k, q[1] + (dst[1] - end[1]) * k]; } /* on the line, landing exactly on the anchor */, A = bpAnchors.map((_, i) => at(i)), hs = sc * k, r2 = 0.9 * sc, sq = 2 * sc;
+        out += `<g opacity="${pts.toFixed(3)}" stroke-width="1">`;
+        bpHandles.forEach(([a, c]) => { const i = bpAnchors.indexOf(a), p = A[i], q = [p[0] + (c[0] - a[0]) * hs, p[1] + (c[1] - a[1]) * hs]; out += `<path d="M${f1(p[0])} ${f1(p[1])}L${f1(q[0])} ${f1(q[1])}" stroke="${acc}"/><circle cx="${f1(q[0])}" cy="${f1(q[1])}" r="${r2.toFixed(1)}" fill="${paper}" stroke="${acc}"/>`; });
+        for (const p of A) out += `<rect x="${f1(p[0] - sq / 2)}" y="${f1(p[1] - sq / 2)}" width="${sq.toFixed(1)}" height="${sq.toFixed(1)}" fill="${paper}" stroke="rgb(${rgb})"/>`;
+        out += `</g>`;
+      }
     }
     svg.innerHTML = out;
   }
