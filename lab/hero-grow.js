@@ -4,7 +4,7 @@
 // later the meadow withers back on its own, leaving a few flowers standing on stone that stays a little earthy; the
 // pointer can grow it again. A click on a pyramid plants one larger flower that stays. The ground reacts too: the
 // sun glow leans toward the pointer, a soft light follows it, and floating pollen drifts around it. There are several
-// backgrounds to try (?bg=golden, studio, sky, sunset, pink, holo, dusk, night), each with lights to match.
+// backgrounds to try (?bg=studio, the default, golden, sky, sunset, pink, holo, dusk, night), each with lights to match.
 import * as THREE from "three";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -81,7 +81,7 @@ function init() {
     dusk: { hemi: ["#a894ff", "#241a4d", 0.95], sun: ["#ffa8c4", 1.9], rim: ["#7fdcff", 1.7], exp: 0.92, dust: ["255,238,160", "255,200,120"], a: 1.25 },
     night: { hemi: ["#7f95c4", "#101810", 0.6], sun: ["#c4d6ff", 1.35], rim: ["#ffd27a", 1.0], exp: 0.86, dust: ["255,230,120", "214,255,150"], a: 1.35 },
   };
-  let lightsFor = null, theme = new URLSearchParams(location.search).get("bg"); if (!THEMES[theme]) theme = "golden";
+  let lightsFor = null, theme = new URLSearchParams(location.search).get("bg"); if (!THEMES[theme]) theme = "studio";
   const picker = document.querySelector(".bg-pick");
   function applyBg(name) {
     theme = name; const t = THEMES[name]; panel.dataset.bg = name; sky.tint(t.dust, t.a); if (lightsFor) lightsFor(t);
@@ -169,9 +169,9 @@ function init() {
     // per vertex: moss (m), earth left behind (e), state (0 bare, 1 greening, 2 green, 3 fading) and when it was last touched
     return { mesh: m, n, shade0, gv, ge, m: new Float32Array(n), e: new Float32Array(n), vs: new Uint8Array(n), vt: new Float32Array(n), busy: false };
   }
-  const rocks = [pyramid(-1.03, 3.1, 0), pyramid(1.03, 9.7, 2)];
+  const rocks = [pyramid(-0.975, 3.1, 0), pyramid(0.975, 9.7, 2)];   // the bases overlap a hair, so no gap shows between them
   // Plain pyramids for finding where the pointer is on the stone (the real ones have tens of thousands of faces).
-  const proxies = [-1.03, 1.03].map((cx) => { const g = new THREE.ConeGeometry(Math.SQRT2, HGT, 4, 1, false, Math.PI / 4); g.translate(cx, 0, 0); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ visible: false })); group.add(m); return m; });
+  const proxies = [-0.975, 0.975].map((cx) => { const g = new THREE.ConeGeometry(Math.SQRT2, HGT, 4, 1, false, Math.PI / 4); g.translate(cx, 0, 0); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ visible: false })); group.add(m); return m; });
 
   let W = 1, H = 1, dirty = true; lightsFor(THEMES[theme]);
   function fit() {

@@ -123,8 +123,11 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .lens-copy { position: absolute; inset: 0; z-index: 1; }
 /* The top line runs at the height of the floating navigation, which sits in the middle of it: name, rule, the
    navigation's own width left open, rule, "Portfolio". */
-.lens-run { position: absolute; left: clamp(22px, 4vw, 56px); right: clamp(22px, 4vw, 56px); top: 12px; height: 48px; display: flex; align-items: center; gap: 18px; font: 500 12px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
-.lens-rule { flex: 1; height: 1px; background: currentColor; opacity: .32; } .lens-navgap { flex: none; width: calc(var(--navw, 480px) + 4px); }
+/* Three equal parts: the name and its line, the room for the navigation, the line and "Portfolio". The two outer parts
+   are the same width, so the room sits exactly in the middle (where the navigation is) whatever the two words measure. */
+.lens-run { position: absolute; left: clamp(22px, 4vw, 56px); right: clamp(22px, 4vw, 56px); top: 12px; height: 48px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; font: 500 12px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.lens-side { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.lens-rule { flex: 1; height: 1px; background: currentColor; opacity: .32; } .lens-navgap { width: calc(var(--navw, 480px) + 36px); }   /* 18px of air each side of the navigation */
 /* Headline, its second line and the paragraph belong to the first screen of the pinned hero: they drift up and fade
    as the scroll begins, and the two roles arrive either side of the pyramids. */
 .lens-head, .lens-blurb { opacity: clamp(0, calc(1 - var(--hp, 0) * 4.5), 1); transform: translateY(calc(var(--hp, 0) * -160px)); will-change: opacity, transform; }
@@ -149,7 +152,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .hero.lens > .hero-cue { --cue-fg: var(--ink); --cue-bg: #fff; position: absolute; z-index: 4; left: 50%; bottom: clamp(18px, 3.4vh, 34px); transform: translateX(-50%); background: #fff; border-color: #fff; box-shadow: 0 10px 26px -12px rgba(31, 28, 28, .55); }
 @media (hover: hover) { .hero.lens > .hero-cue:hover { background: var(--ink); border-color: var(--ink); color: #fff; } .hero.lens > .hero-cue:hover svg { background: #fff; color: var(--ink); } }
 /* Where the navigation leaves no room beside it, the top line goes just under it instead. */
-@media (max-width: 900px) { .lens-run { top: 66px; height: auto; gap: 10px; } .lens-navgap, .lens-navgap + .lens-rule { display: none; } .lens-blurb { bottom: 86px; } }
+@media (max-width: 900px) { .lens-run { top: 66px; height: auto; display: flex; gap: 10px; } .lens-side { display: contents; } .lens-navgap, .lens-side:last-child .lens-rule { display: none; } .lens-blurb { bottom: 86px; } }
 @media (max-width: 820px) {
   .hero-role:nth-child(1) { right: auto; left: 8%; top: 70%; text-align: left; } .hero-role:nth-child(2) { left: auto; right: 8%; bottom: 70%; text-align: right; }
 }
