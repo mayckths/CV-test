@@ -1,18 +1,22 @@
-// Test page (lab/hero-grow.html): two pyramids of pale stone on a golden-hour ground. The pyramids turn their front
-// faces toward the pointer, as the live hero does. Wherever the pointer passes a meadow grows: tufts of grass, daisies
-// on stalks with leaves, sprays of blossom and small wildflowers, and the stone under them turns green. Two seconds
-// later the meadow withers back on its own, leaving a few flowers standing on stone that stays a little earthy; the
-// pointer can grow it again. A click on a pyramid plants one larger flower that stays. The ground reacts too: the
-// sun glow leans toward the pointer, a soft light follows it, and floating pollen drifts around it. There are several
-// backgrounds to try (?bg=studio, the default, golden, sky, sunset, pink, holo, dusk, night), each with lights to match.
+// The hero (index.html, and the test page lab/hero-grow.html): two pyramids of pale stone. The pyramids turn their
+// front faces toward the pointer. Wherever the pointer passes a meadow grows: tufts of grass, daisies on stalks with
+// leaves, sprays of blossom and small wildflowers, and the stone under them turns green. Two seconds later the meadow
+// withers back on its own, leaving a few flowers standing on stone that stays a little earthy; the pointer can grow it
+// again. A click on a pyramid plants one larger flower that stays. The ground reacts too: a wide horizon haze leans
+// toward the pointer, a faint light follows it, and floating pollen drifts around it.
+// The ground is drawn in layers (.grow-layer, each painting one background named by data-bg). On the portfolio the
+// hero opens on Night and turns to Studio as its second, pinned screen scrolls in: the Night layer fades out and the
+// 3D lights, the pollen and the type change with it. The test page has one layer and a switcher for all eight.
 import * as THREE from "three";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
-function init() {
+async function init() {
   const panel = document.querySelector(".hero.grow");
   if (!panel) return;
-  const canvas = panel.querySelector(".lens-fx"), sunEl = panel.querySelector(".grow-sun"), glowEl = panel.querySelector(".grow-glow"), dustEls = [...panel.querySelectorAll(".grow-dust")];
+  const canvas = panel.querySelector(".lens-fx"), sunEls = [...panel.querySelectorAll(".grow-sun")], glowEls = [...panel.querySelectorAll(".grow-glow")], dustEls = [...panel.querySelectorAll(".grow-dust")];
+  let dirty = true, raf = 0, seen = true, kick = () => {};                       // kick() starts the drawing loop once it exists
+  const breathe = () => new Promise((r) => setTimeout(r, 0));                     // let the page scroll and paint between heavy steps
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches, RATE = reduced ? 40 : 1;
   panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px");
   const q = new URLSearchParams(location.search).get("q");
@@ -63,8 +67,8 @@ function init() {
       // the sun glow leans a little toward the pointer and drifts back when it leaves
       const tx = p.on ? (p.x - W / 2) * 0.13 : 0, ty = p.on ? (p.y - H * 0.62) * 0.08 : 0, e1 = 1 - Math.exp(-dt * 1.8);
       sun.x += (tx - sun.x) * e1; sun.y += (ty - sun.y) * e1;
-      if (Math.abs(sun.x - sun.sx) + Math.abs(sun.y - sun.sy) > 0.05 || isNaN(sun.sx)) { sun.sx = sun.x; sun.sy = sun.y; sunEl.style.transform = `translate3d(${sun.x.toFixed(1)}px,${sun.y.toFixed(1)}px,0)`; }
-      if (p.on) { const e2 = glow.set ? 1 - Math.exp(-dt * 10) : 1; glow.set = true; const nx = glow.x + (p.x - glow.x) * e2, ny = glow.y + (p.y - glow.y) * e2; if (Math.abs(nx - glow.x) + Math.abs(ny - glow.y) > 0.05) { glow.x = nx; glow.y = ny; glowEl.style.transform = `translate3d(${nx.toFixed(1)}px,${ny.toFixed(1)}px,0)`; } }
+      if (Math.abs(sun.x - sun.sx) + Math.abs(sun.y - sun.sy) > 0.05 || isNaN(sun.sx)) { sun.sx = sun.x; sun.sy = sun.y; const tf = `translate3d(${sun.x.toFixed(1)}px,${sun.y.toFixed(1)}px,0)`; for (const el of sunEls) el.style.transform = tf; }
+      if (p.on) { const e2 = glow.set ? 1 - Math.exp(-dt * 10) : 1; glow.set = true; const nx = glow.x + (p.x - glow.x) * e2, ny = glow.y + (p.y - glow.y) * e2; if (Math.abs(nx - glow.x) + Math.abs(ny - glow.y) > 0.05) { glow.x = nx; glow.y = ny; const tf = `translate3d(${nx.toFixed(1)}px,${ny.toFixed(1)}px,0)`; for (const el of glowEls) el.style.transform = tf; } }
     }
     return { resize, point, update, tint, lean: () => (W ? sun.x / W : 0) };
   })();
@@ -72,24 +76,41 @@ function init() {
   // --- backgrounds to choose from (?bg=name, or the switcher on the page). The CSS for each is in hero-grow.html;
   //     here are the lights that suit it and the colour of the pollen (on the dark ones it glows like fireflies).
   const THEMES = {
-    golden: { hemi: ["#fff0dc", "#8a6f60", 1.5], sun: ["#fff0d6", 2.9], rim: ["#ff9ab8", 0.9], exp: 1.08, dust: ["255,252,242", "255,214,146"], a: 1 },
-    studio: { hemi: ["#ffffff", "#9a9088", 1.6], sun: ["#fffaf2", 2.7], rim: ["#ffffff", 0.45], exp: 1.05, dust: ["176,160,142", "205,192,176"], a: 0.8 },
-    sky: { hemi: ["#eaf4ff", "#8b8a78", 1.6], sun: ["#fffaf0", 3.0], rim: ["#bfe0ff", 0.8], exp: 1.06, dust: ["255,255,255", "255,246,214"], a: 1 },
-    sunset: { hemi: ["#ffd9c0", "#7a4a6a", 1.4], sun: ["#ffc890", 2.8], rim: ["#ff5c98", 1.3], exp: 1.06, dust: ["255,240,208", "255,190,150"], a: 1 },
-    pink: { hemi: ["#ffe3ee", "#8a4a62", 1.5], sun: ["#fff2f6", 2.8], rim: ["#ffffff", 0.9], exp: 1.06, dust: ["255,255,255", "255,214,232"], a: 1 },
-    holo: { hemi: ["#f3ecff", "#7f8aa8", 1.6], sun: ["#fffaff", 2.7], rim: ["#7fe9ff", 1.0], exp: 1.06, dust: ["255,255,255", "204,242,255"], a: 1 },
-    dusk: { hemi: ["#a894ff", "#241a4d", 0.95], sun: ["#ffa8c4", 1.9], rim: ["#7fdcff", 1.7], exp: 0.92, dust: ["255,238,160", "255,200,120"], a: 1.25 },
-    night: { hemi: ["#7f95c4", "#101810", 0.6], sun: ["#c4d6ff", 1.35], rim: ["#ffd27a", 1.0], exp: 0.86, dust: ["255,230,120", "214,255,150"], a: 1.35 },
+    golden: { hemi: ["#fff0dc", "#8a6f60", 1.5], sun: ["#fff0d6", 2.9], rim: ["#ff9ab8", 0.9], exp: 1.08, dust: ["255,252,242", "255,214,146"], a: 1, ink: "#1f1c1c" },
+    studio: { hemi: ["#ffffff", "#9a9088", 1.6], sun: ["#fffaf2", 2.7], rim: ["#ffffff", 0.45], exp: 1.05, dust: ["176,160,142", "205,192,176"], a: 0.8, ink: "#1f1c1c" },
+    sky: { hemi: ["#eaf4ff", "#8b8a78", 1.6], sun: ["#fffaf0", 3.0], rim: ["#bfe0ff", 0.8], exp: 1.06, dust: ["255,255,255", "255,246,214"], a: 1, ink: "#1f1c1c" },
+    sunset: { hemi: ["#ffd9c0", "#7a4a6a", 1.4], sun: ["#ffc890", 2.8], rim: ["#ff5c98", 1.3], exp: 1.06, dust: ["255,240,208", "255,190,150"], a: 1, ink: "#1f1c1c" },
+    pink: { hemi: ["#ffe3ee", "#8a4a62", 1.5], sun: ["#fff2f6", 2.8], rim: ["#ffffff", 0.9], exp: 1.06, dust: ["255,255,255", "255,214,232"], a: 1, ink: "#1f1c1c" },
+    holo: { hemi: ["#f3ecff", "#7f8aa8", 1.6], sun: ["#fffaff", 2.7], rim: ["#7fe9ff", 1.0], exp: 1.06, dust: ["255,255,255", "204,242,255"], a: 1, ink: "#1f1c1c" },
+    dusk: { hemi: ["#a894ff", "#241a4d", 0.95], sun: ["#ffa8c4", 1.9], rim: ["#7fdcff", 1.7], exp: 0.92, dust: ["255,238,160", "255,200,120"], a: 1.25, ink: "#ffffff" },
+    night: { hemi: ["#7f95c4", "#101810", 0.6], sun: ["#c4d6ff", 1.35], rim: ["#ffd27a", 1.0], exp: 0.86, dust: ["255,230,120", "214,255,150"], a: 1.35, ink: "#ffffff" },
   };
-  let lightsFor = null, theme = new URLSearchParams(location.search).get("bg"); if (!THEMES[theme]) theme = "studio";
-  const picker = document.querySelector(".bg-pick");
-  function applyBg(name) {
-    theme = name; const t = THEMES[name]; panel.dataset.bg = name; sky.tint(t.dust, t.a); if (lightsFor) lightsFor(t);
-    if (picker) picker.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.bg === name));
-    const u = new URL(location.href); u.searchParams.set("bg", name); history.replaceState(null, "", u);
+  const fromL = panel.querySelector(".grow-layer.from"), toL = panel.querySelector(".grow-layer.to"), picker = document.querySelector(".bg-pick"), wrap = panel.closest(".hero-wrap");
+  const asked = picker && new URLSearchParams(location.search).get("bg");
+  let lightsFor = null, A = THEMES[asked] ? asked : fromL && THEMES[fromL.dataset.bg] ? fromL.dataset.bg : "studio", blend = 0, dustStep = -1;
+  const lerpC = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t), lerpN = (a, b, t) => a + (b - a) * t;
+  const lerpRGB = (a, b, t) => { const q = b.split(","); return a.split(",").map((v, k) => Math.round(lerpN(+v, +q[k], t))).join(","); };
+  function refresh() {                                                            // show theme A, blended toward the scroll theme
+    const a = THEMES[A], b = (toL && THEMES[toL.dataset.bg]) || a, t = b === a ? 0 : blend;
+    if (fromL) { fromL.dataset.bg = A; fromL.style.opacity = (1 - t).toFixed(3); }
+    panel.style.setProperty("--lens-ink", "#" + lerpC(a.ink, b.ink, t).getHexString());
+    const step = Math.round(t * 24); if (step !== dustStep) { dustStep = step; const u = step / 24; sky.tint([lerpRGB(a.dust[0], b.dust[0], u), lerpRGB(a.dust[1], b.dust[1], u)], lerpN(a.a, b.a, u)); }
+    if (lightsFor) lightsFor(a, b, t);
+  }
+  function applyBg(name) {                                                        // the test page's switcher
+    A = name; dustStep = -1; refresh();
+    if (picker) { picker.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.bg === name)); const u = new URL(location.href); u.searchParams.set("bg", name); history.replaceState(null, "", u); }
   }
   if (picker) picker.addEventListener("click", (e) => { const b = e.target.closest("button[data-bg]"); if (b) applyBg(b.dataset.bg); });
-  applyBg(theme);
+  applyBg(A);
+  // On the portfolio the second screen of the pinned hero brings in the scroll theme (Studio).
+  if (wrap && toL && !reduced) {
+    const onScroll = () => {
+      const r = wrap.getBoundingClientRect(), hp = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight))), u = Math.min(1, Math.max(0, (hp - 0.06) / 0.3)), v = u * u * (3 - 2 * u);
+      if (Math.abs(v - blend) > 0.001) { blend = v; refresh(); kick(); }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll); onScroll();
+  }
   const pointGround = (e, on) => { const r = panel.getBoundingClientRect(); sky.point(e.clientX - r.left, e.clientY - r.top, on); panel.classList.toggle("lit", on); };
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }); }
@@ -112,7 +133,11 @@ function init() {
   const sun = new THREE.DirectionalLight("#fff0d6", 2.9); sun.position.set(-4.5, 5.5, 5.5); sun.castShadow = true; sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
   Object.assign(sun.shadow.camera, { left: -3.5, right: 3.5, top: 3.5, bottom: -3.5, near: 1, far: 20 }); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.02; sun.shadow.radius = 4; scene.add(sun);
   const rim = new THREE.DirectionalLight("#ff9ab8", 0.9); rim.position.set(5, 2.5, -3.5); scene.add(rim);
-  lightsFor = (t) => { hemi.color.set(t.hemi[0]); hemi.groundColor.set(t.hemi[1]); hemi.intensity = t.hemi[2]; sun.color.set(t.sun[0]); sun.intensity = t.sun[1]; rim.color.set(t.rim[0]); rim.intensity = t.rim[1]; renderer.toneMappingExposure = t.exp; dirty = true; };
+  lightsFor = (a, b, t) => {
+    hemi.color.copy(lerpC(a.hemi[0], b.hemi[0], t)); hemi.groundColor.copy(lerpC(a.hemi[1], b.hemi[1], t)); hemi.intensity = lerpN(a.hemi[2], b.hemi[2], t);
+    sun.color.copy(lerpC(a.sun[0], b.sun[0], t)); sun.intensity = lerpN(a.sun[1], b.sun[1], t); rim.color.copy(lerpC(a.rim[0], b.rim[0], t)); rim.intensity = lerpN(a.rim[1], b.rim[1], t);
+    renderer.toneMappingExposure = lerpN(a.exp, b.exp, t); dirty = true;
+  };
 
   const h3 = (x, y, z) => { const n = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return n - Math.floor(n); };
   const vn = (x, y, z) => { const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z), s = (t) => t * t * (3 - 2 * t), u = s(x - xi), v = s(y - yi), w = s(z - zi), l = (a, b, t) => a + (b - a) * t;
@@ -123,10 +148,11 @@ function init() {
 
   // --- the stone, painted once: colour and height for the relief. Each face of a pyramid gets its own quarter.
   const TS = low ? 768 : 1280, base = new THREE.Color(STONE), paint = base.clone().convertLinearToSRGB();
-  function sheets() {
+  async function sheets() {
     const cc = document.createElement("canvas"), hc = document.createElement("canvas"); cc.width = cc.height = hc.width = hc.height = TS;
     const cx = cc.getContext("2d"), hx = hc.getContext("2d"), ci = cx.createImageData(TS, TS), hi = hx.createImageData(TS, TS);
-    for (let j = 0; j < TS; j++) for (let i = 0; i < TS; i++) {
+    let t0 = performance.now();
+    for (let j = 0; j < TS; j++) { if (performance.now() - t0 > 12) { await breathe(); t0 = performance.now(); } for (let i = 0; i < TS; i++) {
       const u = (i / TS) * 9, v = (j / TS) * 9;
       const patch = fbm2(u * 0.9, v * 0.9, 1.3), streak = fbm(u * 3.2, v * 0.5, 7.7), grain = fbm2(u * 9, v * 9, 3.1), fineG = fbm(u * 34, v * 34, 6.2), speck = vn(u * 60, v * 60, 5.9), salt = h3(i, j, 1.7);
       const c1 = Math.abs(fbm2(u * 0.8, v * 0.8, 11.3) * 2 - 0.97), crack = Math.max(0, 1 - c1 / 0.007) * (0.5 + 0.5 * vn(u * 3, v * 3, 4.1));
@@ -136,11 +162,11 @@ function init() {
       ci.data[o] = Math.max(0, Math.min(255, paint.r * 255 * val * (1.01 + warm * 0.1))); ci.data[o + 1] = Math.max(0, Math.min(255, paint.g * 255 * val * (1.0 + warm * 0.03))); ci.data[o + 2] = Math.max(0, Math.min(255, paint.b * 255 * val * (0.99 - warm * 0.1))); ci.data[o + 3] = 255;
       const hgt = 0.6 + (grain - 0.48) * 0.8 + (fineG - 0.48) * 0.7 + (patch - 0.48) * 0.3 + (salt - 0.5) * 0.16 - crack * 0.5 - pit * 0.6;
       hi.data[o] = hi.data[o + 1] = hi.data[o + 2] = Math.max(0, Math.min(255, hgt * 255)); hi.data[o + 3] = 255;
-    }
+    } }
     cx.putImageData(ci, 0, 0); hx.putImageData(hi, 0, 0);
     const m = new THREE.CanvasTexture(cc), h = new THREE.CanvasTexture(hc); m.colorSpace = THREE.SRGBColorSpace; m.anisotropy = h.anisotropy = 8; return [m, h];
   }
-  const [colourMap, heightMap] = sheets();
+  const [colourMap, heightMap] = await sheets();
 
   // --- two true square pyramids, with a fine roughness, hairline cracks and slightly worn edges
   const BASE_Y = 0.36, SWING = 0.6;                                              // resting turn, and how far the pointer turns them
@@ -169,11 +195,11 @@ function init() {
     // per vertex: moss (m), earth left behind (e), state (0 bare, 1 greening, 2 green, 3 fading) and when it was last touched
     return { mesh: m, n, shade0, gv, ge, m: new Float32Array(n), e: new Float32Array(n), vs: new Uint8Array(n), vt: new Float32Array(n), busy: false };
   }
-  const rocks = [pyramid(-0.975, 3.1, 0), pyramid(0.975, 9.7, 2)];   // the bases overlap a hair, so no gap shows between them
+  const rocks = [pyramid(-0.975, 3.1, 0)]; await breathe(); rocks.push(pyramid(0.975, 9.7, 2)); await breathe();   // the bases overlap a hair, so no gap shows between them
   // Plain pyramids for finding where the pointer is on the stone (the real ones have tens of thousands of faces).
   const proxies = [-0.975, 0.975].map((cx) => { const g = new THREE.ConeGeometry(Math.SQRT2, HGT, 4, 1, false, Math.PI / 4); g.translate(cx, 0, 0); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ visible: false })); group.add(m); return m; });
 
-  let W = 1, H = 1, dirty = true; lightsFor(THEMES[theme]);
+  let W = 1, H = 1; refresh();
   function fit() {
     W = panel.clientWidth; H = panel.clientHeight; renderer.setSize(W, H, false); camera.aspect = W / H; camera.updateProjectionMatrix();
     const visH = 2 * 10 * Math.tan(THREE.MathUtils.degToRad(15)), visW = visH * camera.aspect, narrow = camera.aspect < 0.9;
@@ -195,6 +221,7 @@ function init() {
       cand.push({ p: P.clone(), n: N.clone() });
     }
   }
+  await breathe();
   const C = cand.length, cx = new Float32Array(C), cy = new Float32Array(C), cz = new Float32Array(C), reach = new Float32Array(C), jit = new Float32Array(C);
   const prog = new Float32Array(C), wait = new Float32Array(C), touch = new Float32Array(C), full = new Float32Array(C), state = new Uint8Array(C), kept = new Uint8Array(C), act = new Int32Array(C);
   let actN = 0;
@@ -296,6 +323,7 @@ function init() {
       L.wild.push({ id: i, p, q: orient(faceCam(p, c.n.clone(), 0.45), rnd() * 6.283), s: [s, s, s], c: pick(WILD), w: 0.3, keep: rnd() < 0.2 });
     }
   });
+  await breathe();
   const grassMat = () => mat({ roughness: 0.8 });
   const meadow = [pool(tuft(low ? 4 : 5), grassMat(), L.t0, 0.35), pool(tuft(low ? 3 : 4), grassMat(), L.t1, 0.35), pool(stem(0.02, 1), mat({ roughness: 0.75 }), L.stalk, 0.2),
     pool(daisyGeo, mat({ roughness: 0.55 }), L.head, 0.1), pool(eye(0.24, 0.12, 0), mat({ roughness: 0.8, side: THREE.FrontSide }), L.eye, 0.15), pool(blossomGeo(), mat({ roughness: 0.55 }), L.bl, 0.2), pool(blossomGeo(), mat({ roughness: 0.55 }), L.wild, 0.25)];
@@ -385,7 +413,7 @@ function init() {
     if (h) { plant(group.worldToLocal(h.point.clone()), h.face.normal.clone()); start(); }
   });
 
-  let last = performance.now(), raf = 0, seen = true, lastHit = 0, glFrames = 0, lean = 0;
+  let last = performance.now(), lastHit = 0, glFrames = 0, lean = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
@@ -404,6 +432,7 @@ function init() {
     else if (reduced && !actN && !rocks[0].busy && !rocks[1].busy) stop();       // with reduced motion nothing drifts: wait for the pointer
   }
   function start() { if (!raf && seen && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+  kick = start;
   function stop() { cancelAnimationFrame(raf); raf = 0; }
   document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else { dirty = true; start(); } });
   if ("IntersectionObserver" in window) new IntersectionObserver((en) => { seen = en[en.length - 1].isIntersecting; if (seen) { dirty = true; start(); } else stop(); }).observe(panel);
@@ -412,4 +441,4 @@ function init() {
   renderer.render(scene, camera); panel.classList.add("live"); start();
   window.__grow = { bg: applyBg, get points() { return C; }, get active() { return actN; }, get drawn() { return meadow.reduce((a, p) => a + p.n, 0); }, get flowers() { return planted; }, get turn() { return group.rotation.y; }, get frames() { return glFrames; }, low };
 }
-init();
+init().catch((e) => console.error("hero-grow:", e));
