@@ -3,7 +3,8 @@
 // on stalks with leaves, sprays of blossom and small wildflowers, and the stone under them turns green. Two seconds
 // later the meadow withers back on its own, leaving a few flowers standing on stone that stays a little earthy; the
 // pointer can grow it again. A click on a pyramid plants one larger flower that stays. The ground reacts too: the
-// sun glow leans toward the pointer, a soft light follows it, and floating pollen drifts around it.
+// sun glow leans toward the pointer, a soft light follows it, and floating pollen drifts around it. There are several
+// backgrounds to try (?bg=golden, studio, sky, sunset, pink, holo, dusk, night), each with lights to match.
 import * as THREE from "three";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -22,7 +23,8 @@ function init() {
   const sky = (() => {
     const ctxs = dustEls.map((c) => c.getContext("2d")), motes = [], dpr = [1, 1];
     const sprite = (rgb, hard) => { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(hard, `rgba(${rgb},${hard > 0.2 ? 0.9 : 0.55})`); gr.addColorStop(1, `rgba(${rgb},0)`); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return c; };
-    const SPR = [sprite("255,252,242", 0.3), sprite("255,214,146", 0.3), sprite("255,249,236", 0.04), sprite("255,204,140", 0.04)];
+    const SPR = []; let amp = 1;
+    function tint(rgb, a) { SPR.length = 0; SPR.push(sprite(rgb[0], 0.3), sprite(rgb[1], 0.3), sprite(rgb[0], 0.04), sprite(rgb[1], 0.04)); amp = a; }
     const p = { x: 0, y: 0, vx: 0, vy: 0, on: false, at: 0 }, sun = { x: 0, y: 0, sx: NaN, sy: NaN }, glow = { x: 0, y: 0, set: false };
     let W = 0, H = 0;
     function resize(w, h) {
@@ -57,16 +59,37 @@ function init() {
         const pad = m.r * 3; if (m.x < -pad) m.x += W + 2 * pad; else if (m.x > W + pad) m.x -= W + 2 * pad; if (m.y < -pad) m.y += H + 2 * pad; else if (m.y > H + pad) m.y -= H + 2 * pad;
       }
       ctxs.forEach((g, k) => { g.setTransform(dpr[k], 0, 0, dpr[k], 0, 0); g.clearRect(0, 0, W, H); });
-      for (const m of motes) { const g = ctxs[m.k]; g.globalAlpha = m.a * (0.8 + 0.2 * Math.sin(t * 1.1 + m.ph)); const s = m.r * (m.s >= 2 ? 3 : 5); g.drawImage(SPR[m.s], m.x - s / 2, m.y - s / 2, s, s); }
+      for (const m of motes) { const g = ctxs[m.k]; g.globalAlpha = Math.min(1, m.a * amp * (0.8 + 0.2 * Math.sin(t * 1.1 + m.ph))); const s = m.r * (m.s >= 2 ? 3 : 5); g.drawImage(SPR[m.s], m.x - s / 2, m.y - s / 2, s, s); }
       // the sun glow leans a little toward the pointer and drifts back when it leaves
       const tx = p.on ? (p.x - W / 2) * 0.13 : 0, ty = p.on ? (p.y - H * 0.62) * 0.08 : 0, e1 = 1 - Math.exp(-dt * 1.8);
       sun.x += (tx - sun.x) * e1; sun.y += (ty - sun.y) * e1;
       if (Math.abs(sun.x - sun.sx) + Math.abs(sun.y - sun.sy) > 0.05 || isNaN(sun.sx)) { sun.sx = sun.x; sun.sy = sun.y; sunEl.style.transform = `translate3d(${sun.x.toFixed(1)}px,${sun.y.toFixed(1)}px,0)`; }
       if (p.on) { const e2 = glow.set ? 1 - Math.exp(-dt * 10) : 1; glow.set = true; const nx = glow.x + (p.x - glow.x) * e2, ny = glow.y + (p.y - glow.y) * e2; if (Math.abs(nx - glow.x) + Math.abs(ny - glow.y) > 0.05) { glow.x = nx; glow.y = ny; glowEl.style.transform = `translate3d(${nx.toFixed(1)}px,${ny.toFixed(1)}px,0)`; } }
     }
-    return { resize, point, update, lean: () => (W ? sun.x / W : 0) };
+    return { resize, point, update, tint, lean: () => (W ? sun.x / W : 0) };
   })();
 
+  // --- backgrounds to choose from (?bg=name, or the switcher on the page). The CSS for each is in hero-grow.html;
+  //     here are the lights that suit it and the colour of the pollen (on the dark ones it glows like fireflies).
+  const THEMES = {
+    golden: { hemi: ["#fff0dc", "#8a6f60", 1.5], sun: ["#fff0d6", 2.9], rim: ["#ff9ab8", 0.9], exp: 1.08, dust: ["255,252,242", "255,214,146"], a: 1 },
+    studio: { hemi: ["#ffffff", "#9a9088", 1.6], sun: ["#fffaf2", 2.7], rim: ["#ffffff", 0.45], exp: 1.05, dust: ["176,160,142", "205,192,176"], a: 0.8 },
+    sky: { hemi: ["#eaf4ff", "#8b8a78", 1.6], sun: ["#fffaf0", 3.0], rim: ["#bfe0ff", 0.8], exp: 1.06, dust: ["255,255,255", "255,246,214"], a: 1 },
+    sunset: { hemi: ["#ffd9c0", "#7a4a6a", 1.4], sun: ["#ffc890", 2.8], rim: ["#ff5c98", 1.3], exp: 1.06, dust: ["255,240,208", "255,190,150"], a: 1 },
+    pink: { hemi: ["#ffe3ee", "#8a4a62", 1.5], sun: ["#fff2f6", 2.8], rim: ["#ffffff", 0.9], exp: 1.06, dust: ["255,255,255", "255,214,232"], a: 1 },
+    holo: { hemi: ["#f3ecff", "#7f8aa8", 1.6], sun: ["#fffaff", 2.7], rim: ["#7fe9ff", 1.0], exp: 1.06, dust: ["255,255,255", "204,242,255"], a: 1 },
+    dusk: { hemi: ["#a894ff", "#241a4d", 0.95], sun: ["#ffa8c4", 1.9], rim: ["#7fdcff", 1.7], exp: 0.92, dust: ["255,238,160", "255,200,120"], a: 1.25 },
+    night: { hemi: ["#7f95c4", "#101810", 0.6], sun: ["#c4d6ff", 1.35], rim: ["#ffd27a", 1.0], exp: 0.86, dust: ["255,230,120", "214,255,150"], a: 1.35 },
+  };
+  let lightsFor = null, theme = new URLSearchParams(location.search).get("bg"); if (!THEMES[theme]) theme = "golden";
+  const picker = document.querySelector(".bg-pick");
+  function applyBg(name) {
+    theme = name; const t = THEMES[name]; panel.dataset.bg = name; sky.tint(t.dust, t.a); if (lightsFor) lightsFor(t);
+    if (picker) picker.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.bg === name));
+    const u = new URL(location.href); u.searchParams.set("bg", name); history.replaceState(null, "", u);
+  }
+  if (picker) picker.addEventListener("click", (e) => { const b = e.target.closest("button[data-bg]"); if (b) applyBg(b.dataset.bg); });
+  applyBg(theme);
   const pointGround = (e, on) => { const r = panel.getBoundingClientRect(); sky.point(e.clientX - r.left, e.clientY - r.top, on); panel.classList.toggle("lit", on); };
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }); }
@@ -85,10 +108,11 @@ function init() {
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 1, 0.1, 60); camera.position.set(0, 0, 10);
-  scene.add(new THREE.HemisphereLight("#fff0dc", "#8a6f60", 1.5));
+  const hemi = new THREE.HemisphereLight("#fff0dc", "#8a6f60", 1.5); scene.add(hemi);
   const sun = new THREE.DirectionalLight("#fff0d6", 2.9); sun.position.set(-4.5, 5.5, 5.5); sun.castShadow = true; sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
   Object.assign(sun.shadow.camera, { left: -3.5, right: 3.5, top: 3.5, bottom: -3.5, near: 1, far: 20 }); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.02; sun.shadow.radius = 4; scene.add(sun);
   const rim = new THREE.DirectionalLight("#ff9ab8", 0.9); rim.position.set(5, 2.5, -3.5); scene.add(rim);
+  lightsFor = (t) => { hemi.color.set(t.hemi[0]); hemi.groundColor.set(t.hemi[1]); hemi.intensity = t.hemi[2]; sun.color.set(t.sun[0]); sun.intensity = t.sun[1]; rim.color.set(t.rim[0]); rim.intensity = t.rim[1]; renderer.toneMappingExposure = t.exp; dirty = true; };
 
   const h3 = (x, y, z) => { const n = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return n - Math.floor(n); };
   const vn = (x, y, z) => { const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z), s = (t) => t * t * (3 - 2 * t), u = s(x - xi), v = s(y - yi), w = s(z - zi), l = (a, b, t) => a + (b - a) * t;
@@ -149,7 +173,7 @@ function init() {
   // Plain pyramids for finding where the pointer is on the stone (the real ones have tens of thousands of faces).
   const proxies = [-1.03, 1.03].map((cx) => { const g = new THREE.ConeGeometry(Math.SQRT2, HGT, 4, 1, false, Math.PI / 4); g.translate(cx, 0, 0); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ visible: false })); group.add(m); return m; });
 
-  let W = 1, H = 1, dirty = true;
+  let W = 1, H = 1, dirty = true; lightsFor(THEMES[theme]);
   function fit() {
     W = panel.clientWidth; H = panel.clientHeight; renderer.setSize(W, H, false); camera.aspect = W / H; camera.updateProjectionMatrix();
     const visH = 2 * 10 * Math.tan(THREE.MathUtils.degToRad(15)), visW = visH * camera.aspect, narrow = camera.aspect < 0.9;
@@ -290,10 +314,8 @@ function init() {
     for (const m of [heroStem, heroHead, heroEye]) { m.count = Math.min(planted, CAP); m.instanceMatrix.needsUpdate = m.instanceColor.needsUpdate = true; }
   }
 
-  // --- the net that marks the patch under the pointer
-  const REACH = 0.44, netPts = [], st = 0.07, nat = (a, b) => { const w = 0.03 * Math.sin(a * 9 + b * 7); return new THREE.Vector3(a + w, b + w * 0.6, 0); };
-  for (let a = -0.4; a <= 0.4 + 1e-6; a += st) for (let b = -0.4; b < 0.4 - 1e-6; b += st) if (a * a + (b + st / 2) ** 2 < 0.16) netPts.push(nat(a, b), nat(a, b + st), nat(b, a), nat(b + st, a));
-  const net = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(netPts), new THREE.LineBasicMaterial({ color: "#fff6dc", transparent: true, opacity: 0, depthTest: false })); net.renderOrder = 9; group.add(net);
+  const REACH = 0.44;                                                           // how far one touch of the pointer reaches
+
 
   // --- growing and withering
   const lin = (c) => [c.r, c.g, c.b], b3 = lin(base), mossT = lin(new THREE.Color(MOSS)).map((v, k) => (v / b3[k]) * 1.25), earthT = lin(new THREE.Color(EARTH)).map((v, k) => v / b3[k]);
@@ -351,11 +373,11 @@ function init() {
   }
 
   // --- the pointer: turns the pyramids, grows the meadow, moves the ground; a click plants a flower
-  const ray = new THREE.Raycaster(), ptr = { x: 0, y: 0, moved: false, over: false, in: false }, ndc = new THREE.Vector2(), FWD = new THREE.Vector3(0, 0, 1), netGoal = new THREE.Vector3(), rot = { y: BASE_Y, t: BASE_Y };
+  const ray = new THREE.Raycaster(), ptr = { x: 0, y: 0, moved: false, over: false, in: false }, ndc = new THREE.Vector2(), rot = { y: BASE_Y, t: BASE_Y };
   const aim = (px, py) => { const r = canvas.getBoundingClientRect(); ndc.set(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); };
   const point = (e) => { ptr.x = e.clientX; ptr.y = e.clientY; ptr.moved = ptr.in = true; const r = panel.getBoundingClientRect(); rot.t = BASE_Y + ((e.clientX - r.left) / r.width - 0.5) * SWING; pointGround(e, true); start(); };
   panel.addEventListener("pointermove", point); panel.addEventListener("pointerdown", point);
-  panel.addEventListener("pointerleave", (e) => { ptr.over = ptr.in = false; pointGround(e, false); dirty = true; });
+  panel.addEventListener("pointerleave", (e) => { ptr.over = ptr.in = false; pointGround(e, false); });
   panel.addEventListener("pointerup", (e) => { if (e.pointerType === "touch") panel.classList.remove("lit"); });
   panel.addEventListener("click", (e) => {
     if (e.target.closest("a, button, .hero-cue")) return;
@@ -373,10 +395,8 @@ function init() {
     }
     if (ptr.moved && ptr.in) {
       ptr.moved = false; lastHit = clock; aim(ptr.x, ptr.y); const h = ray.intersectObjects(proxies)[0]; ptr.over = !!h;
-      if (h) { const local = group.worldToLocal(h.point.clone()); grow(local, REACH); netGoal.copy(local).addScaledVector(h.face.normal, 0.05); net.quaternion.setFromUnitVectors(FWD, h.face.normal); if (net.material.opacity < 0.05) net.position.copy(netGoal); }
+      if (h) grow(group.worldToLocal(h.point.clone()), REACH);
     }
-    const want = ptr.over ? 0.85 : 0, o = net.material.opacity; if (Math.abs(want - o) > 0.004) { net.material.opacity = o + (want - o) * (1 - Math.exp(-dt * 7)); dirty = true; }
-    if (ptr.over && net.position.distanceToSquared(netGoal) > 1e-7) { net.position.lerp(netGoal, 1 - Math.exp(-dt * 16)); dirty = true; }
     advance(dt);
     sky.update(dt, clock);
     const ln = sky.lean(); if (Math.abs(ln - lean) > 0.0005) { lean = ln; rim.position.x = 5 + lean * 30; dirty = true; }   // the back light leans with the sun glow
@@ -390,6 +410,6 @@ function init() {
   let rt = 0; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px"); fit(); start(); }, 120); });
 
   renderer.render(scene, camera); panel.classList.add("live"); start();
-  window.__grow = { get points() { return C; }, get active() { return actN; }, get drawn() { return meadow.reduce((a, p) => a + p.n, 0); }, get flowers() { return planted; }, get turn() { return group.rotation.y; }, get frames() { return glFrames; }, low };
+  window.__grow = { bg: applyBg, get points() { return C; }, get active() { return actN; }, get drawn() { return meadow.reduce((a, p) => a + p.n, 0); }, get flowers() { return planted; }, get turn() { return group.rotation.y; }, get frames() { return glFrames; }, low };
 }
 init();

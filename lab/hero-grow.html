@@ -11,21 +11,46 @@
 <style>
 /* A test page, not part of the portfolio: two stone pyramids that turn toward the pointer, where a meadow grows and withers and a click plants a flower. */
 html, body { height: 100%; overflow: hidden; }
-/* Golden hour: a warm ground with a soft sun behind the pyramids. The sun glow leans toward the pointer, a soft
-   light follows it, and pollen floats around it (moved by hero-grow.js). */
-.hero.panel.grow { background: linear-gradient(to bottom, #f6ddca 0%, #efcdb6 70%, #e2bda6 100%); cursor: crosshair; }
+/* The ground. Each background (data-bg, picked with ?bg= or the switcher) sets the panel colour, the sun glow behind
+   the pyramids, a wide low haze rather than a disc (it leans toward the pointer), the soft light that follows the pointer, and the type colour.
+   hero-grow.js sets the 3D lights and the pollen colour to match. */
+.hero.panel.grow { --sunsize: 62% 16%; --s1: rgba(255, 210, 120, .7); --s2: rgba(255, 150, 120, .25); --g1: rgba(255, 247, 228, .5); --g2: rgba(255, 236, 204, .16);
+  --bg: linear-gradient(to bottom, #f6ddca 0%, #efcdb6 70%, #e2bda6 100%); background: var(--bg); cursor: crosshair; transition: color .4s ease; }
 .hero.grow .lens-grey { background: none; }
 .hero.grow .lens-fx { opacity: 0; transition: opacity .8s ease; } .hero.grow.live .lens-fx { opacity: 1; }
 .grow-sun { position: absolute; inset: -25%; z-index: 0; pointer-events: none; will-change: transform;
-  background: radial-gradient(22.7% 28% at 50% 60.7%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%); }
-.grow-glow { position: absolute; left: 0; top: 0; width: 560px; height: 560px; margin: -280px 0 0 -280px; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .7s ease; will-change: transform;
-  background: radial-gradient(closest-side, rgba(255, 247, 228, .5), rgba(255, 236, 204, .16) 55%, rgba(255, 236, 204, 0)); }
-.hero.grow.lit .grow-glow { opacity: 1; }
+  background: var(--sunimg, radial-gradient(var(--sunsize) at 50% 66%, var(--s1), var(--s2) 50%, rgba(255, 255, 255, 0) 100%)); }
+.grow-glow { position: absolute; left: 0; top: 0; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .7s ease; will-change: transform;
+  background: radial-gradient(closest-side, var(--g1), var(--g2) 45%, rgba(255, 255, 255, 0)); }
+.hero.grow.lit .grow-glow { opacity: .55; }
 .grow-dust { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .grow-dust.front { z-index: 3; }
+
+/* Studio: the site's own cream, a pale light behind and a soft shadow on the floor. */
+.hero.grow[data-bg="studio"] { --bg: radial-gradient(26% 5% at 50% 86%, rgba(70, 50, 36, .16), rgba(70, 50, 36, 0)), linear-gradient(#fffaf5, #f1e9df); --s1: rgba(255, 255, 255, .95); --s2: rgba(255, 255, 255, .35); --g1: rgba(255, 255, 255, .7); --g2: rgba(255, 255, 255, .2); }
+/* Clear day: pale blue sky down to a warm horizon, a white sun. */
+.hero.grow[data-bg="sky"] { --bg: linear-gradient(#b7d6f4 0%, #d8e9f7 50%, #f7efe2 100%); --s1: rgba(255, 253, 238, .95); --s2: rgba(255, 244, 205, .35); --g1: rgba(255, 255, 255, .55); --g2: rgba(255, 255, 255, .16); }
+/* Sunset poster: flat bands of colour, like the screen prints, with a low haze on the horizon. */
+.hero.grow[data-bg="sunset"] { --bg: linear-gradient(#ffd7ad 0 30%, #ffc196 30% 46%, #ffa98c 46% 60%, #f99095 60% 73%, #ec7f9f 73% 86%, #dd76a6 86% 100%); --s1: rgba(255, 236, 170, .75); --s2: rgba(255, 214, 160, .3); --g1: rgba(255, 248, 226, .45); --g2: rgba(255, 238, 200, .12); }
+/* Hot pink, from the art. */
+.hero.grow[data-bg="pink"] { --bg: linear-gradient(#ff4d8f, #ff2e7e 60%, #f0246f); --s1: rgba(255, 200, 222, .75); --s2: rgba(255, 140, 185, .3); --g1: rgba(255, 236, 244, .45); --g2: rgba(255, 220, 236, .14); }
+/* Holographic: pastel pink, lilac, cyan and butter. */
+.hero.grow[data-bg="holo"] { --bg: linear-gradient(135deg, #ffd3ea 0%, #e2d3ff 32%, #c6efff 64%, #fff2c4 100%); --s1: rgba(255, 255, 255, .85); --s2: rgba(255, 255, 255, .3); --g1: rgba(255, 255, 255, .55); --g2: rgba(255, 255, 255, .16); }
+/* Ultraviolet dusk: indigo into violet with a pink horizon; white type, pollen like fireflies. */
+.hero.grow[data-bg="dusk"] { --lens-ink: #fff; --bg: linear-gradient(#1a1466 0%, #34197a 40%, #7a3291 72%, #f06a95 100%); --s1: rgba(255, 140, 180, .55); --s2: rgba(180, 90, 200, .22); --g1: rgba(255, 210, 235, .22); --g2: rgba(255, 190, 225, .07); }
+/* Night: a dark blue sky, a moon-white glow and fireflies; white type. */
+.hero.grow[data-bg="night"] { --lens-ink: #fff; --bg: radial-gradient(120% 80% at 50% 0%, #22304d 0%, #101829 60%, #0a0f1a 100%); --s1: rgba(200, 216, 255, .32); --s2: rgba(120, 150, 220, .1); --g1: rgba(255, 232, 160, .16); --g2: rgba(255, 232, 160, .05); }
+
+/* The background switcher (test page only). */
+.bg-pick { position: fixed; z-index: 60; right: 16px; bottom: 16px; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(31, 28, 28, .82); backdrop-filter: blur(8px); font: 500 12px/1 var(--mono, monospace); letter-spacing: .06em; text-transform: uppercase; }
+.bg-pick button { border: 0; border-radius: 999px; padding: 8px 11px; background: none; color: rgba(255, 255, 255, .62); font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.bg-pick button[aria-pressed="true"] { background: #fff; color: #1f1c1c; }
+@media (hover: hover) { .bg-pick button:hover { color: #fff; } .bg-pick button[aria-pressed="true"]:hover { color: #1f1c1c; } }
 @media (max-width: 700px) {
-  .grow-sun { background: radial-gradient(46.7% 22.7% at 50% 56.7%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%); }
-  .grow-glow { width: 380px; height: 380px; margin: -190px 0 0 -190px; }
+  .hero.panel.grow { --sunsize: 80% 13%; }
+  .grow-glow { width: 640px; height: 640px; margin: -320px 0 0 -320px; }
+  .bg-pick { left: 8px; right: 8px; bottom: 8px; overflow-x: auto; scrollbar-width: none; } .bg-pick button { flex: none; }
+  .hero.grow > .hero-cue { bottom: 62px; } .hero.grow .lens-blurb { bottom: 128px; }
 }
 </style>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
@@ -55,6 +80,9 @@ html, body { height: 100%; overflow: hidden; }
     <span class="cue hero-cue" aria-hidden="true"><span>Scroll</span><svg viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>
   </section>
 </main>
+<nav class="bg-pick" aria-label="Background">
+  <button type="button" data-bg="golden">Golden</button><button type="button" data-bg="studio">Studio</button><button type="button" data-bg="sky">Sky</button><button type="button" data-bg="sunset">Sunset</button><button type="button" data-bg="pink">Pink</button><button type="button" data-bg="holo">Holo</button><button type="button" data-bg="dusk">Dusk</button><button type="button" data-bg="night">Night</button>
+</nav>
 <script type="module" src="hero-grow.js"></script>
 </body>
 </html>
