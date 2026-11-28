@@ -9,13 +9,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles.css">
 <style>
-/* A test page, not part of the portfolio: two stone pyramids where a meadow grows under the pointer. */
+/* A test page, not part of the portfolio: two stone pyramids that turn toward the pointer, where a meadow grows and withers and a click plants a flower. */
 html, body { height: 100%; overflow: hidden; }
-/* Golden hour: a warm ground with a soft sun behind the pyramids. */
-.hero.panel.grow { background: radial-gradient(34% 42% at 50% 66%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%), linear-gradient(to bottom, #f6ddca 0%, #efcdb6 70%, #e2bda6 100%); cursor: crosshair; }
+/* Golden hour: a warm ground with a soft sun behind the pyramids. The sun glow leans toward the pointer, a soft
+   light follows it, and pollen floats around it (moved by hero-grow.js). */
+.hero.panel.grow { background: linear-gradient(to bottom, #f6ddca 0%, #efcdb6 70%, #e2bda6 100%); cursor: crosshair; }
 .hero.grow .lens-grey { background: none; }
 .hero.grow .lens-fx { opacity: 0; transition: opacity .8s ease; } .hero.grow.live .lens-fx { opacity: 1; }
-@media (max-width: 700px) { .hero.panel.grow { background: radial-gradient(70% 34% at 50% 60%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%), linear-gradient(to bottom, #f6ddca 0%, #efcdb6 70%, #e2bda6 100%); } }
+.grow-sun { position: absolute; inset: -25%; z-index: 0; pointer-events: none; will-change: transform;
+  background: radial-gradient(22.7% 28% at 50% 60.7%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%); }
+.grow-glow { position: absolute; left: 0; top: 0; width: 560px; height: 560px; margin: -280px 0 0 -280px; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .7s ease; will-change: transform;
+  background: radial-gradient(closest-side, rgba(255, 247, 228, .5), rgba(255, 236, 204, .16) 55%, rgba(255, 236, 204, 0)); }
+.hero.grow.lit .grow-glow { opacity: 1; }
+.grow-dust { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.grow-dust.front { z-index: 3; }
+@media (max-width: 700px) {
+  .grow-sun { background: radial-gradient(46.7% 22.7% at 50% 56.7%, rgba(255, 210, 120, .7), rgba(255, 150, 120, .25) 55%, rgba(255, 150, 120, 0) 78%); }
+  .grow-glow { width: 380px; height: 380px; margin: -190px 0 0 -190px; }
+}
 </style>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
 </head>
@@ -30,7 +41,11 @@ html, body { height: 100%; overflow: hidden; }
 <main>
   <section class="hero panel lens grow">
     <div class="lens-sc lens-grey">
+      <div class="grow-sun" aria-hidden="true"></div>
+      <div class="grow-glow" aria-hidden="true"></div>
+      <canvas class="grow-dust" aria-hidden="true"></canvas>
       <canvas class="lens-fx" aria-hidden="true"></canvas>
+      <canvas class="grow-dust front" aria-hidden="true"></canvas>
       <div class="lens-copy">
         <div class="lens-run"><span>Mayck Cuellar</span><i class="lens-rule"></i><i class="lens-navgap"></i><i class="lens-rule"></i><span>Portfolio</span></div>
         <div class="lens-head"><p class="lens-hl"><span class="i">Lead</span> <span class="b">Product Designer</span> <span class="w">working worldwide</span></p></div>
