@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hero test · Pyramids to M</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+<style>
+/* A test page for the way out of the hero: the meadow and stone give way to a line drawing of the pyramids, which
+   turns to face front, flattens into the M and bends into a bezier path. The slider scrubs it (0 to 1); Play runs it.
+   It opens on the hero's second screen (Studio, the pyramids centred, the two roles). */
+html, body { height: 100%; overflow: hidden; }
+.morph-bar { position: fixed; z-index: 60; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 8px; border-radius: 999px; background: rgba(31, 28, 28, .86); color: #fff; font: 500 12px/1 var(--mono, monospace); letter-spacing: .06em; text-transform: uppercase; backdrop-filter: blur(8px); }
+.morph-bar button { border: 0; border-radius: 999px; padding: 9px 14px; background: #fff; color: #1f1c1c; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.morph-bar input { width: min(46vw, 420px); accent-color: #fff; }
+.morph-bar output { min-width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
+.hero.grow > .hero-cue { display: none; }
+</style>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+</head>
+<body>
+<header class="top">
+  <div class="island">
+    <a class="mark" href="../" aria-label="Mayck Cuellar, home"><svg class="logo" viewBox="0 0 44 20" aria-hidden="true" focusable="false"><path d="M0 20L11 0L22 20ZM22 20L33 0L44 20Z"/></svg></a>
+    <nav aria-label="Primary"><a href="../#about">About</a><a href="../#work">Work</a><a href="../#experience">Experience</a><a href="../#art">Art</a><a href="../#ask">Ask</a></nav>
+  </div>
+  <a class="pill hi" href="https://www.linkedin.com/in/mayck69/" target="_blank" rel="noopener">Say hi</a>
+</header>
+<main>
+  <section class="hero panel lens grow" data-centre="1" style="--hp: .6">
+    <div class="lens-sc lens-grey">
+      <div class="grow-layer from" data-bg="studio" aria-hidden="true"><div class="grow-sun"></div><div class="grow-glow"></div></div>
+      <canvas class="grow-dust" aria-hidden="true"></canvas>
+      <canvas class="lens-fx" aria-hidden="true"></canvas>
+      <canvas class="grow-dust front" aria-hidden="true"></canvas>
+      <div class="lens-copy">
+        <div class="lens-run"><span class="lens-side"><span>Mayck Cuellar</span><i class="lens-rule"></i></span><i class="lens-navgap"></i><span class="lens-side"><i class="lens-rule"></i><span>Portfolio</span></span></div>
+        <div class="lens-head"><p class="lens-hl"><span class="i">Lead</span> <span class="b">Product Designer</span> <span class="w">crafting interaction &amp; code</span></p></div>
+        <div class="hero-roles">
+          <p class="hero-role">Product design</p>
+          <p class="hero-role">AI strategy &amp; product growth</p>
+        </div>
+        <p class="lens-blurb"><strong>10+ years</strong> across fintech and consumer products for <strong>Novo</strong>, <strong>Google</strong>, <strong>Logitech G</strong> and <strong>AccuWeather</strong>, from discovery to launch.</p>
+      </div>
+    </div>
+    <span class="cue hero-cue" aria-hidden="true"><span>Scroll</span><svg viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>
+  </section>
+</main>
+<div class="morph-bar"><button type="button" id="play">Play</button><input id="t" type="range" min="0" max="1" step="0.001" value="0" aria-label="Transition"><output id="tv">0.00</output></div>
+<script type="module" src="../hero-grow.js"></script>
+<script>
+  // Scrub or play the way out. The two roles leave as the drawing takes over.
+  const t = document.getElementById("t"), tv = document.getElementById("tv"), play = document.getElementById("play"), roles = document.querySelector(".hero-roles");
+  const set = (v) => { t.value = v; tv.textContent = (+v).toFixed(2); roles.style.opacity = Math.max(0, 1 - v * 3); if (window.__grow) window.__grow.morph(+v); };
+  t.addEventListener("input", () => set(t.value));
+  let run = 0; play.addEventListener("click", () => { cancelAnimationFrame(run); const t0 = performance.now(), from = +t.value >= 1 ? 0 : +t.value; const step = (now) => { const v = Math.min(1, from + (now - t0) / 5000); set(v); if (v < 1) run = requestAnimationFrame(step); }; run = requestAnimationFrame(step); });
+</script>
+</body>
+</html>

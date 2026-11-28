@@ -16,6 +16,7 @@ async function init() {
   if (!panel) return;
   const canvas = panel.querySelector(".lens-fx"), sunEls = [...panel.querySelectorAll(".grow-sun")], glowEls = [...panel.querySelectorAll(".grow-glow")], dustEls = [...panel.querySelectorAll(".grow-dust")];
   let dirty = true, raf = 0, seen = true, kick = () => {};                       // kick() starts the drawing loop once it exists
+  let centreT = +(panel.dataset.centre || 0);                                     // 0: the pyramids sit under the headline; 1: centred (the second screen)
   const breathe = () => new Promise((r) => setTimeout(r, 0));                     // let the page scroll and paint between heavy steps
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches, RATE = reduced ? 40 : 1;
   panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px");
@@ -103,11 +104,12 @@ async function init() {
   }
   if (picker) picker.addEventListener("click", (e) => { const b = e.target.closest("button[data-bg]"); if (b) applyBg(b.dataset.bg); });
   applyBg(A);
-  // On the portfolio the second screen of the pinned hero brings in the scroll theme (Studio).
-  if (wrap && toL && !reduced) {
+  // On the portfolio the second screen of the pinned hero centres the pyramids and brings in the scroll theme (Studio).
+  if (wrap && !reduced) {
     const onScroll = () => {
       const r = wrap.getBoundingClientRect(), hp = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight))), u = Math.min(1, Math.max(0, (hp - 0.06) / 0.3)), v = u * u * (3 - 2 * u);
-      if (Math.abs(v - blend) > 0.001) { blend = v; refresh(); kick(); }
+      if (Math.abs(v - centreT) > 0.001) { centreT = v; kick(); }
+      if (toL && Math.abs(v - blend) > 0.001) { blend = v; refresh(); kick(); }
     };
     window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll); onScroll();
   }
@@ -199,11 +201,11 @@ async function init() {
   // Plain pyramids for finding where the pointer is on the stone (the real ones have tens of thousands of faces).
   const proxies = [-0.975, 0.975].map((cx) => { const g = new THREE.ConeGeometry(Math.SQRT2, HGT, 4, 1, false, Math.PI / 4); g.translate(cx, 0, 0); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ visible: false })); group.add(m); return m; });
 
-  let W = 1, H = 1; refresh();
+  let W = 1, H = 1, baseY = 0, centre = centreT; refresh();
   function fit() {
     W = panel.clientWidth; H = panel.clientHeight; renderer.setSize(W, H, false); camera.aspect = W / H; camera.updateProjectionMatrix();
     const visH = 2 * 10 * Math.tan(THREE.MathUtils.degToRad(15)), visW = visH * camera.aspect, narrow = camera.aspect < 0.9;
-    group.scale.setScalar(Math.min(0.74, (visW * 0.86) / 4.5)); group.position.y = narrow ? -visH * 0.09 : -0.78;
+    group.scale.setScalar(Math.min(0.74, (visW * 0.86) / 4.5)); baseY = narrow ? -visH * 0.09 : -0.78; group.position.y = baseY * (1 - centre);
     group.updateMatrixWorld(true); camera.updateMatrixWorld(true); renderer.shadowMap.needsUpdate = true; dirty = true;
     sky.resize(W, H);
   }
@@ -263,7 +265,8 @@ async function init() {
 
   // Each kind of plant is a pool: only the plants that are growing or standing are drawn, each scaled by its own
   // aGrow (0 to 1) so it can grow out of the stone and wither back into it.
-  const growable = (m) => { m.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute float aGrow;").replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed *= aGrow;"); }; return m; };
+  const uScale = { value: 1 };                                                    // the whole meadow at once (the way out)
+  const growable = (m) => { m.onBeforeCompile = (sh) => { sh.uniforms.uScale = uScale; sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute float aGrow;\nuniform float uScale;").replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed *= aGrow * uScale;"); }; return m; };
   const mat = (o) => new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.7, ...o });
   const M4 = new THREE.Matrix4(), SV = new THREE.Vector3();
   function pool(geo, material, list, vary) {
@@ -400,6 +403,57 @@ async function init() {
     if (anim) { for (const m of [heroStem, heroHead, heroEye]) m.geometry.attributes.aGrow.needsUpdate = true; dirty = true; }
   }
 
+  // --- the way out (being tried on lab/hero-morph.html): the meadow and the stone give way to a line drawing of the
+  //     two pyramids (hidden edges dashed, square anchors at the corners), which turns to face front, flattens into the
+  //     M of the logo and bends into a bezier path with pen-tool handles. morph runs 0 to 1. The lines are SVG, drawn
+  //     from the pyramids' real corners every frame, so the hand-over from the 3D scene has no seam.
+  let morph = 0, morphDirty = false, svg = null, svgOn = false, stoneOp = 1, floorY = -1, floorA = -1;
+  const seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+  const PYR = [-0.975, 0.975].map((cx) => [[cx, HGT / 2, 0], [cx - 1, -HGT / 2, 1], [cx + 1, -HGT / 2, 1], [cx + 1, -HGT / 2, -1], [cx - 1, -HGT / 2, -1]]);   // apex, then the base: front left, front right, back right, back left
+  const FACES = [[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [1, 2, 3]];       // front, right, back, left, base
+  const EDGES = [[0, 1, 0, 3], [0, 2, 0, 1], [0, 3, 1, 2], [0, 4, 2, 3], [1, 2, 0, 4], [2, 3, 1, 4], [3, 4, 2, 4], [4, 1, 3, 4]];   // two corners, then the faces either side
+  function setMorph(t) {
+    morph = Math.max(0, Math.min(1, t)); uScale.value = 1 - smooth(seg(morph, 0, 0.3));
+    const op = stoneOp = 1 - smooth(seg(morph, 0.05, 0.35));
+    for (const r of rocks) { const m = r.mesh.material, tr = op < 1; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } m.opacity = op; r.mesh.visible = op > 0.002; r.mesh.castShadow = op > 0.5; }
+    renderer.shadowMap.needsUpdate = true; dirty = morphDirty = true; kick();
+  }
+  function drawMorph() {
+    if (!svg) { svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("class", "grow-morph"); svg.setAttribute("aria-hidden", "true"); canvas.after(svg); }
+    svgOn = morph > 0; if (!svgOn) { svg.innerHTML = ""; return; }
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const t = morph, ink = getComputedStyle(panel).getPropertyValue("--lens-ink").trim() || "#1f1c1c", acc = "#5a3cf2", paper = "#fffaf5";
+    const wire = smooth(seg(t, 0.04, 0.24)) * (1 - smooth(seg(t, 0.5, 0.64))), flat = smooth(seg(t, 0.44, 0.6)), bend = smooth(seg(t, 0.6, 0.86)), tidy = smooth(seg(t, 0.88, 1));
+    const px = (v) => { const n = v.clone().project(camera); return [((n.x + 1) / 2) * W, ((1 - n.y) / 2) * H]; }, f1 = (n) => n.toFixed(1);
+    const square = (p, size, stroke, o) => `<rect x="${f1(p[0] - size / 2)}" y="${f1(p[1] - size / 2)}" width="${size}" height="${size}" fill="${paper}" stroke="${stroke}" stroke-width="1.2" opacity="${o.toFixed(3)}"/>`;
+    let out = ""; const shots = [];
+    for (const vs of PYR) {
+      const w = vs.map((v) => new THREE.Vector3(...v).applyMatrix4(group.matrixWorld)), mid = w.reduce((a, v) => a.add(v), new THREE.Vector3()).multiplyScalar(1 / w.length), s2 = w.map(px);
+      const vis = FACES.map(([a, b, c]) => { const n = new THREE.Vector3().subVectors(w[b], w[a]).cross(new THREE.Vector3().subVectors(w[c], w[a])), f = new THREE.Vector3().add(w[a]).add(w[b]).add(w[c]).multiplyScalar(1 / 3); if (n.dot(f.clone().sub(mid)) < 0) n.negate(); return n.dot(camera.position.clone().sub(f)) > 0; });
+      if (wire > 0.001) {
+        for (const [a, b, fa, fb] of EDGES) { const seen = vis[fa] || vis[fb]; out += `<line x1="${f1(s2[a][0])}" y1="${f1(s2[a][1])}" x2="${f1(s2[b][0])}" y2="${f1(s2[b][1])}" stroke="${ink}" stroke-width="${seen ? 1.5 : 1}" ${seen ? "" : 'stroke-dasharray="5 5"'} opacity="${(wire * (seen ? 1 : 0.45)).toFixed(3)}"/>`; }
+        for (const p of s2) out += square(p, 7, ink, wire);
+      }
+      shots.push(s2);
+    }
+    if (flat > 0.001) {
+      // The M: the outline of the two fronts, from the outer front corners over both apexes and down to where they meet.
+      const L0 = shots[0][1], A1 = shots[0][0], V = [(shots[0][2][0] + shots[1][1][0]) / 2, (shots[0][2][1] + shots[1][1][1]) / 2], A2 = shots[1][0], R0 = shots[1][2];
+      const w = R0[0] - L0[0], h = L0[1] - A1[1], lerp2 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+      const curve = (a, b, c1, c2) => [lerp2(lerp2(a, b, 1 / 3), c1, bend), lerp2(lerp2(a, b, 2 / 3), c2, bend)];
+      // Each stroke leaves the base straight up and meets the apex at a slant, so the M reads as two pointed arches.
+      const segs = [[L0, A1, [L0[0] + 0.015 * w, L0[1] - 0.55 * h], [A1[0] - 0.09 * w, A1[1] + 0.28 * h]], [A1, V, [A1[0] + 0.09 * w, A1[1] + 0.28 * h], [V[0] - 0.015 * w, V[1] - 0.55 * h]],
+        [V, A2, [V[0] + 0.015 * w, V[1] - 0.55 * h], [A2[0] - 0.09 * w, A2[1] + 0.28 * h]], [A2, R0, [A2[0] + 0.09 * w, A2[1] + 0.28 * h], [R0[0] - 0.015 * w, R0[1] - 0.55 * h]]].map(([a, b, c1, c2]) => [a, b, ...curve(a, b, c1, c2)]);
+      const d = `M${f1(L0[0])} ${f1(L0[1])}` + segs.map(([, b, c1, c2]) => ` C${f1(c1[0])} ${f1(c1[1])} ${f1(c2[0])} ${f1(c2[1])} ${f1(b[0])} ${f1(b[1])}`).join("");
+      const sw = 1.6 + (Math.max(3, w * 0.011) - 1.6) * tidy;
+      out += `<path d="${d}" fill="none" stroke="${ink}" stroke-width="${f1(sw)}" stroke-linejoin="round" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="${(1 - flat).toFixed(4)}"/>`;
+      const hand = bend * (1 - tidy);
+      if (hand > 0.001) for (const [a, b, c1, c2] of segs) out += `<g opacity="${hand.toFixed(3)}" stroke="${acc}" stroke-width="1"><line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(c1[0])}" y2="${f1(c1[1])}"/><line x1="${f1(b[0])}" y1="${f1(b[1])}" x2="${f1(c2[0])}" y2="${f1(c2[1])}"/><circle cx="${f1(c1[0])}" cy="${f1(c1[1])}" r="3.5" fill="${paper}"/><circle cx="${f1(c2[0])}" cy="${f1(c2[1])}" r="3.5" fill="${paper}"/></g>`;
+      const pts = flat * (1 - tidy); if (pts > 0.001) for (const p of [L0, A1, V, A2, R0]) out += square(p, 8, bend > 0.05 ? acc : ink, pts);
+    }
+    svg.innerHTML = out;
+  }
+
   // --- the pointer: turns the pyramids, grows the meadow, moves the ground; a click plants a flower
   const ray = new THREE.Raycaster(), ptr = { x: 0, y: 0, moved: false, over: false, in: false }, ndc = new THREE.Vector2(), rot = { y: BASE_Y, t: BASE_Y };
   const aim = (px, py) => { const r = canvas.getBoundingClientRect(); ndc.set(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); };
@@ -417,17 +471,26 @@ async function init() {
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
-    if (Math.abs(rot.t - rot.y) > 0.0004) {                                       // the front faces turn toward the pointer
-      rot.y += (rot.t - rot.y) * (1 - Math.exp(-dt * (reduced ? 30 : 3.2))); group.rotation.y = rot.y; group.updateMatrixWorld(true);
+    if (Math.abs(rot.t - rot.y) > 0.0004) rot.y += (rot.t - rot.y) * (1 - Math.exp(-dt * (reduced ? 30 : 3.2)));   // the front faces turn toward the pointer
+    const mf = smooth(seg(morph, 0, 0.45)), ry = rot.y * (1 - mf), rx = 0.13 * (1 - mf);   // on the way out they turn to face front
+    if (Math.abs(centreT - centre) > 0.0005) { centre = centreT; group.position.y = baseY * (1 - centre); group.updateMatrixWorld(true); renderer.shadowMap.needsUpdate = true; dirty = true; }
+    if (ry !== group.rotation.y || rx !== group.rotation.x) {
+      group.rotation.set(rx, ry, 0); group.updateMatrixWorld(true);
       renderer.shadowMap.needsUpdate = true; dirty = true; if (ptr.over && clock - lastHit > 0.06) ptr.moved = true;   // keep growing as the stone turns under the pointer
     }
     if (ptr.moved && ptr.in) {
-      ptr.moved = false; lastHit = clock; aim(ptr.x, ptr.y); const h = ray.intersectObjects(proxies)[0]; ptr.over = !!h;
+      ptr.moved = false; lastHit = clock; aim(ptr.x, ptr.y); const h = morph > 0.02 ? null : ray.intersectObjects(proxies)[0]; ptr.over = !!h;
       if (h) grow(group.worldToLocal(h.point.clone()), REACH);
     }
     advance(dt);
     sky.update(dt, clock);
     const ln = sky.lean(); if (Math.abs(ln - lean) > 0.0005) { lean = ln; rim.position.x = 5 + lean * 30; dirty = true; }   // the back light leans with the sun glow
+    if ((dirty || morphDirty) && (morph > 0 || svgOn)) drawMorph(); morphDirty = false;
+    if (dirty) {                                                                  // the Studio floor shadow sits under the pyramids wherever they are
+      const n = new THREE.Vector3(0, -HGT / 2, 0).applyMatrix4(group.matrixWorld).project(camera), fy = ((1 - n.y) / 2) * H + H * 0.015;
+      if (Math.abs(fy - floorY) > 0.5) { floorY = fy; panel.style.setProperty("--floor-y", fy.toFixed(1) + "px"); }
+      if (stoneOp !== floorA) { floorA = stoneOp; panel.style.setProperty("--floor-a", stoneOp.toFixed(3)); }
+    }
     if (dirty) { dirty = false; renderer.render(scene, camera); glFrames++; }
     else if (reduced && !actN && !rocks[0].busy && !rocks[1].busy) stop();       // with reduced motion nothing drifts: wait for the pointer
   }
@@ -439,6 +502,6 @@ async function init() {
   let rt = 0; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { panel.style.setProperty("--navw", document.querySelector(".top").offsetWidth + "px"); fit(); start(); }, 120); });
 
   renderer.render(scene, camera); panel.classList.add("live"); start();
-  window.__grow = { bg: applyBg, get points() { return C; }, get active() { return actN; }, get drawn() { return meadow.reduce((a, p) => a + p.n, 0); }, get flowers() { return planted; }, get turn() { return group.rotation.y; }, get frames() { return glFrames; }, low };
+  window.__grow = { bg: applyBg, morph: setMorph, centre: (v) => { centreT = v; kick(); }, get points() { return C; }, get active() { return actN; }, get drawn() { return meadow.reduce((a, p) => a + p.n, 0); }, get flowers() { return planted; }, get turn() { return group.rotation.y; }, get frames() { return glFrames; }, low };
 }
 init().catch((e) => console.error("hero-grow:", e));

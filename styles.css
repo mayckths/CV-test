@@ -165,8 +165,9 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .hero.grow.lit .grow-glow { opacity: .55; }
 .grow-dust { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .grow-dust.front { z-index: 3; }
-/* Studio: the site's own cream, a pale light behind and a soft shadow on the floor. */
-.grow-layer[data-bg="studio"] { --bg: radial-gradient(26% 5% at 50% 86%, rgba(70, 50, 36, .16), rgba(70, 50, 36, 0)), linear-gradient(#fffaf5, #f1e9df); --s1: rgba(255, 255, 255, .95); --s2: rgba(255, 255, 255, .35); --g1: rgba(255, 255, 255, .7); --g2: rgba(255, 255, 255, .2); }
+.grow-morph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; overflow: visible; }   /* the line drawing on the way out */
+/* Studio: the site's own cream, a pale light behind and a soft shadow on the floor (hero-grow.js keeps it under the pyramids, --floor-y, and fades it with the stone, --floor-a). */
+.grow-layer[data-bg="studio"] { --bg: radial-gradient(26% 5% at 50% var(--floor-y, 86%), rgba(70, 50, 36, calc(.16 * var(--floor-a, 1))), rgba(70, 50, 36, 0)), linear-gradient(#fffaf5, #f1e9df); --s1: rgba(255, 255, 255, .95); --s2: rgba(255, 255, 255, .35); --g1: rgba(255, 255, 255, .7); --g2: rgba(255, 255, 255, .2); }
 /* Night: a dark blue sky, a moon-white glow and fireflies (the type turns white). */
 .grow-layer[data-bg="night"] { --bg: radial-gradient(120% 80% at 50% 0%, #22304d 0%, #101829 60%, #0a0f1a 100%); --s1: rgba(200, 216, 255, .32); --s2: rgba(120, 150, 220, .1); --g1: rgba(255, 232, 160, .16); --g2: rgba(255, 232, 160, .05); }
 @media (max-width: 700px) { .hero.panel.grow { --sunsize: 80% 13%; } .grow-glow { width: 640px; height: 640px; margin: -320px 0 0 -320px; } }
