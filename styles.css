@@ -134,7 +134,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
 .lens-head { position: absolute; left: 0; right: 0; top: 17%; text-align: center; }
 .lens-hl { white-space: nowrap; font: 800 min(7.7vw, 15.5vh)/.86 var(--display); letter-spacing: -0.06em; }
 .lens-hl .i { font: 400 italic 1.035em/.86 var(--serif); letter-spacing: -0.03em; color: var(--two); }
-/* "crafting in code, motion and 3D" is the headline's second line: the same italic serif as "Lead", large, set tight under it. */
+/* "crafting in code and interaction" is the headline's second line: the same italic serif as "Lead", large, set tight under it. */
 .lens-hl .w { display: block; margin-top: .04em; font: 400 italic .74em/.9 var(--serif); letter-spacing: -0.025em; color: var(--two); }
 .lens-blurb { position: absolute; left: clamp(22px, 4vw, 56px); bottom: 38px; max-width: 31ch; font-size: 17px; line-height: 1.45; text-wrap: pretty; }
 .lens-blurb strong { font-weight: 600; }
@@ -157,7 +157,7 @@ main > section:not(.panel):not(.scene) { max-width: var(--max); margin-inline: a
   .hero-role:nth-child(1) { right: auto; left: 8%; top: 70%; text-align: left; } .hero-role:nth-child(2) { left: auto; right: 8%; bottom: 70%; text-align: right; }
 }
 @media (max-width: 700px) {
-  .lens-head { top: 15.5%; left: 20px; right: 20px; text-align: left; } .lens-hl { white-space: normal; font-size: 14.6vw; line-height: .9; } .lens-hl .w { font-size: .74em; margin-top: .06em; white-space: normal; text-wrap: balance; }   /* on phones the line breaks in two: "crafting in code, / motion and 3D" */
+  .lens-head { top: 15.5%; left: 20px; right: 20px; text-align: left; } .lens-hl { white-space: normal; font-size: 14.6vw; line-height: .9; } .lens-hl .w { font-size: .74em; margin-top: .06em; white-space: normal; text-wrap: balance; }   /* on phones the line breaks in two, balanced */
   .lens-blurb { right: 22px; max-width: none; font-size: 16.5px; }
   .hero.lens > .hero-cue { bottom: 20px; }
 }

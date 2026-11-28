@@ -56,4 +56,4 @@ Read on desktop during hiring review and on phones when a link is shared. Visito
 2. The page is itself a work sample: built in code with the same craft bar as the products it shows.
 3. Respect a hiring manager's time: the strongest evidence is findable within seconds.
 4. Honesty about AI: anything that looks generated or automated says what it is.
-- Hero since late November 2026: a light grey panel with "Lead Product Designer, crafting in code, motion and 3D" (until 28 Nov 2026 the second line read "working worldwide"), and a hot pink version of itself shown inside a pixel-edged lens that follows the cursor; inside the lens the pyramids appear as a 3D blueprint. See DESIGN.md, "Hero: the lens".
+- Hero since late November 2026: a light grey panel with "Lead Product Designer, crafting in code and interaction" (on 28 Nov 2026 the second line went from "working worldwide" to "crafting in code, motion and 3D" and then to this), and a hot pink version of itself shown inside a pixel-edged lens that follows the cursor; inside the lens the pyramids appear as a 3D blueprint. See DESIGN.md, "Hero: the lens".
